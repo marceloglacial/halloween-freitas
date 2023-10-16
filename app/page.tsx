@@ -1,25 +1,55 @@
-import { Card, Footer, Hero, NavBar } from '@/components'
+import { Card, Footer, Hero, NavBar, Section } from '@/components'
 import { secondaryFont } from './util/fonts'
 
 export default function Home() {
     return (
         <>
             <Hero />
-            <main className='relative z-40 flex flex-col gap-8 bg-primary-content'>
+            <main className='relative z-40 flex flex-col bg-primary-content'>
                 <div className='relative p-24 top-[-150px] mb-[-150px] grid grid-flow-col gap-8'>
-                    <Card />
-                    <Card />
-                    <Card />
+                    <Card
+                        title={'Quando?'}
+                        icon={'👻'}
+                        description={
+                            <p>
+                                📅 Data: 28 de outubro <br />
+                                🕖 Hora: 19:00 <br />
+                                Estamos convocando todos os fantasmas, bruxas, vampiros e monstros
+                                para uma festa de Halloween que fará até os mortos-vivos se
+                                agitarem!
+                            </p>
+                        }
+                    />
+                    <Card
+                        title={'Quando?'}
+                        icon={'☠️'}
+                        description={
+                            <p>
+                                📅 Data: 28 de outubro <br />
+                                🕖 Hora: 19:00 <br />
+                                Estamos convocando todos os fantasmas, bruxas, vampiros e monstros
+                                para uma festa de Halloween que fará até os mortos-vivos se
+                                agitarem!
+                            </p>
+                        }
+                    />
+                    <Card
+                        title={'Quando?'}
+                        icon={'🦇'}
+                        description={
+                            <p>
+                                📅 Data: 28 de outubro <br />
+                                🕖 Hora: 19:00 <br />
+                                Estamos convocando todos os fantasmas, bruxas, vampiros e monstros
+                                para uma festa de Halloween que fará até os mortos-vivos se
+                                agitarem!
+                            </p>
+                        }
+                    />
                 </div>
-                <div className='bg-secondary-focus py-24 relative'>
-                    <div className=' absolute top-[-60px] left-[50%] translate-x-[-50%] text-9xl'>
-                        🕸️
-                    </div>
-                    <h3 className={`${secondaryFont.className} text-8xl text-center`}>
-                        Programação
-                    </h3>
-                    <div className='grid grid-flow-col grid-cols-2 gap-8 p-24'>
-                        <div className=' flex flex-col gap-4 text-2xl'>
+                <Section icon={'🕸️'} title={'Programação'}>
+                    <div className='grid grid-flow-col grid-cols-2 gap-8'>
+                        <div className=' flex flex-col gap-4'>
                             <p>
                                 Temos um trato mágico para você: um concurso de fantasias que vai
                                 fazer o chão tremer!
@@ -54,15 +84,20 @@ export default function Home() {
                             </div>
                         </div>
                     </div>
-                </div>
-                <div className='grid grid-flow-col gap-8 p-24'>
-                    Nada de medo, venha se juntar a nós para uma noite de diversão assustadora e
-                    lembranças arrepiantes. Nos vemos em 28 de outubro às 19:00! Esteja pronto para
-                    ser enfeitiçado! 🧙‍♀️ Confirme sua presença até 20 de outubro - Avise-nos se você
-                    se atreverá a participar da festa! 🎃🦇🕷️ A localização e detalhes adicionais
-                    serão compartilhados em breve. Fique ligado para mais informações, ou melhor,
-                    para mais aparições! 📲🦉🌕
-                </div>
+                </Section>
+                <Section icon={'💀'} title={'É só chegar!'} variant='base-100'>
+                    <div className='text-center'>
+                        <p>
+                            Nada de medo, venha se juntar a nós para uma noite de diversão
+                            assustadora e lembranças arrepiantes.
+                        </p>
+                        <p>Esteja pronto para ser enfeitiçado!</p>
+                        <p>Avise-nos se você se atreverá a participar da festa!</p>
+                        <p>Detalhes adicionais serão compartilhados em breve.</p>
+                        <p>Fique ligado para mais informações, ou melhor, para mais aparições!</p>
+                        <p className='text-3xl'>Confirme sua presença até 20 de outubro!</p>
+                    </div>
+                </Section>
             </main>
             <Footer />
         </>
