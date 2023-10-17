@@ -4,18 +4,27 @@ import { FC, ReactNode } from 'react'
 interface SectionProps {
     icon: string
     title: string
-    variant?: string
+    variant?: Colors
     children: ReactNode
 }
 
-const Section: FC<SectionProps> = ({ icon, title, variant, children }) => {
+type Colors = 'secondary' | 'base'
+
+const Section: FC<SectionProps> = ({ icon, title, variant = 'secondary', children }) => {
+    const bgColor = {
+        secondary: `bg-secondary`,
+        base: 'bg-base-100',
+    }
+
     return (
-        <div className={`bg-${variant} p-24 text-2xl relative`}>
-            <div className=' absolute top-[-60px] left-[50%] translate-x-[-50%] text-9xl'>
+        <div className={`${bgColor[variant]} p-12 py-24 lg:p-24 lg:text-2xl relative`}>
+            <div className=' absolute top-[-60px] left-[50%] translate-x-[-50%] text-7xl lg:text-9xl'>
                 {icon}
             </div>
-            <h3 className={`${secondaryFont.className} text-8xl text-center`}>{title}</h3>
-            <div className='py-24'>{children}</div>
+            <h3 className={`${secondaryFont.className} text-5xl lg:text-8xl text-center`}>
+                {title}
+            </h3>
+            <div className='py-12 lg:py-24'>{children}</div>
         </div>
     )
 }

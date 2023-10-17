@@ -11,11 +11,11 @@ const Card: FC<CardProps> = ({ title, icon, description }) => {
     return (
         <div className='card  bg-base-100 shadow-xl text-center'>
             <figure>
-                <span className='text-8xl p-8'>{icon}</span>
+                <span className='text-7xl lg:text-8xl pt-8'>{icon}</span>
             </figure>
             <div className='card-body text-center'>
                 <h2 className={`${secondaryFont.className} text-4xl`}>{title}</h2>
-                <div className='text-xl'>{description}</div>
+                <div className='lg:text-xl'>{description}</div>
             </div>
         </div>
     )

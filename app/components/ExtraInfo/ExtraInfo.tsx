@@ -2,7 +2,7 @@ import { Section } from '@/components'
 
 const ExtraInfo = () => {
     return (
-        <Section icon={'💀'} title={'É só chegar!'} variant='base-100'>
+        <Section icon={'💀'} title={'É só chegar!'} variant='base'>
             <div className=' relative text-center px-24 '>
                 <p>
                     Nada de medo, venha se juntar a nós para uma noite assustadora e lembranças

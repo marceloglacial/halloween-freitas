@@ -7,7 +7,7 @@ export default function Home() {
             <InfoGrid />
             <Schedule />
             <ExtraInfo />
-            <Footer />
+            {/* <Footer /> */}
         </>
     )
 }
