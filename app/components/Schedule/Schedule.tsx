@@ -3,7 +3,7 @@ import { secondaryFont } from '@/util/fonts'
 
 const Schedule = () => {
     return (
-        <Section icon={'🦇'} title={'Programação'}>
+        <Section icon={'🦇'} title={'Programação'} variant='secondary-focus'>
             <div className='grid grid-flow-col grid-cols-2 gap-8'>
                 <div className=' flex flex-col gap-4'>
                     <p>

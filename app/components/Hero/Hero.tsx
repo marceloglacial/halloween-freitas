@@ -19,7 +19,7 @@ const Hero = () => {
                     </h1>
                     <h2 className='text-4xl'>
                         Preparem suas vassouras e poções, pois a noite mais assustadora do ano se
-                        aproxima! 👻
+                        aproxima!
                     </h2>
                     <Countdown />
                 </div>

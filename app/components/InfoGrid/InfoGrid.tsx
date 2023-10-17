@@ -23,7 +23,7 @@ const InfoGrid = () => {
                         <strong className=' text-accent'>📅 28 de outubro de 2023</strong> <br />
                         <strong className=' text-accent'>🕖 19:00</strong>
                         <br />A festa só acaba quando os vampiros voltarem para os caixões, ou seja,
-                        quando o sol raiar!
+                        até o sol raiar!
                     </p>
                 }
             />
