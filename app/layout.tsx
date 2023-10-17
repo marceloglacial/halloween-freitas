@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { defaultFont } from '@/util/fonts'
 
 export const metadata: Metadata = {
-    title: 'Halloween dos Mundiças',
+    title: 'Halloween dos Freitas',
     description: 'Ottawa - On - Canada',
 }
 

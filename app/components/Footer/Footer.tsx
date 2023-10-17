@@ -1,6 +1,6 @@
 const Footer = () => {
     return (
-        <footer className='footer footer-center p-10 bg-primary gap-4 text-primary-content text-xl'>
+        <footer className='footer footer-center p-10 bg-primary gap-4 text-primary-content text-xl relative z-50'>
             <aside>
                 <a href='https://marceloglacial.com' className='link'>
                     marceloglacial.com

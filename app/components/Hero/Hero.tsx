@@ -15,7 +15,7 @@ const Hero = () => {
             <div className='hero-content text-center text-neutral-content relative z-30'>
                 <div className='max-w-2xl flex flex-col items-center gap-4'>
                     <h1 className={`text-9xl font-bold ${secondaryFont.className}`}>
-                        🎃 Halloween dos Mundiças
+                        🎃 Halloween dos Freitas
                     </h1>
                     <h2 className='text-4xl'>
                         Preparem suas vassouras e poções, pois a noite mais assustadora do ano se
