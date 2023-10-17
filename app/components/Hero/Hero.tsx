@@ -2,6 +2,7 @@ import { secondaryFont } from '@/util/fonts'
 import { Countdown } from '..'
 // TODO: Credits - https://www.vecteezy.com/video/1625536-mystery-and-spooky-dark-forest-with-lightning-and-moving-clouds
 const Hero = () => {
+    const finalDate = new Date('2023-10-28T19:00:00')
     return (
         <div className={`hero min-h-screen relative overflow-hidden`}>
             <video
@@ -21,7 +22,7 @@ const Hero = () => {
                         Preparem suas vassouras e poções, pois a noite mais assustadora do ano se
                         aproxima!
                     </h2>
-                    <Countdown />
+                    <Countdown finalDate={finalDate} />
                 </div>
             </div>
         </div>
