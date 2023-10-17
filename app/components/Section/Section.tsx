@@ -8,9 +8,9 @@ interface SectionProps {
     children: ReactNode
 }
 
-const Section: FC<SectionProps> = ({ icon, title, variant = `secondary-focus`, children }) => {
+const Section: FC<SectionProps> = ({ icon, title, variant, children }) => {
     return (
-        <div className={`bg-${variant} p-24 text-2xl relative`}>
+        <div className={`bg-${variant || 'secondary-focus'} p-24 text-2xl relative`}>
             <div className=' absolute top-[-60px] left-[50%] translate-x-[-50%] text-9xl'>
                 {icon}
             </div>

@@ -15,7 +15,7 @@ const Card: FC<CardProps> = ({ title, icon, description }) => {
             </figure>
             <div className='card-body text-center'>
                 <h2 className={`${secondaryFont.className} text-4xl`}>{title}</h2>
-                <p className='text-xl'>{description}</p>
+                <div className='text-xl'>{description}</div>
             </div>
         </div>
     )
