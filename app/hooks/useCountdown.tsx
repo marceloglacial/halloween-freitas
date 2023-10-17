@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react'
 
-export function useCountdown(finalDate: Date) {
-    const calculateTimeLeft = () => {
+interface CountdownProps {
+    days: number
+    hours: number
+    minutes: number
+    seconds: number
+}
+
+export function useCountdown(finalDate: Date): CountdownProps {
+    const calculateTimeLeft = (): CountdownProps => {
         const now = new Date().getTime()
         const difference = finalDate.getTime() - now
 
@@ -27,7 +34,7 @@ export function useCountdown(finalDate: Date) {
         }
     }
 
-    const [timeLeft, setTimeLeft] = useState(calculateTimeLeft())
+    const [timeLeft, setTimeLeft] = useState<CountdownProps>(calculateTimeLeft())
 
     useEffect(() => {
         const interval = setInterval(() => {
