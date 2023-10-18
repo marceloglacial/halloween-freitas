@@ -4,7 +4,11 @@ import { defaultFont } from '@/util/fonts'
 
 export const metadata: Metadata = {
     title: 'Halloween dos Freitas',
-    description: 'Ottawa - On - Canada',
+    description:
+        'Preparem suas vassouras e poções, pois a noite mais assustadora do ano se aproxima!',
+    openGraph: {
+        images: './open-graph.jpg',
+    },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
