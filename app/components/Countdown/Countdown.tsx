@@ -19,7 +19,7 @@ const Countdown: React.FC<CountdownProps> = ({ finalDate }) => {
                     {/* @ts-ignore */}
                     <span style={{ '--value': timeLeft.days }}></span>
                 </span>
-                days
+                dias
             </div>
             <div className='flex flex-col p-2 bg-black rounded-box text-neutral-content'>
                 <span
@@ -28,7 +28,7 @@ const Countdown: React.FC<CountdownProps> = ({ finalDate }) => {
                     {/* @ts-ignore */}
                     <span style={{ '--value': timeLeft.hours }}></span>
                 </span>
-                hours
+                horas
             </div>
             <div className='flex flex-col p-2 bg-black rounded-box text-neutral-content'>
                 <span
@@ -46,7 +46,7 @@ const Countdown: React.FC<CountdownProps> = ({ finalDate }) => {
                     {/* @ts-ignore */}
                     <span style={{ '--value': timeLeft.seconds }}></span>
                 </span>
-                sec
+                seg
             </div>
         </div>
     )
