@@ -11,7 +11,7 @@ const Hero = () => {
                 loop
                 muted
                 className='absolute top-0 left-0 z-10 w-auto min-w-full min-h-full max-w-none'
-                src='https://static.vecteezy.com/system/resources/previews/001/625/536/mp4/mystery-and-spooky-dark-forest-with-lightning-and-moving-clouds-free-video.mp4'
+                src='/hero-video.mp4'
             />
             <div className='hero-content text-center text-neutral-content relative z-30'>
                 <div className='max-w-2xl flex flex-col items-center gap-4 py-12 lg:p-0'>

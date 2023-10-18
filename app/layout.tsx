@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     description:
         'Preparem suas vassouras e poções, pois a noite mais assustadora do ano se aproxima!',
     openGraph: {
-        images: './open-graph.jpg',
+        images: '/open-graph.jpg',
     },
 }
 
