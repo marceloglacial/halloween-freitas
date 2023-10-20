@@ -1,5 +1,6 @@
+'use client'
 import { secondaryFont } from '@/util/fonts'
-import { Countdown } from '..'
+import { Countdown } from '@/components'
 // TODO: Credits - https://www.vecteezy.com/video/1625536-mystery-and-spooky-dark-forest-with-lightning-and-moving-clouds
 const Hero = () => {
     const finalDate = new Date('2023-10-28T19:00:00')
