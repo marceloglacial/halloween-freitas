@@ -3,12 +3,8 @@
 import { secondaryFont } from '@/util/fonts'
 import { useCountdown } from '@/hooks/useCountdown'
 
-interface CountdownProps {
-    finalDate: Date
-}
-
-const Countdown: React.FC<CountdownProps> = ({ finalDate }) => {
-    const timeLeft = useCountdown(finalDate)
+const Countdown: React.FC = () => {
+    const timeLeft = useCountdown()
 
     return (
         <div className={`grid grid-flow-col gap-2 lg:gap-5 text-center auto-cols-max`}>
