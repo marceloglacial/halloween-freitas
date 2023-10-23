@@ -8,7 +8,8 @@ interface CountdownProps {
     seconds: number
 }
 
-export function useCountdown(finalDate: Date): CountdownProps {
+export function useCountdown(): CountdownProps {
+    const finalDate = new Date('Oct 28 2023 19:00:00 EST')
     const calculateTimeLeft = (): CountdownProps => {
         const now = new Date().getTime()
         const difference = finalDate.getTime() - now
@@ -35,7 +36,12 @@ export function useCountdown(finalDate: Date): CountdownProps {
         }
     }
 
-    const [timeLeft, setTimeLeft] = useState<CountdownProps>(calculateTimeLeft())
+    const [timeLeft, setTimeLeft] = useState<CountdownProps>({
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+    })
 
     useEffect(() => {
         const interval = setInterval(() => {
