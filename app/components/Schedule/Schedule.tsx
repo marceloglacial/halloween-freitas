@@ -8,7 +8,7 @@ const Schedule = () => {
                 <div className=' flex flex-col gap-4'>
                     <p>
                         Temos um trato mágico para você: <br /> um
-                        <strong className=' text-primary'> concurso de fantasias</strong> que vai
+                        <strong className='text-primary'> concurso de fantasias</strong> que vai
                         fazer o chão tremer!
                     </p>
                     <p>

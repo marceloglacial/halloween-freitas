@@ -4,7 +4,7 @@ import { Countdown } from '@/components'
 // TODO: Credits - https://www.vecteezy.com/video/1625536-mystery-and-spooky-dark-forest-with-lightning-and-moving-clouds
 const Hero = () => {
     return (
-        <div className={`hero lg:min-h-screen relative overflow-hidden`}>
+        <div className={`hero lg:min-h-screen 2xl:min-h-[900px] relative overflow-hidden`}>
             <video
                 autoPlay
                 playsInline

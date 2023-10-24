@@ -12,7 +12,7 @@ type Colors = 'secondary' | 'base'
 
 const Section: FC<SectionProps> = ({ icon, title, variant = 'secondary', children }) => {
     const bgColor = {
-        secondary: `bg-secondary`,
+        secondary: `bg-secondary-focus`,
         base: 'bg-base-100',
     }
 
@@ -24,7 +24,7 @@ const Section: FC<SectionProps> = ({ icon, title, variant = 'secondary', childre
             <h3 className={`${secondaryFont.className} text-5xl lg:text-8xl text-center`}>
                 {title}
             </h3>
-            <div className='py-12 lg:py-24'>{children}</div>
+            <div className='py-12 lg:py-24 max-w-screen-xl mx-auto'>{children}</div>
         </div>
     )
 }

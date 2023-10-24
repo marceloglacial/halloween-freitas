@@ -3,7 +3,7 @@ import { Card } from '@/components'
 const InfoGrid = () => {
     return (
         <div className='relative bg-primary-content'>
-            <div className='relative z-40 p-8 lg:p-24 top-[-70px] lg:top-[-140px] lg:mb-[-100px] grid lg:grid-cols-3 gap-8 '>
+            <div className='relative z-40 p-8 lg:px-0 lg:py-24 top-[-70px] lg:top-[-140px] lg:mb-[-100px] grid lg:grid-cols-3 gap-8 max-w-screen-xl mx-auto'>
                 <Card
                     title={'Onde?'}
                     icon={'👻'}
