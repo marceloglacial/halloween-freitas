@@ -17,7 +17,7 @@ const Section: FC<SectionProps> = ({ icon, title, variant = 'secondary', childre
     }
 
     return (
-        <div className={`${bgColor[variant]} p-12 py-24 lg:p-24 lg:text-2xl relative`}>
+        <div className={`${bgColor[variant]} p-8 py-24 lg:p-24 lg:text-2xl relative`}>
             <div className=' absolute top-[-60px] left-[50%] translate-x-[-50%] text-9xl'>
                 {icon}
             </div>
