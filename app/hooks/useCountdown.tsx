@@ -9,7 +9,7 @@ interface CountdownProps {
 }
 
 export function useCountdown(): CountdownProps {
-    const finalDate = new Date('Oct 28 2023 19:00:00 EST')
+    const finalDate = new Date('Oct 28 2023 18:00:00 EST')
     const calculateTimeLeft = (): CountdownProps => {
         const now = new Date().getTime()
         const difference = finalDate.getTime() - now
