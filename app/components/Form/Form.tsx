@@ -47,6 +47,7 @@ const Form: React.FC = () => {
                 title={'Cadastro concluído com sucesso!'}
                 icon={'🪦'}
                 description={message}
+                background={false}
                 shadow={false}
             />
         )
