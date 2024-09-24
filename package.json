@@ -9,10 +9,11 @@
         "lint": "next lint",
         "format": "prettier -w app",
         "prepare": "husky install",
-        "husky-actions": "bun format && bun lint"
+        "husky-actions": "yarn format && yarn lint"
     },
     "dependencies": {
         "@vercel/analytics": "^1.1.1",
+        "firebase": "^10.13.2",
         "next": "14.0.0",
         "react": "^18",
         "react-dom": "^18"

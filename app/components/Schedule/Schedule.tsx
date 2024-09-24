@@ -3,7 +3,7 @@ import { secondaryFont } from '@/util/fonts'
 
 const Schedule = () => {
     return (
-        <Section icon={'🦇'} title={'Programação'}>
+        <Section icon={'🦇'} title={'Programação'} variant='black'>
             <div className='grid xl:grid-cols-2 gap-8  max-w-screen-sm lg:max-w-screen-md xl:max-w-screen-xl mx-auto'>
                 <div className='flex flex-col gap-4'>
                     <p>
