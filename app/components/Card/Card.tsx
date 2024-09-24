@@ -5,11 +5,15 @@ interface CardProps {
     title: string
     icon: string
     description: ReactNode
+    shadow?: boolean
+    background?: boolean
 }
 
-const Card: FC<CardProps> = ({ title, icon, description }) => {
+const Card: FC<CardProps> = ({ title, icon, description, shadow = true, background = true }) => {
     return (
-        <div className='card bg-base-100 shadow-xl text-center md:grid xl:flex md:grid-cols-5'>
+        <div
+            className={`card ${background ? 'bg-base-100' : ''} ${shadow ? 'shadow-xl' : ''} text-center md:grid xl:flex md:grid-cols-5`}
+        >
             <figure className='flex items-center'>
                 <span className='text-7xl lg:text-8xl pt-8 md:pt-0 xl:pt-8'>{icon}</span>
             </figure>
