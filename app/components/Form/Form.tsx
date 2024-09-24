@@ -73,13 +73,18 @@ const Form: React.FC = () => {
 
     if (message)
         return (
-            <Card
-                title={'Cadastro concluído com sucesso!'}
-                icon={'🪦'}
-                description={message}
-                background={false}
-                shadow={false}
-            />
+            <>
+                <Card
+                    title={'Cadastro concluído com sucesso!'}
+                    icon={'🪦'}
+                    description={message}
+                    background={false}
+                    shadow={false}
+                />
+                <button className='btn btn-secondary' onClick={() => setMessage('')}>
+                    Clique aqui para confirmar outra pessoa.
+                </button>
+            </>
         )
 
     return (
@@ -88,6 +93,7 @@ const Form: React.FC = () => {
                 Preencha os dados abaixo e confirme sua presença até
                 <span className='underline'> 20 de outubro</span>!
             </p>
+            <p className='pt-8 text-xs'>Confirmação indivual.</p>
             <form className='form flex w-full justify-center py-8 gap-4' onSubmit={handleSubmit}>
                 <div className='form-group flex flex-col gap-8 w-full max-w-[400px]'>
                     <label className='input input-primary input-lg input-bordered flex items-center gap-2'>
@@ -115,7 +121,6 @@ const Form: React.FC = () => {
                             required
                         />
                     </label>
-                    <div className='text-lg'>Optional:</div>
                     {formState.children.map((child: any, index) => (
                         <div key={index} className='flex gap-2'>
                             <label className='input input-secondary input-lg input-bordered flex items-center gap-2 w-full'>
@@ -140,7 +145,7 @@ const Form: React.FC = () => {
                         onClick={addChildField}
                         disabled={isSubmitting}
                     >
-                        Adicionar criança
+                        Adicionar criança (opicional)
                     </button>
 
                     <button
