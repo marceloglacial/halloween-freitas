@@ -2,32 +2,62 @@
 
 import { submitForm } from '@/actions/submitForm'
 import { useState, FormEvent } from 'react'
-import Card from '../Card/Card'
+import { Card } from '@/components'
 
 const Form: React.FC = () => {
-    const [formState, setFormState] = useState({ name: '', email: '' })
+    const [formState, setFormState] = useState({ name: '', email: '', children: [] })
     const [message, setMessage] = useState<string>('')
     const [status, setStatus] = useState<string>('')
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        setMessage('') // Clear previous message
-        setIsSubmitting(true) // Disable form elements
+        console.log('Form submitted')
+        setMessage('')
+        setIsSubmitting(true)
 
         const formData = new FormData()
         formData.append('name', formState.name)
         formData.append('email', formState.email)
 
-        const result = await submitForm(formData)
-        setMessage(result.message)
-        setStatus(result.status)
-        setIsSubmitting(false) // Re-enable form elements
+        formState.children.forEach((child: any, index) => {
+            formData.append(`children[${index}].name`, child.name)
+        })
+
+        try {
+            const result = await submitForm(formData)
+            console.log('Submission result:', result)
+            setMessage(result.message)
+            setStatus(result.status)
+        } catch (error) {
+            console.error('Error submitting form:', error)
+            setMessage('An error occurred while submitting the form.')
+            setStatus('error')
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
         setFormState((prev) => ({ ...prev, [name]: value }))
+    }
+
+    const handleChildInputChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+        const { value } = e.target
+        const updatedChildren = [...formState.children]
+
+        // @ts-ignore
+        updatedChildren[index] = { ...updatedChildren[index], name: value }
+        setFormState((prev) => ({ ...prev, children: updatedChildren }))
+    }
+
+    const addChildField = () => {
+        // @ts-ignore
+        setFormState((prev) => ({
+            ...prev,
+            children: [...prev.children, { name: '' }],
+        }))
     }
 
     if (status === 'error')
@@ -54,9 +84,9 @@ const Form: React.FC = () => {
 
     return (
         <>
-            <p className=' text-2xl lg:text-3xl text-primary max-w-[600px] mx-auto'>
+            <p className='text-2xl lg:text-3xl text-primary max-w-[600px] mx-auto'>
                 Preencha os dados abaixo e confirme sua presença até
-                <span className='  underline'> 20 de outubro</span>!
+                <span className='underline'> 20 de outubro</span>!
             </p>
             <form className='form flex w-full justify-center py-8 gap-4' onSubmit={handleSubmit}>
                 <div className='form-group flex flex-col gap-8 w-full max-w-[400px]'>
@@ -69,7 +99,7 @@ const Form: React.FC = () => {
                             placeholder='Completo'
                             value={formState.name}
                             onChange={handleInputChange}
-                            disabled={isSubmitting} // Disable input while submitting
+                            disabled={isSubmitting}
                             required
                         />
                     </label>
@@ -81,10 +111,38 @@ const Form: React.FC = () => {
                             className='grow bg-transparent'
                             value={formState.email}
                             onChange={handleInputChange}
-                            disabled={isSubmitting} // Disable input while submitting
+                            disabled={isSubmitting}
                             required
                         />
                     </label>
+                    <div className='text-lg'>Optional:</div>
+                    {formState.children.map((child: any, index) => (
+                        <div key={index} className='flex gap-2'>
+                            <label className='input input-secondary input-lg input-bordered flex items-center gap-2 w-full'>
+                                Nome
+                                <input
+                                    type='text'
+                                    name={`childName${index}`}
+                                    className='grow bg-transparent'
+                                    placeholder='da criança'
+                                    value={child.name}
+                                    onChange={(e) => handleChildInputChange(index, e)}
+                                    disabled={isSubmitting}
+                                    required
+                                />
+                            </label>
+                        </div>
+                    ))}
+
+                    <button
+                        type='button'
+                        className='btn btn-outline'
+                        onClick={addChildField}
+                        disabled={isSubmitting}
+                    >
+                        Adicionar criança
+                    </button>
+
                     <button
                         className='btn btn-primary btn-lg'
                         type='submit'
@@ -97,4 +155,5 @@ const Form: React.FC = () => {
         </>
     )
 }
+
 export default Form
