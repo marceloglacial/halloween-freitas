@@ -3,7 +3,7 @@ import { Card } from '@/components'
 const InfoGrid = () => {
     return (
         <div className='relative bg-primary-content'>
-            <div className='relative z-40 p-8 md:px-0 xl:py-24 top-[-70px] xl:top-[-140px] xl:mb-[-100px] grid xl:grid-cols-3 gap-8 max-w-screen-sm lg:max-w-screen-md xl:max-w-screen-xl mx-auto'>
+            <div className='relative  p-8 md:px-0 xl:py-24 top-[-70px] xl:top-[-140px] xl:mb-[-100px] grid xl:grid-cols-3 gap-8 max-w-screen-sm lg:max-w-screen-md xl:max-w-screen-xl mx-auto'>
                 <Card
                     title={'Onde?'}
                     icon={'👻'}
@@ -21,7 +21,7 @@ const InfoGrid = () => {
                     icon={'🧛🏻‍♂️'}
                     description={
                         <p>
-                            <strong className=' text-accent'>📅 28 de outubro de 2023</strong>{' '}
+                            <strong className=' text-accent'>📅 26 de outubro de 2024</strong>{' '}
                             <br />
                             <strong className=' text-accent'>🕖 19:00</strong>
                             <br />A festa só acaba quando os vampiros voltarem para os caixões, ou

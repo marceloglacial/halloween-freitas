@@ -1,7 +1,6 @@
 'use client'
 import { secondaryFont } from '@/util/fonts'
 import { Countdown } from '@/components'
-// TODO: Credits - https://www.vecteezy.com/video/1625536-mystery-and-spooky-dark-forest-with-lightning-and-moving-clouds
 const Hero = () => {
     return (
         <div className={`hero lg:min-h-screen 2xl:min-h-[900px] relative overflow-hidden`}>
@@ -10,7 +9,7 @@ const Hero = () => {
                 playsInline
                 loop
                 muted
-                className='absolute top-0 left-0 z-10 w-auto min-w-full min-h-full max-w-none'
+                className='fixed top-0 left-0 w-auto min-w-full min-h-full max-w-none'
                 src='/hero-video.mp4'
             />
             <div className='hero-content text-center text-neutral-content relative z-30'>
@@ -24,6 +23,9 @@ const Hero = () => {
                         aproxima!
                     </h2>
                     <Countdown />
+                    <a href='#confirme' className='btn btn-secondary btn-lg mt-4 mx-4'>
+                        Clique aqui e confirme sua presença!
+                    </a>
                 </div>
             </div>
         </div>
