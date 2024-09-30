@@ -18,10 +18,10 @@ export async function submitForm(formData: FormData) {
 
     try {
         const today = new Date().toISOString().split('T')[0]
-        const emailDocRef = doc(collection(db, 'guests'), email)
+        const guestRef = doc(collection(db, 'guests'), email)
         const checksRef = doc(collection(db, 'emailValidation'), email)
 
-        const emailDoc = await getDoc(emailDocRef)
+        const guest = await getDoc(guestRef)
         const checksDoc = await getDoc(checksRef)
 
         let checkCount = 0
@@ -32,7 +32,7 @@ export async function submitForm(formData: FormData) {
             }
         }
 
-        if (emailDoc.exists()) {
+        if (guest.exists()) {
             await updateDoc(checksRef, {
                 lastCheckDate: today,
                 checkCount: checkCount + 1,
@@ -40,7 +40,6 @@ export async function submitForm(formData: FormData) {
             throw new Error('Você já está cadastrado.')
         }
 
-        await setDoc(emailDocRef, { name, email, createdAt: serverTimestamp() })
         await setDoc(checksRef, {
             lastCheckDate: today,
             checkCount: checkCount + 1,

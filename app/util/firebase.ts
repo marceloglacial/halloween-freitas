@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
+import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
     apiKey: process.env.FIREBASE_API_KEY,
@@ -12,4 +13,6 @@ const firebaseConfig = {
 
 // Initialize Firebase if it hasn't been initialized already
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
+
+export const storage = getStorage(app)
 export const db = getFirestore(app)
