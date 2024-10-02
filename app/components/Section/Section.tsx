@@ -20,7 +20,7 @@ const Section: FC<SectionProps> = ({ id, icon, title, variant = 'secondary', chi
 
     return (
         <section id={id} className={`${bgColor[variant]} p-8 py-24 lg:p-24 lg:text-2xl relative`}>
-            <div className=' absolute top-[-60px] left-[50%] translate-x-[-50%] text-9xl'>
+            <div className=' absolute top-[-60px] left-[50%] translate-x-[-50%] text-9xl m-0'>
                 {icon}
             </div>
             <h3 className={`${secondaryFont.className} text-5xl lg:text-8xl text-center`}>
