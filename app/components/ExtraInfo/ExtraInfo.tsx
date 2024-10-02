@@ -1,4 +1,4 @@
-import { Form, Section } from '@/components'
+import { Section } from '@/components'
 
 const ExtraInfo = () => {
     return (
@@ -12,7 +12,11 @@ const ExtraInfo = () => {
                 <p>Fique ligado para mais informações, ou melhor, para mais aparições!</p>
                 <br /> <br />
                 <div className='relative z-10'>
-                    <Form />
+                    <p className='text-2xl lg:text-3xl text-primary max-w-[600px] mx-auto'>
+                        Confirme sua presença até
+                        <br />
+                        <span className='underline'> 20 de outubro</span>!
+                    </p>
                 </div>
                 <div className='absolute z-0 top-0 right-0 text-[25rem] opacity-10'>🕸️</div>
                 <div className='hidden lg:block absolute bottom-0 left-0 text-[25rem] opacity-10'>
