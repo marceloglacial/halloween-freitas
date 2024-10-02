@@ -23,9 +23,6 @@ const Hero = () => {
                         aproxima!
                     </h2>
                     <Countdown />
-                    <a href='#confirme' className='btn btn-secondary btn-lg mt-4 mx-4'>
-                        Clique aqui e confirme sua presença!
-                    </a>
                 </div>
             </div>
         </div>
