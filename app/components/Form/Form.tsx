@@ -5,7 +5,8 @@ import { useState, FormEvent } from 'react'
 import { Card } from '@/components'
 
 const Form: React.FC = () => {
-    const [formState, setFormState] = useState({ name: '', email: '', children: [] })
+    const initialFormState = { name: '', email: '', children: [] }
+    const [formState, setFormState] = useState(initialFormState)
     const [message, setMessage] = useState<string>('')
     const [status, setStatus] = useState<string>('')
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
@@ -29,6 +30,7 @@ const Form: React.FC = () => {
             console.log('Submission result:', result)
             setMessage(result.message)
             setStatus(result.status)
+            setFormState(initialFormState)
         } catch (error) {
             console.error('Error submitting form:', error)
             setMessage('An error occurred while submitting the form.')
