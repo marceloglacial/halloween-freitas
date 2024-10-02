@@ -3,6 +3,9 @@ import { Section } from '@/components'
 const ExtraInfo = () => {
     return (
         <Section id='confirme' icon={'💀'} title={'É só chegar!'} variant='base'>
+            <div className='absolute z-0 top-0 lg:top-[15rem] right-0 text-[25rem] opacity-10'>
+                🕸️
+            </div>
             <div className='relative text-center lg:px-24'>
                 <p>
                     Nada de medo, venha se juntar a nós para uma noite assustadora e lembranças
@@ -18,7 +21,6 @@ const ExtraInfo = () => {
                         <span className='underline'> 20 de outubro</span>!
                     </p>
                 </div>
-                <div className='absolute z-0 top-0 right-0 text-[25rem] opacity-10'>🕸️</div>
                 <div className='hidden lg:block absolute bottom-0 left-0 text-[25rem] opacity-10'>
                     🕸️
                 </div>
