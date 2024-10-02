@@ -19,6 +19,6 @@ type PollType = {
 }
 
 type PollResult = {
-    sortedOptions: PollOption[];
-    champion: PollOption;
-};
+    sortedOptions: PollOption[]
+    champion: PollOption
+}
