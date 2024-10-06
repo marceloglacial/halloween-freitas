@@ -1,6 +1,6 @@
 'use server'
 import { db } from '@/util/firebase'
-import { doc, getDoc, setDoc, updateDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, updateDoc, collection, serverTimestamp, query, where, getDocs } from 'firebase/firestore'
 
 export async function submitForm(formData: FormData) {
     const name = formData.get('name')?.toString() || ''
@@ -17,33 +17,12 @@ export async function submitForm(formData: FormData) {
     }
 
     try {
-        const today = new Date().toISOString().split('T')[0]
-        const guestRef = doc(collection(db, 'guests'), email)
-        const checksRef = doc(collection(db, 'emailValidation'), email)
+        const guestQuery = query(collection(db, 'guests'), where('email', '==', email));
+        const guestSnapshot = await getDocs(guestQuery);
 
-        const guest = await getDoc(guestRef)
-        const checksDoc = await getDoc(checksRef)
-
-        let checkCount = 0
-        if (checksDoc.exists() && checksDoc.data().lastCheckDate === today) {
-            checkCount = checksDoc.data().checkCount
-            if (checkCount >= 5) {
-                throw new Error('Você já está cadastrado. Favor não insistir.')
-            }
+        if (!guestSnapshot.empty) {
+            throw new Error('Você já está cadastrado.');
         }
-
-        if (guest.exists()) {
-            await updateDoc(checksRef, {
-                lastCheckDate: today,
-                checkCount: checkCount + 1,
-            })
-            throw new Error('Você já está cadastrado.')
-        }
-
-        await setDoc(checksRef, {
-            lastCheckDate: today,
-            checkCount: checkCount + 1,
-        })
 
         const parentDocRef = doc(collection(db, 'guests'))
         await setDoc(parentDocRef, { name, email, createdAt: serverTimestamp() })
