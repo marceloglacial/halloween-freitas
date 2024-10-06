@@ -21,7 +21,7 @@ const InfoGrid = () => {
                     icon={'🧛🏻‍♂️'}
                     description={
                         <p>
-                            <strong className=' text-accent'>📅 26 de outubro de 2024</strong>{' '}
+                            <strong className=' text-accent'>📅 1o de Novembro de 2024</strong>{' '}
                             <br />
                             <strong className=' text-accent'>🕖 19:00</strong>
                             <br />A festa só acaba quando os vampiros voltarem para os caixões, ou
