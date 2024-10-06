@@ -1,14 +1,6 @@
 'use server'
 import { db } from '@/util/firebase'
-import {
-    doc,
-    setDoc,
-    collection,
-    serverTimestamp,
-    query,
-    where,
-    getDocs,
-} from 'firebase/firestore'
+import { doc, setDoc, collection, serverTimestamp, query, where, getDocs } from 'firebase/firestore'
 
 export async function submitForm(formData: FormData) {
     const name = formData.get('name')?.toString() || ''
