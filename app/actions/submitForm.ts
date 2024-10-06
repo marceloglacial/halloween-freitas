@@ -1,6 +1,16 @@
 'use server'
 import { db } from '@/util/firebase'
-import { doc, getDoc, setDoc, updateDoc, collection, serverTimestamp, query, where, getDocs } from 'firebase/firestore'
+import {
+    doc,
+    getDoc,
+    setDoc,
+    updateDoc,
+    collection,
+    serverTimestamp,
+    query,
+    where,
+    getDocs,
+} from 'firebase/firestore'
 
 export async function submitForm(formData: FormData) {
     const name = formData.get('name')?.toString() || ''
@@ -17,11 +27,11 @@ export async function submitForm(formData: FormData) {
     }
 
     try {
-        const guestQuery = query(collection(db, 'guests'), where('email', '==', email));
-        const guestSnapshot = await getDocs(guestQuery);
+        const guestQuery = query(collection(db, 'guests'), where('email', '==', email))
+        const guestSnapshot = await getDocs(guestQuery)
 
         if (!guestSnapshot.empty) {
-            throw new Error('Você já está cadastrado.');
+            throw new Error('Você já está cadastrado.')
         }
 
         const parentDocRef = doc(collection(db, 'guests'))
