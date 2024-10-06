@@ -107,7 +107,7 @@ const Form: React.FC = () => {
                             type='text'
                             name='name'
                             className='grow bg-transparent'
-                            placeholder='Completo'
+                            placeholder='e Sobrenome'
                             value={formState.name}
                             onChange={handleInputChange}
                             disabled={isSubmitting}
