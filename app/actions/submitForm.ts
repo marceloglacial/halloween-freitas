@@ -2,9 +2,7 @@
 import { db } from '@/util/firebase'
 import {
     doc,
-    getDoc,
     setDoc,
-    updateDoc,
     collection,
     serverTimestamp,
     query,
