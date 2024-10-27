@@ -18,14 +18,7 @@ const Hero = () => {
                         🎃 <br />
                         Halloween dos Freitas
                     </h1>
-                    <h2 className='text-2xl lg:text-4xl'>
-                        Preparem suas vassouras e poções, pois a noite mais assustadora do ano se
-                        aproxima!
-                    </h2>
                     <Countdown />
-                    <a href='#confirme' className='btn btn-secondary btn-lg mt-4 md:mb-8 mx-4'>
-                        Clique aqui e confirme sua presença!
-                    </a>
                 </div>
             </div>
         </div>
