@@ -92,12 +92,11 @@ const Form: React.FC = () => {
     return (
         <>
             <p className='text-2xl lg:text-3xl text-primary max-w-[600px] mx-auto'>
-                Preencha os dados abaixo e confirme sua presença até
-                <span className='underline'> 20 de outubro</span>!
+                Preencha os dados abaixo e confirme sua presença!
             </p>
-            <p className='pt-8 text-xs'>
+            <p className='pt-8 text-2xl text-primary'>
                 Cada adulto deve confirmar sua presença com seu e-mail. <br />
-                Uma confirmação por pessoa.
+                IMPORTANTE: Uma confirmação por pessoa.
             </p>
             <form className='form flex w-full justify-center py-8 gap-4' onSubmit={handleSubmit}>
                 <div className='form-group flex flex-col gap-8 w-full max-w-[400px]'>
