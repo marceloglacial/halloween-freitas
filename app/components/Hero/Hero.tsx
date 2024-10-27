@@ -23,9 +23,9 @@ const Hero = () => {
                         aproxima!
                     </h2>
                     <Countdown />
-                    <a href='#confirme' className='btn btn-secondary btn-lg mt-4 md:mb-8 mx-4'>
-                        Clique aqui e confirme sua presença!
-                    </a>
+                    <span className='flex py-4 mt-4 md:mb-8 mx-4 bg-secondary rounded-lg'>
+                        Não esqueça de confirmar sua presença no formulário abaixo!
+                    </span>
                 </div>
             </div>
         </div>
