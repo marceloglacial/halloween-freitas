@@ -8,7 +8,6 @@ interface CardProps {
     shadow?: boolean
     background?: boolean
     children?: ReactNode
-    id: string
 }
 
 const Card: FC<CardProps> = ({

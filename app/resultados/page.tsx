@@ -21,7 +21,7 @@ const ResultsPage = async () => {
                                 className={` ${index === 0 ? ' md:col-span-2 justify-center' : 'contents'}`}
                                 href={`/resultados/${poll.id}`}
                             >
-                                <Card title={poll.title} id={poll.id} icon={poll.icon} />
+                                <Card title={poll.title} icon={poll.icon} />
                             </Link>
                         )
                     })}
