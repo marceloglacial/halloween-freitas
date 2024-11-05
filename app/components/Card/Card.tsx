@@ -8,6 +8,7 @@ interface CardProps {
     shadow?: boolean
     background?: boolean
     children?: ReactNode
+    id: string
 }
 
 const Card: FC<CardProps> = ({
@@ -20,14 +21,10 @@ const Card: FC<CardProps> = ({
 }) => {
     return (
         <div
-            className={`card ${background ? 'bg-base-100' : ''} ${shadow ? 'shadow-xl' : ''} text-center md:grid xl:flex md:grid-cols-5`}
+            className={`card ${background ? 'bg-base-100' : ''} ${shadow ? 'shadow-xl' : ''} w-full max-w-[700px] mx-auto`}
         >
-            {icon && (
-                <figure className='flex items-center'>
-                    <span className='text-7xl lg:text-8xl pt-8 md:pt-0 xl:pt-8'>{icon}</span>
-                </figure>
-            )}
-            <div className='card-body md:text-left xl:text-center col-span-4'>
+            <div className='card-body text-center gap-8 items-center'>
+                {icon && <span className='text-7xl lg:text-8xl'>{icon}</span>}
                 {title && <h2 className={`${secondaryFont.className} text-4xl`}>{title}</h2>}
                 {description && <div className='lg:text-xl'>{description}</div>}
                 {children && <div className='lg:text-xl'>{children}</div>}
