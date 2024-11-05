@@ -5,22 +5,20 @@ import { FC, useState } from 'react'
 
 const Results: FC<ResultsProps> = (props): JSX.Element => {
     const [showWinner, setShowWinner] = useState(false)
+    const [showVotes, setShowVotes] = useState(false)
     const blurClassName = showWinner ? 'animate-tada' : 'blur-2xl animate-pulse'
 
     return (
-        <div data-results-container className='flex flex-col gap-16 pb-32 mx-auto text-center'>
-            <div className='fixed top-8 right-8 inline-flex z-50'>
-                <a className='btn btn-secondary' href={'/resultados'}>
-                    Voltar
-                </a>
-            </div>
-
+        <div
+            data-results-container
+            className='flex flex-col gap-16 px-6 py-8 md:px-8 md:py-32 mx-auto text-center'
+        >
             <div
                 data-results-header
-                className='min-h-screen flex flex-col gap-16 items-center justify-center cursor-pointer'
-                onClick={() => setShowWinner(!showWinner)}
+                className='flex flex-col gap-16 items-center justify-center cursor-pointer'
+                onClick={() => setShowWinner(true)}
             >
-                <h1 className={`text-7xl text-center mt-8 ${secondaryFont.className}`}>
+                <h1 className={`text-4xl md:text-7xl text-center  ${secondaryFont.className}`}>
                     {props.page.icon} {props.page.title}
                 </h1>
                 <div data-results-winner className='grid grid-cols-1 gap-8'>
@@ -35,7 +33,9 @@ const Results: FC<ResultsProps> = (props): JSX.Element => {
                             />
                         </div>
                     </div>
-                    <h1 className={`text-6xl ${blurClassName}`}>{props.firstPlace.name}</h1>
+                    <h1 className={`text-4xl xl:text-6xl ${blurClassName}`}>
+                        {props.firstPlace.name}
+                    </h1>
                     <div data-results-stats>
                         <div className='stats'>
                             <div className='stat'>
@@ -59,36 +59,59 @@ const Results: FC<ResultsProps> = (props): JSX.Element => {
                     </div>
                 </div>
             </div>
-            <div data-results-votes>
-                <h2 className=' text-5xl text-center pt-24 pb-12'>
-                    Apuração Final: {props.page.totalVotes} votos
-                </h2>
-                {props.page.options.map((option) => {
-                    if (!option.votes || !props.page.totalVotes) return
+            {showVotes && (
+                <div data-results-votes className='grid grid-cols-1 gap-8 items-center'>
+                    <h2 className=' text-2xl xl:text-5xl text-primary text-center'>
+                        Apuração Final: {props.page.totalVotes} votos
+                    </h2>
+                    <div>
+                        {props.page.options.map((option) => {
+                            if (!option.votes || !props.page.totalVotes) return
 
-                    return (
-                        <div key={option.id} className='flex gap-4 text-2xl w-full items-center'>
-                            <div className='min-w-[200px]'>
-                                <p className='text-ellipsis overflow-hidden text-right truncate'>
-                                    {option.name}
-                                </p>
-                            </div>
-                            <div className='grow w-96 h-6 col-auto'>
-                                <progress
-                                    className='progress progress-success w-full h-full'
-                                    value={option.votes}
-                                    max={props.page.totalVotes}
-                                ></progress>
-                            </div>
-                            <div className='flex gap-4 min-w-[300px]'>
-                                <span>
-                                    {((option.votes / props.page.totalVotes) * 100).toFixed(2)}%
-                                </span>
-                                <span>{option.votes} voto(s)</span>
-                            </div>
-                        </div>
-                    )
-                })}
+                            return (
+                                <div
+                                    key={option.id}
+                                    className='flex gap-4 w-full items-center justify-center'
+                                >
+                                    <div className='w-[150px]'>
+                                        <p className='text-ellipsis overflow-hidden text-right truncate'>
+                                            {option.name}
+                                        </p>
+                                    </div>
+                                    <div className='grow h-4 hidden md:block'>
+                                        <progress
+                                            className='progress progress-success w-full h-full'
+                                            value={option.votes}
+                                            max={props.page.totalVotes}
+                                        ></progress>
+                                    </div>
+                                    <div className='flex min-w-[150px] gap-4'>
+                                        <span>
+                                            {((option.votes / props.page.totalVotes) * 100).toFixed(
+                                                2
+                                            )}
+                                            %
+                                        </span>
+                                        <span>{option.votes} voto(s)</span>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
+            {showWinner && !showVotes && (
+                <button
+                    className='btn btn-primary max-w-fit mx-auto'
+                    onClick={() => setShowVotes(!showVotes)}
+                >
+                    {showVotes ? 'Esconder' : 'Mostrar'} votos
+                </button>
+            )}
+            <div className='md:fixed top-8 right-8 inline-flex z-50 mx-auto'>
+                <a className='btn btn-secondary' href={'/resultados'}>
+                    Voltar
+                </a>
             </div>
         </div>
     )

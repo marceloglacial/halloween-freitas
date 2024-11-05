@@ -1,12 +1,12 @@
 type GuestType = {
-    createdAt?: string,
-    id: string,
-    name: string,
-    email: string,
-    photo?: string,
-    votes?: number,
+    createdAt?: string
+    id: string
+    name: string
+    email: string
+    photo?: string
+    votes?: number
     polls?: {
-        pollId: string,
+        pollId: string
         vote: GuestType
     }[]
 }
@@ -25,7 +25,7 @@ interface GestAllGuestsResponse extends ApiResponse {
 }
 
 type PollType = {
-    id: string,
+    id: string
     title: string
     icon: string
     options: GuestType[]
@@ -37,14 +37,14 @@ interface PollApiResponse extends ApiResponse {
 }
 
 interface AlertProps {
-    title: string;
+    title: string
     variant?: 'info' | 'success' | 'warning' | 'error'
 }
 
 interface CardProps {
-    title?: string;
-    id: string;
-    icon?: string;
+    title?: string
+    id: string
+    icon?: string
     disabled?: boolean
     link: string
 }
@@ -55,6 +55,6 @@ type PhotoType = {
 }
 
 interface ResultsProps {
-    page: PollType;
-    firstPlace: GuestType;
+    page: PollType
+    firstPlace: GuestType
 }

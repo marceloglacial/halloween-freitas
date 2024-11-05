@@ -1,11 +1,7 @@
 export default function PageLayout({
-  children,
+    children,
 }: Readonly<{
-  children: React.ReactNode;
+    children: React.ReactNode
 }>) {
-  return (
-    <div className='flex items-start justify-center w-screen min-h-screen'>
-      {children}
-    </div>
-  );
+    return <div className='flex items-start justify-center w-screen min-h-screen'>{children}</div>
 }
