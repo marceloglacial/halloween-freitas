@@ -1,24 +1,33 @@
-import './globals.css'
-import type { Metadata } from 'next'
-import { defaultFont } from '@/util/fonts'
-import { Analytics } from '@vercel/analytics/react'
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-    title: 'Halloween dos Freitas',
-    description:
-        'Preparem suas vassouras e poções, pois a noite mais assustadora do ano se aproxima!',
-    openGraph: {
-        images: '/open-graph.jpg',
-    },
-}
+  title: "Halloween dos Freitas",
+};
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-    return (
-        <html lang='en' className=' scroll-smooth'>
-            <body className={`bg-black text-white ${defaultFont.className}`}>
-                {children}
-                <Analytics />
-            </body>
-        </html>
-    )
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        {children}
+      </body>
+    </html>
+  );
 }
