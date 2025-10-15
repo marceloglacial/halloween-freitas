@@ -10,7 +10,7 @@ const Hero: FC = (): JSX.Element => {
         playsInline
         loop
         muted
-        className="fixed top-0 left-0 min-h-full w-auto max-w-none min-w-full"
+        className="fixed top-0 left-0 -z-10 min-h-full w-auto max-w-none min-w-full"
         src="/hero-video.mp4"
       />
       <div className="hero-content text-neutral-content relative text-center">
