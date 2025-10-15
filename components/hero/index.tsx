@@ -1,5 +1,6 @@
 import { secondaryFont } from "@/util/fonts";
 import { FC, JSX } from "react";
+import Countdown from "@/components/countdown";
 
 const Hero: FC = (): JSX.Element => {
   return (
@@ -20,6 +21,7 @@ const Hero: FC = (): JSX.Element => {
             🎃 <br />
             Halloween dos Freitas
           </h1>
+          <Countdown />
         </div>
       </div>
     </div>

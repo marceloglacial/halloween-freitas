@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { defaultFont } from "@/util/fonts";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,6 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  title: "Halloween dos Freitas",
   description:
     "Preparem suas vassouras e poções, pois a noite mais assustadora do ano se aproxima!",
   openGraph: {
@@ -27,11 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
-      </body>
+      <body className={`${defaultFont.className} antialiased`}>{children}</body>
     </html>
   );
 }
