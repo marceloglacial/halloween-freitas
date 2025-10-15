@@ -3,14 +3,14 @@ import { secondaryFont } from "@/util/fonts";
 
 const TimerBlock: React.FC<TimerBlockProps> = ({ value, label }) => (
   <div className="timer w-16">
-    <div className="bg-black/50 py-4 px-2 rounded-lg overflow-hidden">
+    <div className="overflow-hidden rounded-lg bg-black/50 px-2 py-4">
       <h3
-        className={`${secondaryFont.className} text-5xl text-white text-center`}
+        className={`${secondaryFont.className} text-center text-5xl text-white`}
       >
         {pad(value)}
       </h3>
     </div>
-    <p className="text-lg  text-white mt-1 text-center w-full">{label}</p>
+    <p className="mt-1 w-full text-center text-lg text-white">{label}</p>
   </div>
 );
 

@@ -50,8 +50,8 @@ const EventInfo = () => {
     },
   ];
   return (
-    <section className="relative z-50 bg-black/80 p-8 grid justify-center">
-      <div className="grid lg:grid-cols-3 gap-8 max-w-7xl relative lg:-top-20">
+    <section className="relative grid justify-center bg-black/80 p-8">
+      <div className="relative grid max-w-7xl gap-8 lg:-top-20 lg:grid-cols-3">
         {cards.map((card, index) => (
           <Card
             title={card.title}

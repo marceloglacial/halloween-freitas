@@ -5,12 +5,12 @@ const Card: FC<CardProps> = (props): JSX.Element => {
   return (
     <div
       data-card
-      className="rounded-2xl bg-stone-900 p-8 grid gap-4 relative text-center"
+      className="relative grid gap-4 rounded-2xl bg-stone-900 p-8 text-center"
     >
-      <div data-card-icon className="text-8xl w-full">
+      <div data-card-icon className="w-full text-8xl">
         {props.icon}
       </div>
-      <div data-card-header className={`${secondaryFont.className} text-4xl `}>
+      <div data-card-header className={`${secondaryFont.className} text-4xl`}>
         {props.title}
       </div>
       <div data-card-body className="text-xl">
