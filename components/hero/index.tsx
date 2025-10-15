@@ -3,9 +3,7 @@ import { FC, JSX } from "react";
 
 const Hero: FC = (): JSX.Element => {
   return (
-    <div
-      className={`lg:min-h-screen 2xl:min-h-[900px] relative overflow-hidden`}
-    >
+    <div className="flex items-center justify-center lg:min-h-screen 2xl:min-h-[900px] relative overflow-hidden">
       <video
         autoPlay
         playsInline
