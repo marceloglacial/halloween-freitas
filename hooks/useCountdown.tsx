@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface CountdownProps {
   days: number;
@@ -8,7 +8,7 @@ interface CountdownProps {
 }
 
 export function useCountdown(targetDate: Date): CountdownProps {
-  const calculateTimeLeft = (): CountdownProps => {
+  const calculateTimeLeft = useCallback((): CountdownProps => {
     const now = new Date().getTime();
     const difference = targetDate.getTime() - now;
 
@@ -34,7 +34,7 @@ export function useCountdown(targetDate: Date): CountdownProps {
       minutes,
       seconds,
     };
-  };
+  }, [targetDate]);
 
   const [timeLeft, setTimeLeft] = useState<CountdownProps>(calculateTimeLeft());
 
@@ -44,7 +44,7 @@ export function useCountdown(targetDate: Date): CountdownProps {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [targetDate]);
+  }, [calculateTimeLeft, targetDate]);
 
   return timeLeft;
 }

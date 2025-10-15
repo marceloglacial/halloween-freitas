@@ -2,7 +2,7 @@
 import React from "react";
 import { useCountdown } from "@/hooks/useCountdown";
 import { EVENT_DATE } from "@/constants/globals";
-import { isTimeLeftZero, pad } from "@/util/countdown";
+import { isTimeLeftZero } from "@/util/countdown";
 import TimerBlock from "./timer-block";
 
 const TARGET_DATE: Date = new Date(EVENT_DATE);
