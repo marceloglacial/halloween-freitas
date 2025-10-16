@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { SignOutButton } from "@clerk/nextjs";
-import { CldUploadButton } from "next-cloudinary";
+import { CldImage, CldUploadButton } from "next-cloudinary";
 
 export default function UserList() {
   const [users, setUsers] = useState<User[]>([]);
@@ -191,11 +191,14 @@ export default function UserList() {
               key={user._id}
               className="flex items-center gap-4 rounded-lg bg-white/10 p-4"
             >
-              <Image
-                src={user.imageUrl ?? "/apple-icon.png"}
-                alt={user.fullName || "User"}
-                width={40}
-                height={40}
+              <CldImage
+                src={user.imageUrl || "halloween-freitas/apple-icon_fqkaye"}
+                width={900}
+                height={600}
+                sizes="(max-width: 768px) 100vw,
+                    (max-width: 1200px) 50vw,
+                    33vw"
+                alt="User Image"
                 className="h-10 w-10 rounded-full"
               />
               <div className="flex-1">
@@ -259,9 +262,14 @@ export default function UserList() {
                 className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-white"
               />
               {modalUser.imageUrl ? (
-                <img
-                  alt="user image"
-                  src={modalUser.imageUrl || ""}
+                <CldImage
+                  src={modalUser.imageUrl}
+                  width={900}
+                  height={600}
+                  sizes="(max-width: 768px) 100vw,
+                    (max-width: 1200px) 50vw,
+                    33vw"
+                  alt="User Image"
                   className="overflow-hidden rounded"
                 />
               ) : (
@@ -273,7 +281,7 @@ export default function UserList() {
                       ...u,
                       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                       // @ts-expect-error
-                      imageUrl: e.info.secure_url,
+                      imageUrl: e.info.public_id,
                     }));
                   }}
                 >
