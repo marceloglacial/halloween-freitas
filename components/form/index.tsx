@@ -1,14 +1,13 @@
 "use client";
 
 import React, { FC, JSX } from "react";
+import { toast } from "sonner";
 
 const Form: FC = (): JSX.Element => {
-  const [message, setMessage] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setMessage(null);
     setLoading(true);
     const form = e.currentTarget;
     const formData = new FormData(form);
@@ -22,15 +21,15 @@ const Form: FC = (): JSX.Element => {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setMessage("Inscrição realizada com sucesso!");
+        toast.success("Inscrição realizada com sucesso!");
         form.reset();
       } else if (data.error === "User already exists") {
-        setMessage("Este email já está inscrito.");
+        toast.error("Este email já está inscrito.");
       } else {
-        setMessage("Ocorreu um erro. Tente novamente.");
+        toast.error("Ocorreu um erro. Tente novamente.");
       }
     } catch {
-      setMessage("Erro de conexão. Tente novamente.");
+      toast.error("Erro de conexão. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -42,12 +41,6 @@ const Form: FC = (): JSX.Element => {
       autoComplete="off"
       onSubmit={handleSubmit}
     >
-      {message && (
-        <div className="bg-orange-500 p-4 text-center text-2xl text-white">
-          {message}
-        </div>
-      )}
-
       <label className="flex flex-col gap-1">
         <input
           type="text"

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { defaultFont } from "@/util/fonts";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Halloween dos Freitas",
@@ -18,7 +19,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${defaultFont.className} antialiased`}>{children}</body>
+      <body className={`${defaultFont.className} antialiased`}>
+        {children}
+        <Toaster richColors position="bottom-center" offset="12vh" />
+      </body>
     </html>
   );
 }
