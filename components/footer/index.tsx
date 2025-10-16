@@ -2,8 +2,8 @@ import { FC, JSX } from "react";
 
 const Footer: FC = (): JSX.Element => {
   return (
-    <footer className="grid justify-center bg-orange-400 p-10">
-      <nav className="flex flex-wrap justify-center gap-4 text-xl text-black underline">
+    <footer className="grid justify-center bg-orange-400 p-5 lg:p-10">
+      <nav className="flex flex-wrap justify-center gap-2 text-black underline lg:gap-4 lg:text-xl">
         <a
           href="https://github.com/marceloglacial"
           role="link"

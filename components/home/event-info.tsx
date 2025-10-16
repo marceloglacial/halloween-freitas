@@ -49,7 +49,7 @@ const cards: CardProps[] = [
 
 const EventInfo: FC = (): JSX.Element => {
   return (
-    <section className="relative grid justify-center bg-black/70 p-8">
+    <section className="relative grid justify-center bg-black/70 px-8 py-12 lg:p-8">
       <div className="relative grid max-w-7xl gap-8 lg:-top-28 lg:grid-cols-3">
         {cards.map((card, index) => (
           <Card

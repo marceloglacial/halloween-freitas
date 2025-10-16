@@ -3,16 +3,16 @@ import { FC, JSX } from "react";
 
 const Schedule: FC = (): JSX.Element => {
   return (
-    <section className="relative grid justify-center bg-black p-8">
+    <section className="relative grid justify-center bg-black px-8 py-16 lg:p-8">
       <div className="relative grid max-w-7xl">
         <div className="relative grid gap-16 lg:-top-24">
           <div className="text-center">
             <span className="text-9xl">🦇</span>
-            <h2 className={`${secondaryFont.className} text-8xl`}>
+            <h2 className={`${secondaryFont.className} text-6xl lg:text-8xl`}>
               Programação
             </h2>
           </div>
-          <div className="grid gap-8 text-2xl lg:grid-cols-2 lg:gap-16">
+          <div className="grid gap-8 lg:grid-cols-2 lg:gap-16 lg:text-2xl">
             <div className="grid gap-4">
               <p>Temos um trato mágico para você:</p>
               <p>
