@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import Image from "next/image";
 import { SignOutButton } from "@clerk/nextjs";
 import { CldImage, CldUploadButton } from "next-cloudinary";
 

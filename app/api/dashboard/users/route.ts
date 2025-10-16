@@ -11,6 +11,7 @@ export async function GET() {
     const users = await getUsers();
     return NextResponse.json(users);
   } catch (err) {
+    console.error(err);
     return NextResponse.json([], { status: 500 });
   }
 }
@@ -34,6 +35,8 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ _id: result.insertedId.toString(), ...body });
   } catch (err) {
+    console.error(err);
+
     return NextResponse.json(
       { error: "Failed to create user" },
       { status: 500 },
@@ -55,7 +58,7 @@ export async function PUT(req: Request) {
     }
     await client.connect();
     const db = client.db(DB_NAME);
-    const update: any = {};
+    const update = {} as User;
     if (body.fullName) update.fullName = body.fullName;
     if (body.email) update.email = body.email;
     if (body.imageUrl !== undefined) update.imageUrl = body.imageUrl;
@@ -65,8 +68,10 @@ export async function PUT(req: Request) {
     if (result.matchedCount === 0) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    return NextResponse.json({ _id: body._id, ...update });
+    return NextResponse.json({ ...update, _id: body._id });
   } catch (err) {
+    console.error(err);
+
     return NextResponse.json(
       { error: "Failed to update user" },
       { status: 500 },
@@ -93,6 +98,8 @@ export async function DELETE(req: Request) {
     }
     return NextResponse.json({ success: true });
   } catch (err) {
+    console.error(err);
+
     return NextResponse.json(
       { error: "Failed to delete user" },
       { status: 500 },
