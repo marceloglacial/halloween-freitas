@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { SignOutButton } from "@clerk/nextjs";
+import { CldUploadButton } from "next-cloudinary";
 
 export default function UserList() {
   const [users, setUsers] = useState<User[]>([]);
@@ -257,15 +258,29 @@ export default function UserList() {
                 disabled={loading}
                 className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-white"
               />
-              <input
-                type="text"
-                value={modalUser.imageUrl || ""}
-                onChange={(e) =>
-                  setModalUser((u) => ({ ...u, imageUrl: e.target.value }))
-                }
-                placeholder="Image URL (optional)"
-                className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-white"
-              />
+              {modalUser.imageUrl ? (
+                <img
+                  alt="user image"
+                  src={modalUser.imageUrl || ""}
+                  className="overflow-hidden rounded"
+                />
+              ) : (
+                <CldUploadButton
+                  uploadPreset="halloween-freitas"
+                  className="cursor-pointer rounded bg-blue-600 px-4 py-2 text-white hover:bg-orange-700"
+                  onSuccess={(e) => {
+                    setModalUser((u) => ({
+                      ...u,
+                      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                      // @ts-expect-error
+                      imageUrl: e.info.secure_url,
+                    }));
+                  }}
+                >
+                  Upload an image
+                </CldUploadButton>
+              )}
+
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
