@@ -4,13 +4,13 @@ import Countdown from "@/components/countdown";
 
 const Hero: FC = (): JSX.Element => {
   return (
-    <div className="flex items-center justify-center lg:min-h-screen 2xl:min-h-[900px]">
+    <div className="relative flex items-center justify-center lg:min-h-screen 2xl:min-h-[900px]">
       <video
         autoPlay
         playsInline
         loop
         muted
-        className="fixed top-0 left-0 -z-10 min-h-full w-auto max-w-none min-w-full"
+        className="absolute top-0 left-0 -z-10 h-full w-full object-cover"
         src="/hero-video.mp4"
       />
       <div className="hero-content text-neutral-content relative text-center">

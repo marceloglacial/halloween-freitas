@@ -3,7 +3,7 @@ import { FC, JSX } from "react";
 
 const Schedule: FC = (): JSX.Element => {
   return (
-    <section className="relative grid justify-center bg-black px-8 py-16 lg:p-8">
+    <section className="relative grid justify-center bg-stone-900 px-8 py-16 lg:p-8">
       <div className="relative grid max-w-7xl">
         <div className="relative grid gap-16 lg:-top-24">
           <div className="text-center">
