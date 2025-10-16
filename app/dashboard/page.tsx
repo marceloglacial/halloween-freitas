@@ -24,7 +24,7 @@ export default async function DashboardPage() {
   const role = currentUser?.publicMetadata?.role;
   if (role !== "admin") {
     return (
-      <div className="flex h-screen w-screen flex-col items-center justify-center gap-6">
+      <div className="flex h-screen w-screen flex-col items-center justify-center gap-6 p-8">
         <h2>Usuário não autorizado.</h2>
         <SignOutButton redirectUrl="/">
           <button className="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700">
@@ -36,7 +36,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl py-12">
+    <main className="mx-auto max-w-2xl px-8 py-12">
       <UserList />
     </main>
   );

@@ -202,10 +202,14 @@ export default function UserList() {
                 className="h-10 w-10 rounded-full"
               />
               <div className="flex-1">
-                <div className="font-semibold">{user.fullName}</div>
-                <div className="text-sm text-gray-400">{user.email}</div>
+                <div className="w-32 truncate font-semibold md:w-fit">
+                  {user.fullName}
+                </div>
+                <div className="w-32 truncate text-sm text-gray-400 md:w-fit">
+                  {user.email}
+                </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex lg:gap-2">
                 <button
                   className="cursor-pointer rounded px-4 py-3 text-xs text-white hover:bg-blue-700"
                   onClick={() => openEditModal(user)}
@@ -270,7 +274,10 @@ export default function UserList() {
                     (max-width: 1200px) 50vw,
                     33vw"
                   alt="User Image"
-                  className="overflow-hidden rounded"
+                  className="cursor-pointer overflow-hidden rounded"
+                  onClick={() => {
+                    setModalUser((u) => ({ ...u, imageUrl: "" }));
+                  }}
                 />
               ) : (
                 <CldUploadButton
