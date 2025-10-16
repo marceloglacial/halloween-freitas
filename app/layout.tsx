@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { defaultFont } from "@/util/fonts";
 import { Toaster } from "sonner";
+import { ClerkProvider } from "@clerk/nextjs";
 
 export const metadata: Metadata = {
   title: "Halloween dos Freitas",
@@ -14,15 +15,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className={`${defaultFont.className} antialiased`}>
-        {children}
-        <Toaster richColors position="bottom-center" offset="12vh" />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className="scroll-smooth">
+        <body className={`${defaultFont.className} antialiased`}>
+          {children}
+          <Toaster richColors position="bottom-center" offset="12vh" />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
