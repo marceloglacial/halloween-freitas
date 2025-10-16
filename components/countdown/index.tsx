@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { JSX } from "react";
 import { useCountdown } from "@/hooks/useCountdown";
 import { EVENT_DATE } from "@/constants/globals";
 import { isTimeLeftZero } from "@/util/countdown";
@@ -13,7 +13,7 @@ const timerUnits = [
   { key: "seconds", label: "seg" },
 ] as const;
 
-const Countdown: React.FC = () => {
+const Countdown: React.FC = (): JSX.Element => {
   const timeLeft: TimeLeft = useCountdown(TARGET_DATE);
 
   if (isTimeLeftZero(timeLeft)) {

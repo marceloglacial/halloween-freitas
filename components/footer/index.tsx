@@ -1,4 +1,6 @@
-const Footer = () => {
+import { FC, JSX } from "react";
+
+const Footer: FC = (): JSX.Element => {
   return (
     <footer className="grid justify-center bg-orange-400 p-10">
       <nav className="flex flex-wrap justify-center gap-4 text-xl text-black underline">

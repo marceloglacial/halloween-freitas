@@ -1,6 +1,7 @@
 import Card from "@/components/card";
 import { EVENT_DATE } from "@/constants/globals";
 import { formatDate, formatTime } from "@/util/locale";
+import { FC, JSX } from "react";
 
 const cards: CardProps[] = [
   {
@@ -46,7 +47,7 @@ const cards: CardProps[] = [
   },
 ];
 
-const EventInfo = () => {
+const EventInfo: FC = (): JSX.Element => {
   return (
     <section className="relative grid justify-center bg-black/70 p-8">
       <div className="relative grid max-w-7xl gap-8 lg:-top-28 lg:grid-cols-3">

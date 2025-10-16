@@ -1,6 +1,7 @@
 import { secondaryFont } from "@/util/fonts";
+import { FC, JSX } from "react";
 
-const Schedule = () => {
+const Schedule: FC = (): JSX.Element => {
   return (
     <section className="relative grid justify-center bg-black p-8">
       <div className="relative grid max-w-7xl">
@@ -39,7 +40,7 @@ const Schedule = () => {
                 <li>🧟 Fantasia Mais Assustadora</li>
                 <li>🤡 Fantasia Mais Engraçada</li>
                 <li>👯‍♀️ Melhor Fantasia de Grupo ou Dupla</li>
-                <li>👻 Melhor Fantasia Infantil</li>
+                {/* <li>👻 Melhor Fantasia Infantil</li> */}
               </ul>
             </div>
           </div>
