@@ -8,7 +8,7 @@ interface VotacaoFormProps {
 
 export default function VotacaoForm({ loading, onSubmit }: VotacaoFormProps) {
   const loadingClassname = loading
-    ? "cursor-not-allowed bg-green-900"
+    ? "cursor-not-allowed bg-green-400"
     : "cursor-pointer bg-orange-600";
   return (
     <section className="flex h-screen w-screen flex-col items-center justify-center gap-4 p-8 text-center">
@@ -16,7 +16,7 @@ export default function VotacaoForm({ loading, onSubmit }: VotacaoFormProps) {
       <p className="rounded-xl bg-black/50 p-8 text-2xl">
         Entre com seu email. <br />
         Caso não tenha acesso, favor{" "}
-        <Link href={"/"} className="text-green-900 underline">
+        <Link href={"/"} className="text-green-400 underline">
           se cadastrar no site
         </Link>
         .
