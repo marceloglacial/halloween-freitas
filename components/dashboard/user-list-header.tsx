@@ -9,7 +9,7 @@ export function UserListHeader() {
       <div className="flex gap-2">
         <Link
           href={"/votacao"}
-          className="cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
+          className="cursor-pointer rounded-lg bg-green-400 px-4 py-2 text-white hover:bg-green-400"
         >
           Votação
         </Link>

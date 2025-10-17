@@ -1,11 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { UserListHeader } from "./user-list-header";
 import { UserListItem } from "./user-list-item";
 import { UserEditModal } from "./user-edit-modal";
-import { useUserList } from "../../hooks/useUserList";
-import UserListSearch from "./user-list-search";
+import { useUsers } from "@/hooks/useUsers";
+import { UserListSearch } from "./user-list-search";
 
 export default function UserList() {
   const {
@@ -21,7 +21,12 @@ export default function UserList() {
     handleDelete,
     openEditModal,
     closeModal,
-  } = useUserList();
+    fetchUsers,
+  } = useUsers();
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   return (
     <div className="flex flex-col gap-4">

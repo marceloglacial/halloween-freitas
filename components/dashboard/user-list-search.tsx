@@ -1,12 +1,6 @@
 import React from "react";
 
-interface UserListSearchProps {
-  search: string;
-  setSearch: (value: string) => void;
-  onSearch?: (value: string) => void;
-}
-
-const UserListSearch: React.FC<UserListSearchProps> = ({
+export const UserListSearch: React.FC<UserListSearchProps> = ({
   search,
   setSearch,
   onSearch,
@@ -28,5 +22,3 @@ const UserListSearch: React.FC<UserListSearchProps> = ({
     />
   );
 };
-
-export default UserListSearch;

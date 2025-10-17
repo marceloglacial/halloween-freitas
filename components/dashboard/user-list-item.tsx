@@ -1,19 +1,6 @@
 import React from "react";
 import { CldImage } from "next-cloudinary";
 
-interface User {
-  _id: string;
-  fullName: string;
-  email: string;
-  imageUrl?: string;
-}
-
-interface UserListItemProps {
-  user: User;
-  openEditModal: (user: User) => void;
-  handleDelete: (id: string) => void;
-}
-
 export function UserListItem({
   user,
   openEditModal,
