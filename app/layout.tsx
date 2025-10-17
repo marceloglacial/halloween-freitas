@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "Halloween dos Freitas",
   description:
     "Preparem suas vassouras e poções, pois a noite mais assustadora do ano se aproxima!",
+  metadataBase: new URL("https://halloweendosfreitas.vercel.app/"),
   openGraph: {
     images: "/open-graph.jpg",
   },
