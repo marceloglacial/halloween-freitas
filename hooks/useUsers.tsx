@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 
-export function useUserList() {
+export function useUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);

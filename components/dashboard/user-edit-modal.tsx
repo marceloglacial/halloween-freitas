@@ -1,23 +1,6 @@
 import React from "react";
 import { CldImage, CldUploadButton } from "next-cloudinary";
 
-interface User {
-  _id?: string;
-  fullName?: string;
-  email?: string;
-  imageUrl?: string;
-}
-
-interface UserEditModalProps {
-  showModal: boolean;
-  modalUser: Partial<User>;
-  setModalUser: (u: Partial<User>) => void;
-  handleEdit: (user: Partial<User>) => void;
-  closeModal: () => void;
-  loading: boolean;
-  error?: string;
-}
-
 export function UserEditModal({
   showModal,
   modalUser,
