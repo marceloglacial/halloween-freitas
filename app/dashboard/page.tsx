@@ -18,10 +18,10 @@ export default async function DashboardPage() {
     redirect("/");
   }
 
-  // Fetch current user and check role
   const client = await clerkClient();
   const currentUser = await client.users.getUser(userId);
   const role = currentUser?.publicMetadata?.role;
+
   if (role !== "admin") {
     return (
       <div className="flex h-screen w-screen flex-col items-center justify-center gap-6 p-8">

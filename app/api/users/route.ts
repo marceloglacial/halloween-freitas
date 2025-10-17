@@ -28,6 +28,16 @@ export async function POST(req: Request) {
     }
     await client.connect();
     const db = client.db(DB_NAME);
+    // Check for duplicate email
+    const existing = await db
+      .collection(COLLECTION)
+      .findOne({ email: body.email });
+    if (existing) {
+      return NextResponse.json(
+        { error: "User already exists" },
+        { status: 409 },
+      );
+    }
     const result = await db.collection(COLLECTION).insertOne({
       fullName: body.fullName,
       email: body.email,

@@ -3,16 +3,14 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { SignOutButton } from "@clerk/nextjs";
 import { CldImage, CldUploadButton } from "next-cloudinary";
+import Link from "next/link";
 
 export default function UserList() {
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
-
-  // For create/edit modal
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [modalUser, setModalUser] = useState<Partial<User>>({});
 
   useEffect(() => {
@@ -23,7 +21,7 @@ export default function UserList() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/dashboard/users");
+      const res = await fetch("/api/users");
       if (!res.ok) throw new Error("Failed to fetch users");
       const data = await res.json();
       setUsers(data);
@@ -42,38 +40,11 @@ export default function UserList() {
     }
   }
 
-  async function handleCreate(user: Partial<User>) {
-    setError("");
-    try {
-      setLoading(true);
-      const res = await fetch("/api/dashboard/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(user),
-      });
-      if (!res.ok) throw new Error("Failed to create user");
-      const newUser = await res.json();
-      setUsers((prev: User[]) => [...prev, newUser]);
-      setShowModal(false);
-    } catch (err: unknown) {
-      setError(
-        typeof err === "object" &&
-          err &&
-          "message" in err &&
-          typeof (err as { message?: unknown }).message === "string"
-          ? (err as { message: string }).message
-          : "Error creating user",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function handleEdit(user: Partial<User>) {
     setError("");
     try {
       setLoading(true);
-      const res = await fetch("/api/dashboard/users", {
+      const res = await fetch("/api/users", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(user),
@@ -104,7 +75,7 @@ export default function UserList() {
     setError("");
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      const res = await fetch("/api/dashboard/users", {
+      const res = await fetch("/api/users", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ _id }),
@@ -133,14 +104,7 @@ export default function UserList() {
     );
   }, [search, users]);
 
-  function openCreateModal() {
-    setModalMode("create");
-    setModalUser({});
-    setShowModal(true);
-  }
-
   function openEditModal(user: User) {
-    setModalMode("edit");
     setModalUser(user);
     setShowModal(true);
   }
@@ -156,12 +120,12 @@ export default function UserList() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">All Users</h1>
         <div className="flex gap-2">
-          <button
+          <Link
+            href={"/votacao"}
             className="cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700"
-            onClick={openCreateModal}
           >
-            Add User
-          </button>
+            Votação
+          </Link>
           <SignOutButton redirectUrl="/">
             <button className="cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700">
               Logout
@@ -231,14 +195,11 @@ export default function UserList() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="w-full max-w-md rounded-lg bg-gray-900 p-6 shadow-lg">
-            <h2 className="mb-4 text-xl font-bold">
-              {modalMode === "create" ? "Add User" : "Edit User"}
-            </h2>
+            <h2 className="mb-4 text-xl font-bold">Edit User</h2>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (modalMode === "create") handleCreate(modalUser);
-                else handleEdit(modalUser);
+                handleEdit(modalUser);
               }}
               className="space-y-4"
             >
@@ -308,9 +269,7 @@ export default function UserList() {
                   className="cursor-pointer rounded bg-orange-600 px-4 py-2 text-white hover:bg-orange-700"
                   disabled={loading}
                 >
-                  {modalMode === "create"
-                    ? `Creat${loading ? "ing" : "e"}`
-                    : `Updat${loading ? "ing" : "e"}`}
+                  Updat{loading ? "ing" : "e"}
                 </button>
               </div>
             </form>

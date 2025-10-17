@@ -1,40 +1,10 @@
 "use client";
 
 import React, { FC, JSX } from "react";
-import { toast } from "sonner";
+import { useForm } from "@/hooks/useForm";
 
 const Form: FC = (): JSX.Element => {
-  const [loading, setLoading] = React.useState(false);
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-    const fullName = formData.get("fullName") as string;
-    const email = formData.get("email") as string;
-    try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, email }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        toast.success("Inscrição realizada com sucesso!");
-        form.reset();
-      } else if (data.error === "User already exists") {
-        toast.error("Este email já está inscrito.");
-      } else {
-        toast.error("Ocorreu um erro. Tente novamente.");
-      }
-    } catch {
-      toast.error("Erro de conexão. Tente novamente.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const { loading, handleSubmit } = useForm();
   return (
     <form
       className="mx-auto grid w-full max-w-sm gap-8"
