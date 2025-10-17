@@ -11,7 +11,7 @@ const cards: CardProps[] = [
       <>
         Estamos convocando todos os fantasmas, bruxas, vampiros e monstros para
         uma festa na
-        <span className="text-green-700">
+        <span className="text-green-500">
           {" "}
           Mansão Assombrada dos Freitas
         </span>{" "}
@@ -24,7 +24,7 @@ const cards: CardProps[] = [
     icon: "🧛🏻‍♂️",
     description: (
       <>
-        <span className="text-green-700">
+        <span className="text-green-500">
           {formatDate(EVENT_DATE)} <br />A partir das {formatTime(EVENT_DATE)}.
         </span>
         <br />A festa só acaba quando os vampiros voltarem para os caixões, ou
@@ -39,8 +39,8 @@ const cards: CardProps[] = [
       <>
         Prepare sua poção secreta e prato favorito para uma noite de sustos e
         delícias! Cada um deve trazer{" "}
-        <span className="text-green-700">sua bebida encantada</span> e um{" "}
-        <span className="text-green-700">prato sinistro para compartilhar</span>{" "}
+        <span className="text-green-500">sua bebida encantada</span> e um{" "}
+        <span className="text-green-500">prato sinistro para compartilhar</span>{" "}
         com todos.
       </>
     ),

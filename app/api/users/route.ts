@@ -1,15 +1,37 @@
 import { NextResponse } from "next/server";
-import { getUsers } from "@/util/get-users";
+import { getUserById, getUsers } from "@/util/get-users";
 import { MongoClient, ObjectId } from "mongodb";
 
 const DATABASE_URL = process.env.DATABASE_URL || "mongodb://localhost:27017";
 const DB_NAME = process.env.DATABASE_NAME;
 const COLLECTION = "users";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const users = await getUsers();
-    return NextResponse.json(users);
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("id");
+    const email = searchParams.get("email");
+    if (userId) {
+      const user = await getUserById(userId);
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+      return NextResponse.json(user);
+    } else if (email) {
+      // Search by email
+      const client = new MongoClient(DATABASE_URL);
+      await client.connect();
+      const db = client.db(DB_NAME);
+      const user = await db.collection(COLLECTION).findOne({ email });
+      await client.close();
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+      return NextResponse.json({ ...user, _id: user._id.toString() });
+    } else {
+      const users = await getUsers();
+      return NextResponse.json(users);
+    }
   } catch (err) {
     console.error(err);
     return NextResponse.json([], { status: 500 });
