@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import VotacaoForm from "@/components/votacao/form";
 import Candidates from "@/components/votacao/candidates";
+import BackgroundVideo from "@/components/background-video";
 
 export default function PoolHome() {
   const { loading, error, getUserByEmail, user } = useUsers();
@@ -22,5 +23,10 @@ export default function PoolHome() {
 
   if (user) return <Candidates user={user} />;
 
-  return <VotacaoForm loading={loading} onSubmit={handleSubmit} />;
+  return (
+    <>
+      <BackgroundVideo />
+      <VotacaoForm loading={loading} onSubmit={handleSubmit} />;
+    </>
+  );
 }
