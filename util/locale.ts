@@ -8,7 +8,7 @@ export const formatDate = (date: string): string => {
 };
 
 export const formatTime = (date: string): string => {
-  return new Date(date).toLocaleTimeString("pt-BR", {
+  return new Date(date).toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "America/Toronto",
