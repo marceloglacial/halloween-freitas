@@ -25,7 +25,7 @@ const cards: CardProps[] = [
     description: (
       <>
         <span className="text-green-400">
-          {formatDate(EVENT_DATE)} <br />A partir das {formatTime(EVENT_DATE)}.
+          31 de Outubro de 2025. <br />A partir das 19h.
         </span>
         <br />A festa só acaba quando os vampiros voltarem para os caixões, ou
         seja, até o sol raiar!
