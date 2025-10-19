@@ -16,7 +16,7 @@ export async function getCategories() {
   }
 }
 
-export async function getCategoryById(id: string) {
+export async function getCategoryById(id: string): Promise<Category | null> {
   const client = new MongoClient(DATABASE_URL);
   try {
     await client.connect();
@@ -25,7 +25,11 @@ export async function getCategoryById(id: string) {
       .collection(COLLECTION)
       .findOne({ _id: new ObjectId(id) });
     if (!category) return null;
-    return { ...category, _id: category._id.toString() };
+    return {
+      _id: category._id.toString(),
+      title: category.title,
+      icon: category.icon,
+    };
   } finally {
     await client.close();
   }

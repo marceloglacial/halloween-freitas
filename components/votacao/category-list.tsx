@@ -1,6 +1,7 @@
 "use client";
 import { useCategories } from "@/hooks/useCategories";
 import { secondaryFont } from "@/util/fonts";
+import Link from "next/link";
 import { FC } from "react";
 
 const CategoryList: FC = () => {
@@ -16,12 +17,13 @@ const CategoryList: FC = () => {
         const firstClassname =
           index === 0 ? `lg:col-span-2 lg:max-w-fit lg:mx-auto` : "";
         return (
-          <div
+          <Link
+            href={`/votacao/${category._id}`}
             key={category._id}
             className={`${firstClassname} flex items-center justify-start gap-6 rounded-xl bg-purple-600 p-8 ${secondaryFont.className} text-left text-3xl`}
           >
             <span className="text-6xl">{category.icon}</span> {category.title}
-          </div>
+          </Link>
         );
       })}
     </div>

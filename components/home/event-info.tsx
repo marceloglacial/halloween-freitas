@@ -1,6 +1,4 @@
 import Card from "@/components/card";
-import { EVENT_DATE } from "@/constants/globals";
-import { formatDate, formatTime } from "@/util/locale";
 import { FC, JSX } from "react";
 
 const cards: CardProps[] = [
