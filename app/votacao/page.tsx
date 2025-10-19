@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import VotacaoForm from "@/components/votacao/form";
 import BackgroundVideo from "@/components/background-video";
+import { setUserCookie } from "@/actions";
 
 export default function PoolHome() {
   const { loading, error, getUserByEmail, user } = useUsers();
@@ -24,12 +25,9 @@ export default function PoolHome() {
 
   useEffect(() => {
     if (user) {
-      const safeUser = {
-        _id: user._id,
-        fullName: user.fullName,
-      };
-      localStorage.setItem("user", JSON.stringify(safeUser));
-      router.push("/votacao/categories");
+      setUserCookie(user).then(() => {
+        router.push("/votacao/categories");
+      });
     }
   }, [user, router]);
 

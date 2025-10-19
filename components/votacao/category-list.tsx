@@ -1,14 +1,11 @@
-"use client";
-import { useCategories } from "@/hooks/useCategories";
+import { fetchData } from "@/util/fetch-data";
 import { secondaryFont } from "@/util/fonts";
 import Link from "next/link";
 import { FC } from "react";
 
-const CategoryList: FC = () => {
-  const { categories, loading, error } = useCategories();
+const CategoryList: FC = async () => {
+  const categories: Category[] = await fetchData("categories");
 
-  if (loading) return <p>Carregando categorias...</p>;
-  if (error) return <p className="text-red-500">Erro: {error}</p>;
   if (!categories.length) return <p>Nenhuma categoria encontrada.</p>;
 
   return (
