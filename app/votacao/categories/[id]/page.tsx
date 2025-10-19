@@ -28,15 +28,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         {users.map((user) => {
           return <UserCard key={user._id} user={user} />;
         })}
-        {users.map((user) => {
-          return <UserCard key={user._id} user={user} />;
-        })}
-        {users.map((user) => {
-          return <UserCard key={user._id} user={user} />;
-        })}
-        {users.map((user) => {
-          return <UserCard key={user._id} user={user} />;
-        })}
       </div>
     </section>
   );

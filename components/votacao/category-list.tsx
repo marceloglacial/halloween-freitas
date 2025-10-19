@@ -18,7 +18,7 @@ const CategoryList: FC = () => {
           index === 0 ? `lg:col-span-2 lg:max-w-fit lg:mx-auto` : "";
         return (
           <Link
-            href={`/votacao/${category._id}`}
+            href={`/votacao/categories/${category._id}`}
             key={category._id}
             className={`${firstClassname} flex items-center justify-start gap-6 rounded-xl bg-purple-600 p-8 ${secondaryFont.className} text-left text-3xl`}
           >
