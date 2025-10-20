@@ -2,10 +2,14 @@ import React from "react";
 import Link from "next/link";
 import { SignOutButton } from "@clerk/nextjs";
 
-export function UserListHeader() {
+interface UserListHeaderProps {
+  users: User[];
+}
+
+export function UserListHeader(props: UserListHeaderProps) {
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <h1 className="text-3xl font-bold">All Users</h1>
+      <h1 className="text-3xl font-bold">{props.users.length} convidados</h1>
       <div className="flex gap-2">
         <Link
           href={"/votacao"}

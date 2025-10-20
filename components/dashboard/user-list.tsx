@@ -9,19 +9,20 @@ import { UserListSearch } from "./user-list-search";
 
 export default function UserList() {
   const {
-    search,
-    setSearch,
-    loading,
-    error,
-    showModal,
-    modalUser,
-    setModalUser,
-    filteredUsers,
-    handleEdit,
-    handleDelete,
-    openEditModal,
     closeModal,
+    error,
     fetchUsers,
+    filteredUsers,
+    handleDelete,
+    handleEdit,
+    loading,
+    modalUser,
+    openEditModal,
+    search,
+    setModalUser,
+    setSearch,
+    showModal,
+    users,
   } = useUsers();
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export default function UserList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <UserListHeader />
+      <UserListHeader users={users} />
       <UserListSearch search={search} setSearch={setSearch} />
       {error && <div className="mb-2 text-red-500">{error}</div>}
       <ul className="space-y-4">
