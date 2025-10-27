@@ -1,6 +1,6 @@
 import BackButton from "@/components/back-button";
-import { UserCard } from "@/components/user-card";
 import { fetchData } from "@/util/fetch-data";
+import VoteGrid from "@/components/votacao/vote-grid";
 
 interface CategoryPageParams {
   id: string;
@@ -21,15 +21,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   return (
     <section className="min-h-screen w-screen justify-center px-8 py-16 text-center">
       <BackButton href="/votacao/categories" />
-      <h1 className="mb-8 text-6xl">
-        {category.icon}
-        {category.title}
+      <h1 className="mt-8 mb-8 text-4xl lg:text-6xl">
+        {category.icon} {category.title}
       </h1>
-      <div className="mx-auto grid max-w-3xl grid-cols-4 gap-8">
-        {users.map((user) => {
-          return <UserCard key={user._id} user={user} />;
-        })}
-      </div>
+      <VoteGrid users={users} categoryId={category._id} />
     </section>
   );
 }

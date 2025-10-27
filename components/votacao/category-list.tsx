@@ -17,9 +17,10 @@ const CategoryList: FC = async () => {
           <Link
             href={`/votacao/categories/${category._id}`}
             key={category._id}
-            className={`${firstClassname} flex items-center justify-start gap-6 rounded-xl bg-purple-600 p-8 ${secondaryFont.className} text-left text-3xl`}
+            className={`${firstClassname} flex items-center justify-start gap-6 rounded-xl bg-purple-600 p-4 lg:p-8 ${secondaryFont.className} text-left text-3xl`}
           >
-            <span className="text-6xl">{category.icon}</span> {category.title}
+            <span className="text-4xl lg:text-6xl">{category.icon}</span>{" "}
+            <span className="text-xl">{category.title}</span>
           </Link>
         );
       })}
