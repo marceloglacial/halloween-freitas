@@ -2,19 +2,13 @@
 import { useState } from "react";
 import UserCard from "../user-card";
 import { toast } from "sonner";
-import Link from "next/link";
-
-interface VoteGridProps {
-  user: User;
-  users: User[];
-  categoryId: string;
-}
 
 export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [voted, setVoted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const handleVote = async () => {
     if (!selectedUserId) return;
@@ -59,10 +53,23 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
     }
   };
 
+  const filteredUsers = users.filter((u) =>
+    u.fullName.toLowerCase().includes(search.toLowerCase()),
+  );
+
   return (
     <div className="relative">
+      <div className="mb-6 flex justify-center">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por nome..."
+          className="w-full max-w-lg rounded-2xl border border-orange-400 px-4 py-2 text-lg shadow"
+        />
+      </div>
       <div className="mx-auto grid max-w-3xl grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-4">
-        {users.map((user) => (
+        {filteredUsers.map((user) => (
           <div
             key={user._id}
             onClick={() =>
