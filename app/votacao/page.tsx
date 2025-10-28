@@ -32,9 +32,9 @@ export default function PoolHome() {
   }, [user, router]);
 
   return (
-    <>
+    <div className="min-h-screen w-full">
       <BackgroundVideo />
-      <VotacaoForm loading={loading} onSubmit={handleSubmit} />;
-    </>
+      <VotacaoForm loading={loading} onSubmit={handleSubmit} />
+    </div>
   );
 }

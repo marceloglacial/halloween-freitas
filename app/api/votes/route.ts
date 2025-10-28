@@ -1,6 +1,32 @@
 import { NextResponse } from "next/server";
 import { MongoClient, ObjectId } from "mongodb";
 
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const voterId = searchParams.get("voterId");
+  if (!voterId) {
+    return NextResponse.json({ error: "voterId is required" }, { status: 400 });
+  }
+  const client = new MongoClient(process.env.DATABASE_URL!);
+  try {
+    await client.connect();
+    const db = client.db(process.env.DATABASE_NAME);
+    const votes = await db
+      .collection("votes")
+      .find({ voterId: new ObjectId(voterId) })
+      .toArray();
+    return NextResponse.json(votes, { status: 200 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 },
+    );
+  } finally {
+    await client.close();
+  }
+}
+
 export async function POST(request: Request) {
   const client = new MongoClient(process.env.DATABASE_URL!);
   try {

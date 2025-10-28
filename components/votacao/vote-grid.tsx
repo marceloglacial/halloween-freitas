@@ -2,6 +2,7 @@
 import { useState } from "react";
 import UserCard from "../user-card";
 import { toast } from "sonner";
+import Link from "next/link";
 
 interface VoteGridProps {
   user: User;
@@ -48,7 +49,15 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
     <div className="relative">
       <div className="mx-auto grid max-w-3xl grid-cols-2 gap-8 lg:grid-cols-4">
         {users.map((user) => (
-          <div key={user._id} onClick={() => setSelectedUserId(user._id)}>
+          <div
+            key={user._id}
+            onClick={() =>
+              voted
+                ? toast.error("Você já votou!")
+                : setSelectedUserId(user._id)
+            }
+            className={voted ? "opacity-50" : ""}
+          >
             <UserCard user={user} selected={selectedUserId === user._id} />
           </div>
         ))}
@@ -61,6 +70,14 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
         >
           {loading ? "Votando..." : "Votar"}
         </button>
+      )}
+      {voted && (
+        <Link
+          href={"/votacao/categories"}
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-purple-600 px-8 py-2 text-white shadow-lg lg:py-4 lg:text-2xl"
+        >
+          Voltar para votação
+        </Link>
       )}
     </div>
   );

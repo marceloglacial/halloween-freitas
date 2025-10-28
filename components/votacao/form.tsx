@@ -11,7 +11,7 @@ export default function VotacaoForm({ loading, onSubmit }: VotacaoFormProps) {
     ? "cursor-not-allowed bg-green-400"
     : "cursor-pointer bg-orange-600";
   return (
-    <section className="flex min-h-screen w-screen flex-col items-center justify-center gap-4 p-8 text-center">
+    <section className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
       <h1 className="text-7xl lg:text-8xl">
         Halloween <br />
         Dos Freitas

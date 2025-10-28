@@ -1,4 +1,5 @@
-import Candidates from "@/components/votacao/candidates";
+import CategoryList from "@/components/votacao/category-list";
+import { fetchData } from "@/util/fetch-data";
 import { cookies } from "next/headers";
 
 export default async function PoolHome() {
@@ -10,5 +11,19 @@ export default async function PoolHome() {
       user = JSON.parse(userCookie.value);
     } catch {}
   }
-  return <Candidates user={user} />;
+  const categories: Category[] = await fetchData("categories");
+  if (!categories.length) return <p>Nenhuma categoria encontrada.</p>;
+
+  return (
+    <section className="mmin-h-screen flex w-screen flex-col items-center justify-center gap-8 p-8 text-center">
+      <h1 className="text-5xl">
+        Bem-vindo, <br />
+        {user.fullName}!
+      </h1>
+      <p className="mt-2 text-xl text-orange-400 lg:text-2xl">
+        ATENÇÃO: Você pode votar na mesma pessoa em mais de uma categoria.
+      </p>
+      <CategoryList categories={categories} userID={user._id} />
+    </section>
+  );
 }
