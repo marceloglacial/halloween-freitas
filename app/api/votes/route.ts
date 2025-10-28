@@ -1,25 +1,24 @@
-import type { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 import { MongoClient, ObjectId } from "mongodb";
 
-const client = new MongoClient(process.env.DATABASE_URL!);
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
+export async function POST(request: Request) {
+  const client = new MongoClient(process.env.DATABASE_URL!);
   try {
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
-
-    const { voterId, voteForId, categoryId } = req.body;
+    const body = await request.json();
+    const { voterId, voteForId, categoryId } = body;
 
     if (!voterId || !voteForId || !categoryId) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return NextResponse.json(
+        { error: "Campos obrigatórios faltando" },
+        { status: 400 },
+      );
     }
 
     if (voterId === voteForId) {
-      return res.status(400).json({ error: "You cannot vote for yourself" });
+      return NextResponse.json(
+        { error: "Você não pode votar em si mesmo" },
+        { status: 400 },
+      );
     }
 
     await client.connect();
@@ -31,14 +30,21 @@ export default async function handler(
 
     // Check if voter exists
     const voter = await db.collection("users").findOne({ _id: voterObjectId });
-    if (!voter) return res.status(404).json({ error: "Voter not found" });
+    if (!voter)
+      return NextResponse.json(
+        { error: "Votante não encontrado" },
+        { status: 404 },
+      );
 
     // Check if vote target exists
     const voteForUser = await db
       .collection("users")
       .findOne({ _id: voteForObjectId });
     if (!voteForUser)
-      return res.status(404).json({ error: "User to vote for not found" });
+      return NextResponse.json(
+        { error: "Usuário para votar não encontrado" },
+        { status: 404 },
+      );
 
     // Check if voter already voted in this category
     const existingVote = await db.collection("votes").findOne({
@@ -47,9 +53,10 @@ export default async function handler(
     });
 
     if (existingVote) {
-      return res
-        .status(400)
-        .json({ error: "You have already voted in this category" });
+      return NextResponse.json(
+        { error: "Você já votou nesta categoria" },
+        { status: 400 },
+      );
     }
 
     // Insert the vote
@@ -60,10 +67,16 @@ export default async function handler(
       votedAt: new Date(),
     });
 
-    return res.status(200).json({ message: "Vote recorded successfully" });
+    return NextResponse.json(
+      { message: "Voto registrado com sucesso" },
+      { status: 200 },
+    );
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 },
+    );
   } finally {
     await client.close();
   }

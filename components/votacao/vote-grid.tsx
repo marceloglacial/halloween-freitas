@@ -4,11 +4,12 @@ import UserCard from "../user-card";
 import { toast } from "sonner";
 
 interface VoteGridProps {
+  user: User;
   users: User[];
   categoryId: string;
 }
 
-export default function VoteGrid({ users, categoryId }: VoteGridProps) {
+export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [voted, setVoted] = useState(false);
@@ -16,22 +17,28 @@ export default function VoteGrid({ users, categoryId }: VoteGridProps) {
 
   const handleVote = async () => {
     if (!selectedUserId) return;
+
     setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/votes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: selectedUserId, categoryId }),
+        body: JSON.stringify({
+          voterId: user._id,
+          voteForId: selectedUserId,
+          categoryId,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao votar");
       setVoted(true);
+      toast.success("Voto registrado com sucesso!");
     } catch (err: unknown) {
       const errors = err as Error;
-      toast.error("Erro ao votar. Recarregue a página ou tente novamente.");
+      toast.error(errors.message);
       setError(errors.message);
-      console.error(error);
+      console.debug(error);
     } finally {
       setLoading(false);
     }
@@ -54,11 +61,6 @@ export default function VoteGrid({ users, categoryId }: VoteGridProps) {
         >
           {loading ? "Votando..." : "Votar"}
         </button>
-      )}
-      {voted && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-green-600 px-8 py-4 text-2xl text-white shadow-lg">
-          Voto registrado!
-        </div>
       )}
     </div>
   );
