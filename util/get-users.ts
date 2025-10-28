@@ -1,3 +1,4 @@
+import { group } from "console";
 import { MongoClient } from "mongodb";
 
 const DATABASE_URL = process.env.DATABASE_URL || "mongodb://localhost:27017";
@@ -11,13 +12,17 @@ export async function getUsers(): Promise<User[]> {
     const db = client.db(DB_NAME);
     const users = await db
       .collection(COLLECTION)
-      .find({}, { projection: { fullName: 1, email: 1, imageUrl: 1 } })
+      .find(
+        {},
+        { projection: { fullName: 1, email: 1, imageUrl: 1, group: 1 } },
+      )
       .toArray();
     return users.map((u) => ({
       _id: u._id.toString(),
       fullName: u.fullName,
       email: u.email,
       imageUrl: u.imageUrl,
+      group: u.group,
     }));
   } finally {
     await client.close();

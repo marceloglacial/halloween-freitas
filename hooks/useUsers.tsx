@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 
 export function useUsers() {
   const [users, setUsers] = useState<User[]>([]);
@@ -112,19 +112,48 @@ export function useUsers() {
     }
   }
 
-  const filteredUsers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter((u: User) =>
-      [u.fullName, u.email]
-        .filter(Boolean)
-        .some((field) => field!.toLowerCase().includes(q)),
-    );
-  }, [search, users]);
+  const q = search.trim().toLowerCase();
+  const filteredUsers = !q
+    ? users
+    : users.filter((u: User) =>
+        [u.fullName, u.email]
+          .filter(Boolean)
+          .some((field) => field!.toLowerCase().includes(q)),
+      );
 
-  function openEditModal(user: User) {
-    setModalUser(user);
+  function openEditModal(user?: User | null) {
+    if (user) {
+      setModalUser(user);
+    } else {
+      setModalUser({});
+    }
     setShowModal(true);
+  }
+  async function handleCreate(user: Partial<User>) {
+    setError("");
+    try {
+      setLoading(true);
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user),
+      });
+      if (!res.ok) throw new Error("Failed to create user");
+      const created = await res.json();
+      setUsers((prev: User[]) => [...prev, created]);
+      setShowModal(false);
+    } catch (err: unknown) {
+      setError(
+        typeof err === "object" &&
+          err &&
+          "message" in err &&
+          typeof (err as { message?: unknown }).message === "string"
+          ? (err as { message: string }).message
+          : "Error creating user",
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   function closeModal() {
@@ -141,6 +170,7 @@ export function useUsers() {
     getUserByEmail,
     handleDelete,
     handleEdit,
+    handleCreate,
     loading,
     modalUser,
     openEditModal,

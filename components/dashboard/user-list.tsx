@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { UserListHeader } from "./user-list-header";
 import { UserListItem } from "./user-list-item";
 import { UserEditModal } from "./user-edit-modal";
 import { useUsers } from "@/hooks/useUsers";
 import { UserListSearch } from "./user-list-search";
+import Link from "next/link";
+import { SignOutButton } from "@clerk/nextjs";
 
 export default function UserList() {
   const {
@@ -15,6 +16,7 @@ export default function UserList() {
     filteredUsers,
     handleDelete,
     handleEdit,
+    handleCreate,
     loading,
     modalUser,
     openEditModal,
@@ -31,7 +33,28 @@ export default function UserList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <UserListHeader users={users} />
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <h1 className="text-3xl font-bold">{users.length} convidados</h1>
+        <div className="flex justify-between gap-2">
+          <button
+            className="self-end rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
+            onClick={() => openEditModal(null)}
+          >
+            Criar Usuário
+          </button>
+          <Link
+            href={"/votacao"}
+            className="cursor-pointer rounded-lg bg-green-400 px-4 py-2 text-white hover:bg-green-400"
+          >
+            Votação
+          </Link>
+          <SignOutButton redirectUrl="/">
+            <button className="cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700">
+              Logout
+            </button>
+          </SignOutButton>
+        </div>
+      </div>
       <UserListSearch search={search} setSearch={setSearch} />
       {error && <div className="mb-2 text-red-500">{error}</div>}
       <ul className="space-y-4">
@@ -55,6 +78,7 @@ export default function UserList() {
         modalUser={modalUser}
         setModalUser={setModalUser}
         handleEdit={handleEdit}
+        handleCreate={handleCreate}
         closeModal={closeModal}
         loading={loading}
         error={error}

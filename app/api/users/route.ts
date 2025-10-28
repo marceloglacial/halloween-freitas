@@ -64,6 +64,7 @@ export async function POST(req: Request) {
       fullName: body.fullName,
       email: body.email,
       imageUrl: body.imageUrl || null,
+      group: !!body.group,
     });
     return NextResponse.json({ _id: result.insertedId.toString(), ...body });
   } catch (err) {
@@ -94,6 +95,7 @@ export async function PUT(req: Request) {
     if (body.fullName) update.fullName = body.fullName;
     if (body.email) update.email = body.email;
     if (body.imageUrl !== undefined) update.imageUrl = body.imageUrl;
+    if (body.group !== undefined) update.group = !!body.group;
     const result = await db
       .collection(COLLECTION)
       .updateOne({ _id: new ObjectId(body._id) }, { $set: update });

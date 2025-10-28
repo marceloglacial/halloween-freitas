@@ -3,6 +3,7 @@ type User = {
   fullName: string;
   email: string;
   imageUrl?: string;
+  group?: boolean;
 };
 
 interface UserListItemProps {
