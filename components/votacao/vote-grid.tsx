@@ -59,13 +59,13 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
 
   return (
     <div className="relative">
-      <div className="mb-12 flex justify-center">
+      <div className="sticky top-4 z-40 mb-12 flex justify-center">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nome..."
-          className="w-full max-w-lg rounded-2xl border border-orange-400 px-4 py-2 text-lg shadow"
+          className="w-full max-w-xs rounded-2xl border border-orange-400 bg-black px-4 py-2 text-lg shadow"
         />
       </div>
       {filteredUsers.length === 0 && (
@@ -88,7 +88,7 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
       </div>
       {selectedUserId && !voted && (
         <button
-          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-2xl bg-orange-400 px-16 py-3 text-white shadow-lg lg:py-4 lg:text-xl"
+          className="fixed bottom-6 left-1/2 z-50 w-full max-w-xs -translate-x-1/2 rounded-2xl bg-orange-400 px-16 py-3 text-white shadow-lg lg:py-4 lg:text-xl"
           onClick={handleVote}
           disabled={loading}
         >
