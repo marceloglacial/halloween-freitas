@@ -34,10 +34,24 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao votar");
       setVoted(true);
-      toast.success("Voto registrado com sucesso!");
+      toast.success("Voto registrado!", {
+        dismissible: false,
+        duration: Infinity,
+        action: {
+          label: "Voltar",
+          onClick: () => {
+            window.location.href = "/votacao/categories";
+          },
+        },
+      });
     } catch (err: unknown) {
       const errors = err as Error;
-      toast.error(errors.message);
+      toast.error(errors.message, {
+        cancel: {
+          label: "Fechar",
+          onClick: () => close(),
+        },
+      });
       setError(errors.message);
       console.debug(error);
     } finally {
@@ -47,7 +61,7 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
 
   return (
     <div className="relative">
-      <div className="mx-auto grid max-w-3xl grid-cols-2 gap-8 lg:grid-cols-4">
+      <div className="mx-auto grid max-w-3xl grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-4">
         {users.map((user) => (
           <div
             key={user._id}
@@ -70,14 +84,6 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
         >
           {loading ? "Votando..." : "Votar"}
         </button>
-      )}
-      {voted && (
-        <Link
-          href={"/votacao/categories"}
-          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-purple-600 px-8 py-2 text-white shadow-lg lg:py-4 lg:text-2xl"
-        >
-          Voltar para votação
-        </Link>
       )}
     </div>
   );

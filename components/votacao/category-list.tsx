@@ -1,22 +1,15 @@
 import { FC } from "react";
-import { fetchData } from "@/util/fetch-data";
 import CategoryLink from "./category-link";
 
 interface CategoryListProps {
-  userID: User["_id"];
   categories: Category[];
+  votedCategoryIds: Set<Category["_id"]>;
 }
 
-const CategoryList: FC<CategoryListProps> = async ({ userID, categories }) => {
-  // Fetch votes for this user
-  type Vote = { categoryId: string };
-  const votes: Vote[] = userID
-    ? await fetchData(`votes?voterId=${userID}`)
-    : [];
-  const votedCategoryIds = new Set(
-    votes.map((v) => v.categoryId?.toString?.() || v.categoryId),
-  );
-
+const CategoryList: FC<CategoryListProps> = async ({
+  categories,
+  votedCategoryIds,
+}) => {
   return (
     <div className="grid max-w-3xl gap-8 lg:grid-cols-2">
       {categories.map((category, index) => {

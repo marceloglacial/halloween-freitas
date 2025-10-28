@@ -22,7 +22,20 @@ export default function RootLayout({
       <html lang="en" className="scroll-smooth">
         <body className={`${defaultFont.className} antialiased`}>
           {children}
-          <Toaster richColors position="bottom-center" offset="12vh" />
+          <Toaster
+            richColors
+            position="bottom-center"
+            offset="12vh"
+            toastOptions={{
+              cancelButtonStyle: {
+                color: "white",
+                backgroundColor: "red",
+              },
+              actionButtonStyle: {
+                backgroundColor: "green",
+              },
+            }}
+          />
         </body>
       </html>
     </ClerkProvider>

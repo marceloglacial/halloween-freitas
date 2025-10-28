@@ -1,0 +1,1 @@
+type Vote = { categoryId: string };

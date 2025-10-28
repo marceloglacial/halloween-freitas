@@ -22,7 +22,7 @@ const UserCard: FC<UserCardProps> = ({
         (selected ? "scale-105 ring-4 ring-orange-400" : "")
       }
     >
-      <div className="h-40 w-full lg:h-60">
+      <div className="h-40 w-full sm:h-60">
         <img src={url} alt="Photo of User" />
       </div>
       <span className="p-4 backdrop-blur-lg">{user.fullName}</span>
