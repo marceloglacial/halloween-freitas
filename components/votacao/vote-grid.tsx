@@ -63,7 +63,10 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSelectedUserId(null);
+            setSearch(e.target.value);
+          }}
           placeholder="Buscar por nome..."
           className="w-full max-w-xs rounded-2xl border border-orange-400 bg-black px-4 py-2 text-lg shadow"
         />
