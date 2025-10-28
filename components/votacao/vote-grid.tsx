@@ -59,7 +59,7 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
 
   return (
     <div className="relative">
-      <div className="mb-6 flex justify-center">
+      <div className="mb-12 flex justify-center">
         <input
           type="text"
           value={search}
@@ -68,6 +68,9 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
           className="w-full max-w-lg rounded-2xl border border-orange-400 px-4 py-2 text-lg shadow"
         />
       </div>
+      {filteredUsers.length === 0 && (
+        <div className="w-full text-center">Nenhum resultado.</div>
+      )}
       <div className="mx-auto grid max-w-3xl grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-4">
         {filteredUsers.map((user) => (
           <div
@@ -85,7 +88,7 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
       </div>
       {selectedUserId && !voted && (
         <button
-          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-orange-400 px-8 py-4 text-2xl text-white shadow-lg"
+          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-2xl bg-orange-400 px-16 py-3 text-white shadow-lg lg:py-4 lg:text-xl"
           onClick={handleVote}
           disabled={loading}
         >
