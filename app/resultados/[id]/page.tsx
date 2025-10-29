@@ -1,22 +1,6 @@
 import BackButton from "@/components/back-button";
+import { ResultsUser } from "@/components/results/results-user";
 import { fetchData } from "@/util/fetch-data";
-
-interface ResultPageParams {
-  id: string;
-}
-
-interface ResultPageProps {
-  params: ResultPageParams;
-}
-
-type UserWithVotes = {
-  votes: number;
-} & User;
-
-type Results = {
-  users: UserWithVotes[];
-  totalVotes: number;
-};
 
 export default async function ResultPage({ params }: ResultPageProps) {
   const { id } = await params;
@@ -34,12 +18,13 @@ export default async function ResultPage({ params }: ResultPageProps) {
       <ul>
         {!hasResults && <li>Nenhum voto nessa categoria</li>}
         {hasResults &&
-          results.users.map((user) => (
-            <li key={user._id}>
-              {results.totalVotes > 0
-                ? ((user.votes / results.totalVotes) * 100).toFixed(2)
-                : "0.00"}
-              % - {user.fullName} - {user.votes} voto(s)
+          results.users.map((user, index) => (
+            <li key={user._id} className="pb-8">
+              <ResultsUser
+                showImage={index === 0}
+                user={user}
+                totalVotes={results?.totalVotes}
+              />
             </li>
           ))}
       </ul>

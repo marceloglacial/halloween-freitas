@@ -27,3 +27,7 @@ interface UserListSearchProps {
   setSearch: (value: string) => void;
   onSearch?: (value: string) => void;
 }
+
+type UserWithVotes = {
+  votes: number;
+} & User;
