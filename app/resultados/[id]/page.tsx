@@ -21,25 +21,13 @@ export default async function ResultPage({ params }: ResultPageProps) {
       </div>
     );
 
-  const firstPlace = results?.users[0];
-  const winners = results?.users.splice(1);
-
   return (
     <section className="min-h-screen w-screen justify-center px-8 py-16 text-center">
       <BackButton href={"/resultados"} />
-      <h1 className="mt-8 mb-8 text-4xl lg:text-6xl">
+      <h1 className="mt-8 mb-32 text-4xl lg:text-6xl">
         {category.icon} {category.title}
       </h1>
-      <div className="mx-auto mt-32 grid max-w-lg gap-16">
-        <ResultsUser
-          position={1}
-          showImage={true}
-          user={firstPlace}
-          totalVotes={results?.totalVotes}
-        />
-
-        <ResultList users={winners} totalVotes={results.totalVotes} />
-      </div>
+      <ResultList users={results.users} totalVotes={results.totalVotes} />
     </section>
   );
 }
