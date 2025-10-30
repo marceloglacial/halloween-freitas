@@ -9,7 +9,7 @@ export async function GET(
   try {
     const { categoryId } = params;
     if (!categoryId || typeof categoryId !== "string") {
-      return new Response(JSON.stringify({ error: "Invalid categoryId" }), {
+      return new Response(JSON.stringify({ error: "Categoria inválida" }), {
         status: 400,
       });
     }
@@ -31,7 +31,7 @@ export async function GET(
 
     if (voteCounts.length === 0) {
       return new Response(
-        JSON.stringify({ message: "No votes yet in this category" }),
+        JSON.stringify({ message: "Ainda não há votos nesta categoria" }),
         { status: 200 },
       );
     }
@@ -77,7 +77,7 @@ export async function GET(
     });
   } catch (error) {
     console.error(error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
+    return new Response(JSON.stringify({ error: "Erro interno do servidor" }), {
       status: 500,
     });
   } finally {
