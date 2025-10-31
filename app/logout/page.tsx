@@ -1,4 +1,9 @@
 import { SignOutButton } from "@clerk/nextjs";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Logout - Halloween dos Freitas",
+};
 
 const LogoutPage = () => {
   return (

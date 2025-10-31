@@ -1,11 +1,8 @@
 import UserList from "@/components/dashboard/user-list";
+import { Metadata } from "next";
 
-export type User = {
-  _id: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  imageUrl?: string;
+export const metadata: Metadata = {
+  title: "Dashboard - Halloween dos Freitas",
 };
 
 export default async function DashboardPage() {
