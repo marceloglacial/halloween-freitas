@@ -2,6 +2,7 @@ import BackButton from "@/components/back-button";
 import { fetchData } from "@/util/fetch-data";
 import VoteGrid from "@/components/votacao/vote-grid";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 interface CategoryPageParams {
   id: string;
@@ -23,6 +24,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const cookieStore = await cookies();
   const userCookie = cookieStore.get("user");
   const user: User = userCookie ? JSON.parse(userCookie.value) : null;
+
+  if (!user?.fullName) {
+    redirect("/votacao");
+  }
 
   // Filter group
   const isGroup = category.title?.toLowerCase().includes("grupo");

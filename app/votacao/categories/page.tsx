@@ -1,6 +1,7 @@
 import CategoryList from "@/components/votacao/category-list";
 import { fetchData } from "@/util/fetch-data";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export default async function PoolHome() {
   const cookieStore = await cookies();
@@ -11,6 +12,11 @@ export default async function PoolHome() {
       user = JSON.parse(userCookie.value);
     } catch {}
   }
+
+  if (!user.fullName) {
+    redirect("/votacao");
+  }
+
   const categories: Category[] = await fetchData("categories");
   if (!categories.length) return <p>Nenhuma categoria encontrada.</p>;
 
