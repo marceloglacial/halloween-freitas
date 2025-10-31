@@ -30,7 +30,7 @@ export const ResultList: FC<Results> = ({ users, totalVotes }): JSX.Element => {
         </button>
       )}
       {showList && (
-        <div className="grid gap-3">
+        <div className="flex flex-col gap-3">
           {allUsers.map((user, index) => (
             <React.Fragment key={user._id}>
               <ResultsUser
