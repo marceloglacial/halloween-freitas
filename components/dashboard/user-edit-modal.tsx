@@ -63,6 +63,17 @@ export function UserEditModal({
             />
             <span className="text-white">Grupo</span>
           </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!modalUser.junior}
+              onChange={(e) =>
+                setModalUser({ ...modalUser, junior: e.target.checked })
+              }
+              disabled={loading}
+            />
+            <span className="text-white">Junior</span>
+          </label>
           {modalUser.imageUrl ? (
             <CldImage
               src={modalUser.imageUrl}

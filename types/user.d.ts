@@ -4,6 +4,7 @@ type User = {
   email: string;
   imageUrl?: string;
   group?: boolean;
+  junior?: boolean;
 };
 
 interface UserListItemProps {

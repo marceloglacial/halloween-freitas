@@ -26,6 +26,18 @@ export function UserListItem({
         <div className="w-32 truncate text-sm text-gray-400 md:w-fit">
           {user.email}
         </div>
+        <div className="mt-1 flex gap-2">
+          {user.group && (
+            <span className="rounded bg-orange-200 px-2 py-1 text-xs text-orange-800">
+              Grupo
+            </span>
+          )}
+          {user.junior && (
+            <span className="rounded bg-blue-200 px-2 py-1 text-xs text-blue-800">
+              Junior
+            </span>
+          )}
+        </div>
       </div>
       <div className="flex lg:gap-2">
         <button
