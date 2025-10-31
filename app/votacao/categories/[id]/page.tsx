@@ -26,7 +26,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   // Filter group
   const isGroup = category.title?.toLowerCase().includes("grupo");
-  const allUsers: User[] = users.filter((u) => !!u.group === isGroup);
+  const isJunior = category.title?.toLowerCase().includes("j");
+  const allUsers: User[] = users.filter((u) => {
+    if (isGroup) return !!u.group === isGroup;
+    if (isJunior) return !!u.junior === isJunior;
+    return u;
+  });
 
   return (
     <section className="min-h-screen w-screen justify-center px-8 py-16 text-center">

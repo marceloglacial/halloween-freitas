@@ -6,6 +6,7 @@ export const ResultList: FC<Results> = ({ users, totalVotes }): JSX.Element => {
   const [showWinner, setShowWinner] = useState<boolean>(false);
   const [showList, setShowList] = useState<boolean>(false);
   const firstPlace = users[0];
+  const allUsers = users.slice(1);
 
   return (
     <div
@@ -30,7 +31,7 @@ export const ResultList: FC<Results> = ({ users, totalVotes }): JSX.Element => {
       )}
       {showList && (
         <div className="grid gap-3">
-          {users.map((user, index) => (
+          {allUsers.map((user, index) => (
             <React.Fragment key={user._id}>
               <ResultsUser
                 position={index + 2}
@@ -39,7 +40,7 @@ export const ResultList: FC<Results> = ({ users, totalVotes }): JSX.Element => {
                 totalVotes={totalVotes}
                 showWinner={false}
               />
-              {index < users.length - 1 && (
+              {index < allUsers.length - 1 && (
                 <hr className="border-t border-white/20" />
               )}
             </React.Fragment>
