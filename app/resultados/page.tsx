@@ -21,7 +21,7 @@ export default async function Resultados() {
             <Link
               href={`/resultados/${category._id}`}
               key={category._id}
-              className={`col-span-2 ${categories.length === index + 1 && "col-start-3"} flex items-center justify-center gap-6 rounded-xl p-4 lg:p-6 ${secondaryFont.className} bg-purple-600 text-left text-3xl`}
+              className={`col-span-2 ${categories.length === index + 1 && "lg:col-start-3"} flex items-center justify-center gap-6 rounded-xl p-4 lg:p-6 ${secondaryFont.className} bg-purple-600 text-left text-3xl`}
             >
               <span className="text-4xl lg:text-6xl">{category.icon}</span>{" "}
               <span className="text-xl">{category.title}</span>

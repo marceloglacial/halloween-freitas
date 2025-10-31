@@ -43,10 +43,10 @@ export default function UserList() {
             Criar Usuário
           </button>
           <Link
-            href={"/votacao"}
-            className="cursor-pointer rounded-lg bg-green-400 px-4 py-2 text-white hover:bg-green-400"
+            href={"/resultados"}
+            className="cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-400"
           >
-            Votação
+            Resultados
           </Link>
           <SignOutButton redirectUrl="/">
             <button className="cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700">
