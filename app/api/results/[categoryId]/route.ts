@@ -4,10 +4,10 @@ const client = new MongoClient(process.env.DATABASE_URL!);
 
 export async function GET(
   request: Request,
-  { params }: { params: { categoryId: string } },
+  context: { params: Promise<{ categoryId: string }> },
 ) {
   try {
-    const { categoryId } = params;
+    const { categoryId } = await context.params;
     if (!categoryId || typeof categoryId !== "string") {
       return new Response(JSON.stringify({ error: "Categoria inválida" }), {
         status: 400,

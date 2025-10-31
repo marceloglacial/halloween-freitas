@@ -1,6 +1,5 @@
 import BackButton from "@/components/back-button";
 import { ResultList } from "@/components/results/result-list";
-import { ResultsUser } from "@/components/results/results-user";
 import { fetchData } from "@/util/fetch-data";
 import React from "react";
 

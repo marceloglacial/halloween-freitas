@@ -1,7 +1,7 @@
 "use client";
 
 import { CldImage } from "next-cloudinary";
-import { FC, JSX, useState } from "react";
+import { FC, JSX } from "react";
 
 interface ResultsUserProps {
   user: UserWithVotes;
