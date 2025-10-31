@@ -9,12 +9,17 @@ export async function getCategories(): Promise<Category[]> {
   try {
     await client.connect();
     const db = client.db(DB_NAME);
-    const categories = await db.collection(COLLECTION).find({}).toArray();
+    const categories = await db
+      .collection(COLLECTION)
+      .find({})
+      .sort({ order: -1 })
+      .toArray();
     // Ensure all required fields for Category are present
     return categories.map((u) => ({
       _id: u._id.toString(),
       title: u.title ?? "",
       icon: u.icon ?? "",
+      order: u.order ?? "",
     }));
   } finally {
     await client.close();
@@ -34,6 +39,7 @@ export async function getCategoryById(id: string): Promise<Category | null> {
       _id: category._id.toString(),
       title: category.title,
       icon: category.icon,
+      order: category.order,
     };
   } finally {
     await client.close();
