@@ -40,7 +40,7 @@ const UserImageModal: React.FC<UserImageModalProps> = ({
           width={900}
           height={600}
           alt="User Image Large"
-          className="max-h-[80vh] max-w-[90vw] rounded-lg border-4 border-orange-400 object-cover object-top"
+          className="max-h-[80vh] max-w-[90vw] rounded-lg border-4 border-orange-400 object-cover object-top lg:max-h-[90vh] lg:max-w-[680px]"
         />
       </div>
     </div>
