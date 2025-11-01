@@ -23,7 +23,7 @@ export default async function ResultPage({ params }: ResultPageProps) {
   return (
     <section className="min-h-screen w-screen justify-center px-8 py-16 text-center">
       <BackButton href={"/resultados"} />
-      <h1 className="mt-8 mb-32 text-4xl lg:text-6xl">
+      <h1 className="mt-8 mb-24 text-4xl lg:mb-32 lg:text-6xl">
         {category.icon} {category.title}
       </h1>
       <ResultList users={results.users} totalVotes={results.totalVotes} />
