@@ -6,10 +6,7 @@ import {
 import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 
-const isProtectedRoute = createRouteMatcher([
-  "/dashboard(.*)",
-  "/resultados(.*)",
-]);
+const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
