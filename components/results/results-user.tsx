@@ -1,7 +1,8 @@
 "use client";
 
-import { CldImage } from "next-cloudinary";
-import { FC, JSX } from "react";
+import UserImageModal from "./UserImageModal";
+import UserImage from "./UserImage";
+import { FC, JSX, useState } from "react";
 
 interface ResultsUserProps {
   user: UserWithVotes;
@@ -12,6 +13,9 @@ interface ResultsUserProps {
 }
 export const ResultsUser: FC<ResultsUserProps> = (props): JSX.Element => {
   const animationClasse = props.showWinner ? "" : "animate-pulse blur-2xl";
+  const [modalOpen, setModalOpen] = useState(false);
+  const imageSrc = props.user.imageUrl || "halloween-freitas/apple-icon_fqkaye";
+
   if (props.position === 1) {
     return (
       <div className="relative">
@@ -21,13 +25,11 @@ export const ResultsUser: FC<ResultsUserProps> = (props): JSX.Element => {
           🥇
         </div>
         <div className={`flex flex-col items-center gap-4`}>
-          <CldImage
-            src={props.user.imageUrl || "halloween-freitas/apple-icon_fqkaye"}
-            width={900}
-            height={600}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            alt="User Image"
-            className={`h-68 w-68 rounded-full border-8 border-orange-400 object-cover ${animationClasse}`}
+          <UserImage
+            imageSrc={imageSrc}
+            position={props.position}
+            animationClasse={animationClasse}
+            onClick={() => setModalOpen(true)}
           />
           <div className="grid gap-8">
             <span className={`text-7xl font-bold ${animationClasse}`}>
@@ -42,6 +44,11 @@ export const ResultsUser: FC<ResultsUserProps> = (props): JSX.Element => {
             </span>
           </div>
         </div>
+        <UserImageModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          imageSrc={imageSrc}
+        />
       </div>
     );
   }
@@ -49,13 +56,11 @@ export const ResultsUser: FC<ResultsUserProps> = (props): JSX.Element => {
     <div className="flex items-center gap-4">
       <span className="w-fit">{props.position}o</span>
       <span className="w-fit">
-        <CldImage
-          src={props.user.imageUrl || "halloween-freitas/apple-icon_fqkaye"}
-          width={900}
-          height={600}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          alt="User Image"
-          className={`h-12 w-12 rounded-full border-orange-400 object-cover`}
+        <UserImage
+          imageSrc={imageSrc}
+          position={props.position}
+          animationClasse={animationClasse}
+          onClick={() => setModalOpen(true)}
         />
       </span>
       <span className="w-full flex-1 text-left">{props.user.fullName}</span>
@@ -65,6 +70,11 @@ export const ResultsUser: FC<ResultsUserProps> = (props): JSX.Element => {
           {((props.user.votes / props.totalVotes) * 100).toFixed(2)}%
         </span>
       </span>
+      <UserImageModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        imageSrc={imageSrc}
+      />
     </div>
   );
 };

@@ -3,8 +3,8 @@ import React, { FC, JSX, useState } from "react";
 import { ResultsUser } from "./results-user";
 
 export const ResultList: FC<Results> = ({ users, totalVotes }): JSX.Element => {
-  const [showWinner, setShowWinner] = useState<boolean>(false);
-  const [showList, setShowList] = useState<boolean>(false);
+  const [showWinner, setShowWinner] = useState<boolean>(true);
+  const [showList, setShowList] = useState<boolean>(true);
   const firstPlace = users[0];
   const allUsers = users.slice(1);
 
