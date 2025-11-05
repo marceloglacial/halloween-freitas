@@ -16,14 +16,7 @@ const timerUnits = [
 const Countdown: React.FC = (): JSX.Element => {
   const timeLeft: TimeLeft = useCountdown(TARGET_DATE);
 
-  if (isTimeLeftZero(timeLeft)) {
-    return (
-      <h2 className="text-center text-2xl lg:text-4xl">
-        Preparem suas vassouras e poções, pois a noite mais assustadora do ano
-        COMEÇOU!!
-      </h2>
-    );
-  }
+  if (isTimeLeftZero(timeLeft)) return <></>;
 
   return (
     <div className="count-down-main flex w-full items-start justify-center gap-2">

@@ -2,6 +2,7 @@ import { secondaryFont } from "@/util/fonts";
 import { FC, JSX } from "react";
 import Countdown from "@/components/countdown";
 import BackgroundVideo from "@/components/background-video";
+import { IS_PAST } from "@/constants/globals";
 
 const Hero: FC = (): JSX.Element => {
   return (
@@ -19,7 +20,8 @@ const Hero: FC = (): JSX.Element => {
             </span>{" "}
             dos Freitas
           </h1>
-          <Countdown />
+
+          {IS_PAST && <Countdown />}
         </div>
       </div>
     </div>

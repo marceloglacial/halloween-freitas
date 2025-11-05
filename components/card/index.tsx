@@ -13,9 +13,11 @@ const Card: FC<CardProps> = (props): JSX.Element => {
       <div data-card-header className={`${secondaryFont.className} text-4xl`}>
         {props.title}
       </div>
-      <div data-card-body className="lg:text-xl">
-        {props.description}
-      </div>
+      {props.description && (
+        <div data-card-body className="lg:text-xl">
+          {props.description}
+        </div>
+      )}{" "}
     </div>
   );
 };

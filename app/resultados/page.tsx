@@ -1,3 +1,4 @@
+import BackButton from "@/components/back-button";
 import { fetchData } from "@/util/fetch-data";
 import { secondaryFont } from "@/util/fonts";
 import Link from "next/link";
@@ -6,7 +7,8 @@ export default async function Resultados() {
   const categories: Category[] = await fetchData("categories");
   return (
     <main className="mx-auto max-w-6xl px-8 py-12">
-      <h1 className="mx-auto mb-8 text-center text-5xl font-bold">
+      <BackButton href="/" />
+      <h1 className="mx-auto mb-8 pt-16 text-center text-5xl font-bold">
         Resultados
       </h1>
       <div className="grid gap-8 lg:grid-cols-6">
