@@ -21,7 +21,7 @@ export function PhotoCard({ user, images, initialIndex }: PhotoCardProps) {
       className="cursor-pointer overflow-hidden rounded-lg bg-purple-600 shadow-md"
       onClick={handleOpenModal}
     >
-      <div className="relative h-80 w-full">
+      <div className="relative h-60 w-full lg:h-80">
         <CldImage
           src={user.imageUrl || "halloween-freitas/apple-icon_fqkaye"}
           width={300}
@@ -31,8 +31,8 @@ export function PhotoCard({ user, images, initialIndex }: PhotoCardProps) {
           className="h-full w-full object-cover"
         />
       </div>
-      <div className="p-4">
-        <h2 className="text-center font-semibold text-white">
+      <div className="flex min-h-16 items-center justify-center p-3 lg:p-4">
+        <h2 className="text-center text-sm font-semibold text-white">
           {user.fullName}
         </h2>
       </div>
