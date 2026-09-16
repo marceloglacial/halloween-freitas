@@ -1,6 +1,6 @@
 import { MongoServerError, ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
-import { getCurrentEvent, getEventPhase } from "@/lib/events";
+import { getCurrentEvent, getRegistrationState } from "@/lib/events";
 import {
   errorResponse,
   normalizeEmail,
@@ -11,8 +11,15 @@ import {
 export async function POST(request: Request) {
   try {
     const event = await getCurrentEvent();
-    if (!event || getEventPhase(event) !== "registration") {
+    if (!event) {
       return errorResponse("As inscrições não estão abertas", 403);
+    }
+    const registrationState = getRegistrationState(event);
+    if (registrationState === "upcoming") {
+      return errorResponse("As inscrições ainda não estão abertas", 403);
+    }
+    if (registrationState === "closed") {
+      return errorResponse("As inscrições estão encerradas", 403);
     }
 
     const body = await readJsonObject(request);

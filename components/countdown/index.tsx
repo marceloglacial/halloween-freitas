@@ -11,10 +11,11 @@ const timerUnits = [
   { key: "seconds", label: "seg" },
 ] as const;
 
-const Countdown: React.FC<{ targetDate: string }> = ({
+const Countdown: React.FC<{ targetDate: string; initialNow: string }> = ({
   targetDate,
+  initialNow,
 }): JSX.Element => {
-  const timeLeft: TimeLeft = useCountdown(targetDate);
+  const timeLeft: TimeLeft = useCountdown(targetDate, initialNow);
 
   if (isTimeLeftZero(timeLeft)) return <></>;
 

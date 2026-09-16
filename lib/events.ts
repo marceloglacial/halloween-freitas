@@ -96,6 +96,17 @@ export function getEventPhase(
   return "results";
 }
 
+export function getRegistrationState(
+  event: HalloweenEvent,
+  now = new Date(),
+): RegistrationState {
+  if (event.status !== "active") return "closed";
+  const time = now.getTime();
+  if (time < new Date(event.registrationOpensAt).getTime()) return "upcoming";
+  if (time >= new Date(event.registrationClosesAt).getTime()) return "closed";
+  return "open";
+}
+
 export function resultsArePublic(event: HalloweenEvent, now = new Date()) {
   const phase = getEventPhase(event, now);
   return phase === "results" || phase === "archived";

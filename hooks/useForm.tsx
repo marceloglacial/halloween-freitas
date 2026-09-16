@@ -26,7 +26,11 @@ export function useForm() {
       } else if (res.status === 409) {
         toast.error("Este email já está inscrito.");
       } else {
-        toast.error("Ocorreu um erro. Tente novamente.");
+        toast.error(
+          typeof data?.error === "string"
+            ? data.error
+            : "Ocorreu um erro. Tente novamente.",
+        );
       }
     } catch {
       toast.error("Erro de conexão. Tente novamente.");

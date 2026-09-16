@@ -6,9 +6,14 @@ import BackgroundVideo from "@/components/background-video";
 interface HeroProps {
   startsAt?: string;
   showCountdown: boolean;
+  initialNow: string;
 }
 
-const Hero: FC<HeroProps> = ({ startsAt, showCountdown }): JSX.Element => {
+const Hero: FC<HeroProps> = ({
+  startsAt,
+  showCountdown,
+  initialNow,
+}): JSX.Element => {
   return (
     <div className="relative flex items-center justify-center lg:min-h-screen 2xl:min-h-[900px]">
       <BackgroundVideo />
@@ -25,7 +30,9 @@ const Hero: FC<HeroProps> = ({ startsAt, showCountdown }): JSX.Element => {
             dos Freitas
           </h1>
 
-          {showCountdown && startsAt && <Countdown targetDate={startsAt} />}
+          {showCountdown && startsAt && (
+            <Countdown targetDate={startsAt} initialNow={initialNow} />
+          )}
         </div>
       </div>
     </div>

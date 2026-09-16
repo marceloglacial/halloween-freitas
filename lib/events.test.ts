@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getEventPhase, resultsArePublic } from "@/lib/events";
+import {
+  getEventPhase,
+  getRegistrationState,
+  resultsArePublic,
+} from "@/lib/events";
 
 const event: HalloweenEvent = {
   _id: "507f1f77bcf86cd799439011",
@@ -35,5 +39,29 @@ describe("event phases", () => {
     expect(
       resultsArePublic({ ...event, status: "archived" }, duringRegistration),
     ).toBe(true);
+  });
+
+  it("opens registration inclusively and closes it exclusively", () => {
+    expect(
+      getRegistrationState(event, new Date("2026-09-01T03:59:59.999Z")),
+    ).toBe("upcoming");
+    expect(
+      getRegistrationState(event, new Date(event.registrationOpensAt)),
+    ).toBe("open");
+    expect(
+      getRegistrationState(event, new Date("2026-10-15T03:59:59.999Z")),
+    ).toBe("open");
+    expect(
+      getRegistrationState(event, new Date(event.registrationClosesAt)),
+    ).toBe("closed");
+  });
+
+  it("keeps archived events closed regardless of their dates", () => {
+    expect(
+      getRegistrationState(
+        { ...event, status: "archived" },
+        new Date("2026-09-15T00:00:00Z"),
+      ),
+    ).toBe("closed");
   });
 });

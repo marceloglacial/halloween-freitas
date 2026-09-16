@@ -1,4 +1,5 @@
 type EventStatus = "active" | "archived";
+type RegistrationState = "upcoming" | "open" | "closed";
 type EventPhase =
   | "upcoming"
   | "registration"
