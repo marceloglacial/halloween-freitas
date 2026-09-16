@@ -7,10 +7,10 @@ interface CountdownProps {
   seconds: number;
 }
 
-export function useCountdown(targetDate: Date): CountdownProps {
+export function useCountdown(targetDate: string): CountdownProps {
   const calculateTimeLeft = useCallback((): CountdownProps => {
     const now = new Date().getTime();
-    const difference = targetDate.getTime() - now;
+    const difference = new Date(targetDate).getTime() - now;
 
     if (difference <= 0) {
       return {

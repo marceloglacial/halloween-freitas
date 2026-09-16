@@ -1,35 +1,59 @@
-import BackButton from "@/components/back-button";
-import { fetchData } from "@/util/fetch-data";
-import { secondaryFont } from "@/util/fonts";
 import Link from "next/link";
+import BackButton from "@/components/back-button";
+import { getEvents, resultsArePublic } from "@/lib/events";
+import { secondaryFont } from "@/util/fonts";
+import { getCategories } from "@/util/get-categories";
 
-export default async function Resultados() {
-  const categories: Category[] = await fetchData("categories");
+export const dynamic = "force-dynamic";
+
+export default async function ResultsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ event?: string }>;
+}) {
+  const events = (await getEvents()).filter((event) => resultsArePublic(event));
+  const requestedSlug = (await searchParams).event;
+  const event = events.find((item) => item.slug === requestedSlug) ?? events[0];
+  const categories = event ? await getCategories(event._id) : [];
+
   return (
     <main className="mx-auto max-w-6xl px-8 py-12">
       <BackButton href="/" />
       <h1 className="mx-auto mb-8 pt-16 text-center text-5xl font-bold">
         Resultados
       </h1>
-      <div className="grid gap-8 lg:grid-cols-6">
-        {!categories?.length && (
-          <p className="mt-4">Nenhuma categoria encontrada.</p>
-        )}
-
-        {categories
-          .slice()
-          .reverse()
-          .map((category, index) => (
+      {events.length > 1 && (
+        <nav aria-label="Eventos" className="mb-10 flex justify-center gap-3">
+          {events.map((item) => (
             <Link
-              href={`/resultados/${category._id}`}
-              key={category._id}
-              className={`col-span-2 ${categories.length === index + 1 && "lg:col-start-3"} flex items-center justify-center gap-6 rounded-xl p-4 lg:p-6 ${secondaryFont.className} bg-purple-600 text-left text-3xl`}
+              key={item._id}
+              href={`/resultados?event=${item.slug}`}
+              aria-current={item._id === event?._id ? "page" : undefined}
+              className={`rounded-lg px-4 py-2 ${item._id === event?._id ? "bg-orange-500 text-black" : "bg-white/10"}`}
             >
-              <span className="text-4xl lg:text-6xl">{category.icon}</span>{" "}
+              {item.title}
+            </Link>
+          ))}
+        </nav>
+      )}
+      {!event || !categories.length ? (
+        <p className="mt-4 text-center">Nenhum resultado publicado.</p>
+      ) : (
+        <div className="grid gap-8 lg:grid-cols-6">
+          {categories.map((category, index) => (
+            <Link
+              href={`/resultados/${category._id}?event=${event.slug}`}
+              key={category._id}
+              className={`col-span-2 ${categories.length === index + 1 ? "lg:col-start-3" : ""} flex items-center justify-center gap-6 rounded-xl bg-purple-600 p-4 text-left text-3xl lg:p-6 ${secondaryFont.className}`}
+            >
+              <span className="text-4xl lg:text-6xl" aria-hidden="true">
+                {category.icon}
+              </span>
               <span className="text-xl">{category.title}</span>
             </Link>
           ))}
-      </div>
+        </div>
+      )}
     </main>
   );
 }

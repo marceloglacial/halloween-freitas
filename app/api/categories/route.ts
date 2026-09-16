@@ -1,10 +1,15 @@
-// Temporary mock API for categories
 import { NextResponse } from "next/server";
 import { getCategories } from "@/util/get-categories";
+import { getCurrentEvent, getEventBySlug } from "@/lib/events";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const categories = await getCategories();
+    const slug = new URL(request.url).searchParams.get("event");
+    const event = slug ? await getEventBySlug(slug) : await getCurrentEvent();
+    if (!event) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+    const categories = await getCategories(event._id);
     return NextResponse.json(categories);
   } catch (error) {
     console.error(error);

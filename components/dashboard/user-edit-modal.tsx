@@ -11,12 +11,28 @@ export function UserEditModal({
   loading,
   error,
 }: UserEditModalProps & { handleCreate: (user: Partial<User>) => void }) {
+  const nameInputRef = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => {
+    if (!showModal) return;
+    nameInputRef.current?.focus();
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeModal();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [showModal, closeModal]);
+
   if (!showModal) return null;
   const isEdit = !!modalUser._id;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="user-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+    >
       <div className="w-full max-w-md rounded-lg bg-gray-900 p-6 shadow-lg">
-        <h2 className="mb-4 text-xl font-bold">
+        <h2 id="user-modal-title" className="mb-4 text-xl font-bold">
           {isEdit ? "Edit User" : "Create User"}
         </h2>
         <form
@@ -31,6 +47,8 @@ export function UserEditModal({
           className="space-y-4"
         >
           <input
+            ref={nameInputRef}
+            aria-label="Nome completo"
             type="text"
             value={modalUser.fullName || ""}
             onChange={(e) =>
@@ -42,6 +60,7 @@ export function UserEditModal({
             className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-white"
           />
           <input
+            aria-label="Email"
             type="email"
             value={modalUser.email || ""}
             onChange={(e) =>
@@ -80,7 +99,7 @@ export function UserEditModal({
               width={900}
               height={600}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              alt="User Image"
+              alt={`Foto de ${modalUser.fullName || "participante"}`}
               className="h-80 cursor-pointer overflow-hidden rounded object-contain"
               onClick={() => setModalUser({ ...modalUser, imageUrl: "" })}
             />

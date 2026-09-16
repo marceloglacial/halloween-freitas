@@ -6,9 +6,8 @@ import { UserEditModal } from "./user-edit-modal";
 import { useUsers } from "@/hooks/useUsers";
 import { UserListSearch } from "./user-list-search";
 import Link from "next/link";
-import { SignOutButton } from "@clerk/nextjs";
 
-export default function UserList() {
+export default function UserList({ event }: { event: HalloweenEvent }) {
   const {
     closeModal,
     error,
@@ -25,11 +24,11 @@ export default function UserList() {
     setSearch,
     showModal,
     users,
-  } = useUsers();
+  } = useUsers(event._id);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -43,16 +42,11 @@ export default function UserList() {
             Criar Usuário
           </button>
           <Link
-            href={"/resultados"}
+            href={`/resultados?event=${event.slug}`}
             className="cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-400"
           >
             Resultados
           </Link>
-          <SignOutButton redirectUrl="/">
-            <button className="cursor-pointer rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700">
-              Logout
-            </button>
-          </SignOutButton>
         </div>
       </div>
       <UserListSearch search={search} setSearch={setSearch} />

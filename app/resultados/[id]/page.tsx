@@ -1,32 +1,57 @@
+import { notFound } from "next/navigation";
 import BackButton from "@/components/back-button";
 import { ResultList } from "@/components/results/result-list";
-import { fetchData } from "@/util/fetch-data";
-import React from "react";
+import { getEventBySlug, resultsArePublic } from "@/lib/events";
+import { getCategoryResults } from "@/lib/results";
+import { getCategoryById } from "@/util/get-categories";
 
-export default async function ResultPage({ params }: ResultPageProps) {
-  const { id } = await params;
-  const results: Results = await fetchData(`results/${id}`);
-  const category: Category = await fetchData(`categories/${id}`);
+export const dynamic = "force-dynamic";
 
-  if (!results?.users)
+export default async function ResultPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ event?: string }>;
+}) {
+  const [{ id }, { event: eventSlug }] = await Promise.all([
+    params,
+    searchParams,
+  ]);
+  const [category, event] = await Promise.all([
+    getCategoryById(id),
+    eventSlug ? getEventBySlug(eventSlug) : null,
+  ]);
+  if (
+    !category ||
+    !event ||
+    category.eventId !== event._id ||
+    !resultsArePublic(event)
+  ) {
+    notFound();
+  }
+
+  const results = await getCategoryResults(event._id, category._id);
+  const backHref = `/resultados?event=${event.slug}`;
+  if (!results.users.length) {
     return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center gap-8">
-        <BackButton href={"/resultados"} />
+      <main className="flex min-h-screen w-full flex-col items-center justify-center gap-8">
+        <BackButton href={backHref} />
         <h1 className="text-4xl lg:text-6xl">
           {category.icon} {category.title}
         </h1>
-
         <p className="text-2xl text-orange-400">Nenhum voto nessa categoria.</p>
-      </div>
+      </main>
     );
+  }
 
   return (
-    <section className="min-h-screen w-screen justify-center px-8 py-16 text-center">
-      <BackButton href={"/resultados"} />
+    <main className="min-h-screen w-full px-8 py-16 text-center">
+      <BackButton href={backHref} />
       <h1 className="mt-8 mb-24 text-4xl lg:mb-32 lg:text-6xl">
         {category.icon} {category.title}
       </h1>
       <ResultList users={results.users} totalVotes={results.totalVotes} />
-    </section>
+    </main>
   );
 }

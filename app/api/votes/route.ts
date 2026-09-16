@@ -1,109 +1,88 @@
-import { NextResponse } from "next/server";
-import { MongoClient, ObjectId } from "mongodb";
+import { MongoServerError, ObjectId } from "mongodb";
+import { getGuestSession } from "@/lib/auth/guest-session";
+import { getDb } from "@/lib/db";
+import { getCurrentEvent, getEventPhase } from "@/lib/events";
+import { errorResponse, parseObjectId, readJsonObject } from "@/lib/http";
+import { getCategoryById } from "@/util/get-categories";
+import { getUserById } from "@/lib/users";
+import { isEligibleCandidate } from "@/lib/voting";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const voterId = searchParams.get("voterId");
-  if (!voterId) {
-    return NextResponse.json({ error: "voterId is required" }, { status: 400 });
-  }
-  const client = new MongoClient(process.env.DATABASE_URL!);
+export async function GET() {
   try {
-    await client.connect();
-    const db = client.db(process.env.DATABASE_NAME);
-    const votes = await db
+    const session = await getGuestSession();
+    if (!session) return errorResponse("Sessão inválida", 401);
+
+    const votes = await (
+      await getDb()
+    )
       .collection("votes")
-      .find({ voterId: new ObjectId(voterId) })
+      .find(
+        {
+          eventId: new ObjectId(session.eventId),
+          voterId: new ObjectId(session.userId),
+        },
+        { projection: { categoryId: 1 } },
+      )
       .toArray();
-    return NextResponse.json(votes, { status: 200 });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 },
+    return Response.json(
+      votes.map((vote) => ({ categoryId: vote.categoryId.toString() })),
     );
-  } finally {
-    await client.close();
+  } catch (error) {
+    console.error("Vote lookup failed", error);
+    return errorResponse("Não foi possível carregar os votos", 500);
   }
 }
 
 export async function POST(request: Request) {
-  const client = new MongoClient(process.env.DATABASE_URL!);
   try {
-    const body = await request.json();
-    const { voterId, voteForId, categoryId } = body;
+    const session = await getGuestSession();
+    if (!session) return errorResponse("Sessão inválida", 401);
 
-    if (!voterId || !voteForId || !categoryId) {
-      return NextResponse.json(
-        { error: "Campos obrigatórios faltando" },
-        { status: 400 },
-      );
+    const event = await getCurrentEvent();
+    if (
+      !event ||
+      event._id !== session.eventId ||
+      getEventPhase(event) !== "voting"
+    ) {
+      return errorResponse("A votação não está aberta", 403);
     }
 
-    if (voterId === voteForId) {
-      return NextResponse.json(
-        { error: "Você não pode votar em si mesmo" },
-        { status: 400 },
-      );
+    const body = await readJsonObject(request);
+    if (!body) return errorResponse("Corpo da requisição inválido", 400);
+    const categoryId = parseObjectId(body.categoryId);
+    const voteForId = parseObjectId(body.voteForId);
+    if (!categoryId || !voteForId) return errorResponse("Voto inválido", 400);
+    if (session.userId === voteForId.toString()) {
+      return errorResponse("Você não pode votar em si mesmo", 400);
     }
 
-    await client.connect();
-    const db = client.db(process.env.DATABASE_NAME);
-
-    const voterObjectId = new ObjectId(voterId);
-    const voteForObjectId = new ObjectId(voteForId);
-    const categoryObjectId = new ObjectId(categoryId);
-
-    // Check if voter exists
-    const voter = await db.collection("users").findOne({ _id: voterObjectId });
-    if (!voter)
-      return NextResponse.json(
-        { error: "Votante não encontrado" },
-        { status: 404 },
-      );
-
-    // Check if vote target exists
-    const voteForUser = await db
-      .collection("users")
-      .findOne({ _id: voteForObjectId });
-    if (!voteForUser)
-      return NextResponse.json(
-        { error: "Usuário para votar não encontrado" },
-        { status: 404 },
-      );
-
-    // Check if voter already voted in this category
-    const existingVote = await db.collection("votes").findOne({
-      voterId: voterObjectId,
-      categoryId: categoryObjectId,
-    });
-
-    if (existingVote) {
-      return NextResponse.json(
-        { error: "Você já votou nesta categoria" },
-        { status: 400 },
-      );
+    const [category, candidate] = await Promise.all([
+      getCategoryById(categoryId.toString()),
+      getUserById(voteForId.toString()),
+    ]);
+    if (!category || category.eventId !== session.eventId) {
+      return errorResponse("Categoria não encontrada", 404);
+    }
+    if (!candidate || candidate.eventId !== session.eventId) {
+      return errorResponse("Candidato não encontrado", 404);
+    }
+    if (!isEligibleCandidate(category, candidate, session.userId)) {
+      return errorResponse("Candidato inelegível para esta categoria", 400);
     }
 
-    // Insert the vote
-    await db.collection("votes").insertOne({
-      voterId: voterObjectId,
-      voteForId: voteForObjectId,
-      categoryId: categoryObjectId,
+    await (await getDb()).collection("votes").insertOne({
+      eventId: new ObjectId(session.eventId),
+      voterId: new ObjectId(session.userId),
+      voteForId,
+      categoryId,
       votedAt: new Date(),
     });
-
-    return NextResponse.json(
-      { message: "Voto registrado com sucesso" },
-      { status: 200 },
-    );
+    return Response.json({ message: "Voto registrado com sucesso" });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: "Erro interno do servidor" },
-      { status: 500 },
-    );
-  } finally {
-    await client.close();
+    if (error instanceof MongoServerError && error.code === 11000) {
+      return errorResponse("Você já votou nesta categoria", 409);
+    }
+    console.error("Vote creation failed", error);
+    return errorResponse("Não foi possível registrar o voto", 500);
   }
 }

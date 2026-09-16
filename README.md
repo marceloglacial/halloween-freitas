@@ -1,63 +1,42 @@
-# Halloween Freitas
+# Halloween dos Freitas
 
-A modern event landing page built with Next.js, React, and Tailwind CSS for the Halloween Freitas event. Features include a countdown timer, event info, schedule, registration form, and responsive design.
+Event registration, voting, results, and photo gallery built with Next.js 16,
+React 19, TypeScript, Tailwind CSS, Clerk, MongoDB, and Cloudinary.
 
-## Features
+## Local setup
 
-- Countdown timer to event
-- Event information and schedule
-- Registration form (API route)
-- Custom card components
-- Responsive layout
-- Optimized fonts and assets
+1. Install dependencies with `pnpm install`.
+2. Copy `.env.example` to `.env.local` and fill in database, Clerk, Cloudinary,
+   and session values. Generate `SESSION_SECRET` with `openssl rand -base64 32`.
+3. Start the app with `pnpm dev` and open `http://localhost:3000`.
 
-## Tech Stack
+Run `pnpm lint`, `pnpm test`, and `pnpm build` before submitting changes.
 
-- Next.js (App Router)
-- React
-- Tailwind CSS
-- TypeScript
+## Event data migration
 
-## Project Structure
-
-```
-app/         # Main app directory (routing, layout, pages, API)
-components/  # Reusable UI components (card, countdown, form, home, footer)
-constants/   # Global constants
-hooks/       # Custom React hooks
-public/      # Static assets (images, video)
-types/       # TypeScript type definitions
-util/        # Utility functions
-```
-
-## Getting Started
-
-Install dependencies:
+Back up the database, configure `DATABASE_URL` and `DATABASE_NAME` in
+`.env.local` (or `.env`), then run:
 
 ```bash
-pnpm install
+pnpm migrate:events
 ```
 
-Run the development server:
+The idempotent migration creates the archived 2025 event in the
+`America/Toronto` timezone, associates existing users, categories, and votes,
+and creates uniqueness indexes. It stops without creating indexes when
+duplicate emails or votes require manual resolution.
 
-```bash
-pnpm dev
-```
+Future events are documents in the `events` collection, with one event per
+year. Admins can create a year, copy the previous year's categories, edit its
+schedule, and explicitly activate it from `/dashboard`. Activating a year
+archives the previously active event. All schedule fields are stored as BSON
+dates, while `timezone` is an IANA name.
 
-Open [http://localhost:3000](http://localhost:3000) to view the site.
+## Access boundaries
 
-## Editing
-
-- Main page: `app/page.tsx`
-- Layout: `app/layout.tsx`
-- Global styles: `app/globals.css`
-- Components: `components/`
-- API route: `app/api/register/route.ts`
-
-## Deployment
-
-Deploy easily on [Vercel](https://vercel.com/) or any platform supporting Next.js.
-
----
-
-For questions or contributions, feel free to open an issue or pull request.
+- Clerk users with `publicMetadata.role: "admin"` can access the dashboard and
+  `/api/admin/*` routes.
+- Guests enter their registered email to receive a signed, HTTP-only voting
+  session. Voting APIs never trust a client-provided voter ID.
+- Photos and published results are public. Email addresses are returned only
+  by authenticated admin endpoints.

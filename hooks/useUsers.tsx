@@ -1,71 +1,49 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
-export function useUsers() {
+export function useUsers(eventId: string) {
   const [users, setUsers] = useState<User[]>([]);
-  const [user, setUser] = useState<User | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [showModal, setShowModal] = useState(false);
   const [modalUser, setModalUser] = useState<Partial<User>>({});
 
-  async function fetchUsers() {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/users");
-      if (!res.ok) throw new Error("Failed to fetch users");
-      const data = await res.json();
-      setUsers(data);
-    } catch (err: unknown) {
-      setUsers([]);
-      setError(
-        typeof err === "object" &&
-          err &&
-          "message" in err &&
-          typeof (err as { message?: unknown }).message === "string"
-          ? (err as { message: string }).message
-          : "Error fetching users",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function getUserByEmail(email: string) {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch(`/api/users?email=${encodeURIComponent(email)}`);
-      if (!res.ok) throw new Error("Usuário não encontrado!");
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setUser(data[0]);
+  const fetchUsers = useCallback(
+    async function fetchUsers() {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await fetch(
+          `/api/admin/users?eventId=${encodeURIComponent(eventId)}`,
+        );
+        if (!res.ok) throw new Error("Failed to fetch users");
+        const data = await res.json();
+        setUsers(data);
+      } catch (err: unknown) {
+        setUsers([]);
+        setError(
+          typeof err === "object" &&
+            err &&
+            "message" in err &&
+            typeof (err as { message?: unknown }).message === "string"
+            ? (err as { message: string }).message
+            : "Error fetching users",
+        );
+      } finally {
+        setLoading(false);
       }
-      setUser(data || null);
-    } catch (err: unknown) {
-      setError(
-        typeof err === "object" &&
-          err &&
-          "message" in err &&
-          typeof (err as { message?: unknown }).message === "string"
-          ? (err as { message: string }).message
-          : "Erro de conexão!",
-      );
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }
+    },
+    [eventId],
+  );
 
   async function handleEdit(user: Partial<User>) {
     setError("");
     try {
       setLoading(true);
-      const res = await fetch("/api/users", {
+      const res = await fetch("/api/admin/users", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(user),
+        body: JSON.stringify({ ...user, eventId }),
       });
       if (!res.ok) throw new Error("Failed to update user");
       const updated = await res.json();
@@ -93,10 +71,10 @@ export function useUsers() {
     setError("");
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      const res = await fetch("/api/users", {
+      const res = await fetch("/api/admin/users", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ _id }),
+        body: JSON.stringify({ _id, eventId }),
       });
       if (!res.ok) throw new Error("Failed to delete user");
       setUsers((prev: User[]) => prev.filter((u: User) => u._id !== _id));
@@ -133,10 +111,10 @@ export function useUsers() {
     setError("");
     try {
       setLoading(true);
-      const res = await fetch("/api/users", {
+      const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(user),
+        body: JSON.stringify({ ...user, eventId }),
       });
       if (!res.ok) throw new Error("Failed to create user");
       const created = await res.json();
@@ -156,18 +134,17 @@ export function useUsers() {
     }
   }
 
-  function closeModal() {
+  const closeModal = useCallback(function closeModal() {
     setShowModal(false);
     setModalUser({});
     setError("");
-  }
+  }, []);
 
   return {
     closeModal,
     error,
     fetchUsers,
     filteredUsers,
-    getUserByEmail,
     handleDelete,
     handleEdit,
     handleCreate,
@@ -178,9 +155,7 @@ export function useUsers() {
     setModalUser,
     setSearch,
     setShowModal,
-    setUser,
     showModal,
-    user,
     users,
   };
 }
