@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BackButton from "@/components/back-button";
+import FeatureUnavailable from "@/components/feature-unavailable";
 import { getEvents, resultsArePublic } from "@/lib/events";
 import { secondaryFont } from "@/util/fonts";
 import { getCategories } from "@/util/get-categories";
@@ -11,9 +12,32 @@ export default async function ResultsPage({
 }: {
   searchParams: Promise<{ event?: string }>;
 }) {
-  const events = (await getEvents()).filter((event) => resultsArePublic(event));
+  const allEvents = await getEvents();
+  const events = allEvents.filter((event) => resultsArePublic(event));
   const requestedSlug = (await searchParams).event;
-  const event = events.find((item) => item.slug === requestedSlug) ?? events[0];
+  const requestedEvent = requestedSlug
+    ? allEvents.find((item) => item.slug === requestedSlug)
+    : null;
+  if (
+    (requestedSlug && !requestedEvent) ||
+    (requestedEvent && !resultsArePublic(requestedEvent))
+  ) {
+    return (
+      <FeatureUnavailable
+        title="Resultados indisponíveis"
+        message="Os resultados deste evento ainda não foram publicados."
+      />
+    );
+  }
+  const event = requestedEvent ?? events[0];
+  if (!event) {
+    return (
+      <FeatureUnavailable
+        title="Resultados indisponíveis"
+        message="Nenhum resultado foi publicado ainda."
+      />
+    );
+  }
   const categories = event ? await getCategories(event._id) : [];
 
   return (
@@ -36,7 +60,7 @@ export default async function ResultsPage({
           ))}
         </nav>
       )}
-      {!event || !categories.length ? (
+      {!categories.length ? (
         <p className="mt-4 text-center">Nenhum resultado publicado.</p>
       ) : (
         <div className="grid gap-8 lg:grid-cols-6">

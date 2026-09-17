@@ -3,11 +3,16 @@ import { getCategoryById } from "@/util/get-categories";
 import { errorResponse } from "@/lib/http";
 import { getPublicUsersForEvent } from "@/lib/users";
 import { isEligibleCandidate } from "@/lib/voting";
+import { getCurrentEvent, isVotingOpen } from "@/lib/events";
 
 export async function GET(request: Request) {
   try {
     const session = await getGuestSession();
     if (!session) return errorResponse("Sessão inválida", 401);
+    const event = await getCurrentEvent();
+    if (!event || event._id !== session.eventId || !isVotingOpen(event)) {
+      return errorResponse("A votação não está aberta", 403);
+    }
 
     const categoryId = new URL(request.url).searchParams.get("categoryId");
     const category = categoryId ? await getCategoryById(categoryId) : null;

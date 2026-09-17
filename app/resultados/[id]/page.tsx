@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import BackButton from "@/components/back-button";
+import FeatureUnavailable from "@/components/feature-unavailable";
 import { ResultList } from "@/components/results/result-list";
 import { getEventBySlug, resultsArePublic } from "@/lib/events";
 import { getCategoryResults } from "@/lib/results";
@@ -22,13 +23,16 @@ export default async function ResultPage({
     getCategoryById(id),
     eventSlug ? getEventBySlug(eventSlug) : null,
   ]);
-  if (
-    !category ||
-    !event ||
-    category.eventId !== event._id ||
-    !resultsArePublic(event)
-  ) {
+  if (!category || !event || category.eventId !== event._id) {
     notFound();
+  }
+  if (!resultsArePublic(event)) {
+    return (
+      <FeatureUnavailable
+        title="Resultados indisponíveis"
+        message="Os resultados deste evento ainda não foram publicados."
+      />
+    );
   }
 
   const results = await getCategoryResults(event._id, category._id);

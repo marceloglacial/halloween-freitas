@@ -33,6 +33,7 @@ export default async function DashboardPage({
         initialEvents={events}
         initialYear={selected?.year}
         initialTab={query.tab === "settings" ? "settings" : "guests"}
+        initialNow={new Date().toISOString()}
       />
     </main>
   );

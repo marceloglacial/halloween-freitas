@@ -1,34 +1,50 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
+  cascadeScheduleField,
+  EventDateField,
   EventInput,
+  LocalEventSchedule,
+  ScheduleCollision,
+  eventDateLabels,
   eventDateFields,
   eventToLocalSchedule,
+  getScheduleCascadeFields,
+  getScheduleFieldBounds,
+  getScheduleCollisions,
+  isLocalDateTime,
+  scheduleCollisionMessage,
   shiftEventSchedule,
+  withDerivedRegistrationClose,
 } from "@/lib/event-schedule";
 import UserList from "./user-list";
 import LogoutButton from "@/components/logout-button";
 
 type DashboardTab = "settings" | "guests";
 
-const dateLabels: Record<(typeof eventDateFields)[number], string> = {
-  registrationOpensAt: "Abertura das inscrições",
-  registrationClosesAt: "Encerramento das inscrições",
-  votingOpensAt: "Abertura da votação",
-  startsAt: "Início do evento",
-  votingClosesAt: "Encerramento da votação",
-  resultsPublishedAt: "Publicação dos resultados",
+const scheduleHelpText: Partial<Record<EventDateField, string>> = {
+  registrationClosesAt:
+    "Definido automaticamente para um minuto antes do início do evento.",
+  startsAt:
+    "Ao alterar esta data, o encerramento das inscrições será ajustado.",
 };
 
+function eventSchedule(value: EventInput): LocalEventSchedule {
+  return Object.fromEntries(
+    eventDateFields.map((field) => [field, value[field]]),
+  ) as LocalEventSchedule;
+}
+
 function eventForm(event: HalloweenEvent): EventInput {
+  const schedule = withDerivedRegistrationClose(eventToLocalSchedule(event));
   return {
     year: event.year,
     title: event.title,
     timezone: event.timezone,
-    ...eventToLocalSchedule(event),
+    ...schedule,
   };
 }
 
@@ -44,11 +60,15 @@ function EventForm({
   setValue,
   disabled,
   yearDisabled,
+  collisions,
+  onDateChange,
 }: {
   value: EventInput;
   setValue: (value: EventInput) => void;
   disabled: boolean;
   yearDisabled: boolean;
+  collisions: ScheduleCollision[];
+  onDateChange: (field: EventDateField, value: string) => void;
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -94,21 +114,66 @@ function EventForm({
           className="rounded border border-white/20 bg-white/10 px-3 py-2"
         />
       </label>
-      {eventDateFields.map((field) => (
-        <label key={field} className="grid gap-1 text-sm">
-          {dateLabels[field]}
-          <input
-            type="datetime-local"
-            required
-            disabled={disabled}
-            value={value[field]}
-            onChange={(event) =>
-              setValue({ ...value, [field]: event.target.value })
-            }
-            className="rounded border border-white/20 bg-white/10 px-3 py-2"
-          />
-        </label>
-      ))}
+      {eventDateFields.map((field) => {
+        const bounds = getScheduleFieldBounds(value, field, value.year);
+        const helpText = scheduleHelpText[field];
+        const fieldCollisions = collisions.filter(
+          ({ earlierField, laterField }) =>
+            earlierField === field || laterField === field,
+        );
+        const fieldMessages = collisions.filter(
+          ({ laterField }) => laterField === field,
+        );
+        const describedBy = fieldCollisions
+          .map(
+            ({ earlierField, laterField }) =>
+              `schedule-error-${earlierField}-${laterField}`,
+          )
+          .concat(helpText ? `schedule-shift-help-${field}` : [])
+          .join(" ");
+
+        return (
+          <label key={field} className="grid gap-1 text-sm">
+            {eventDateLabels[field]}
+            <input
+              type="datetime-local"
+              step="60"
+              min={bounds.min}
+              max={bounds.max}
+              required
+              disabled={disabled}
+              readOnly={field === "registrationClosesAt"}
+              value={value[field]}
+              aria-invalid={fieldCollisions.length > 0 || undefined}
+              aria-describedby={describedBy || undefined}
+              onChange={(event) => onDateChange(field, event.target.value)}
+              className={`rounded border bg-white/10 px-3 py-2 read-only:cursor-not-allowed read-only:opacity-70 ${
+                fieldCollisions.length > 0
+                  ? "border-red-500 ring-1 ring-red-500"
+                  : "border-white/20"
+              }`}
+            />
+            {helpText && (
+              <span
+                id={`schedule-shift-help-${field}`}
+                className="text-xs text-gray-300"
+              >
+                {helpText}
+              </span>
+            )}
+            {fieldMessages.map((collision) => (
+              <span
+                key={`${collision.earlierField}-${collision.laterField}`}
+                id={`schedule-error-${collision.earlierField}-${collision.laterField}`}
+                aria-live="polite"
+                className="text-sm text-red-400"
+              >
+                {scheduleCollisionMessage(collision)}
+              </span>
+            ))}
+          </label>
+        );
+      })}
     </div>
   );
 }
@@ -117,10 +182,12 @@ export default function EventDashboard({
   initialEvents,
   initialYear,
   initialTab,
+  initialNow,
 }: {
   initialEvents: HalloweenEvent[];
   initialYear?: number;
   initialTab: DashboardTab;
+  initialNow: string;
 }) {
   const router = useRouter();
   const [events, setEvents] = useState(initialEvents);
@@ -129,8 +196,22 @@ export default function EventDashboard({
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(false);
   const selected = events.find((event) => event.year === year) ?? events[0];
+  const eventHasStarted = selected
+    ? new Date(selected.startsAt).getTime() <= new Date(initialNow).getTime()
+    : false;
   const [draft, setDraft] = useState<EventInput | null>(
     selected ? eventForm(selected) : null,
+  );
+  const dateAnchors = useRef<LocalEventSchedule>(
+    draft
+      ? eventSchedule(draft)
+      : (Object.fromEntries(
+          eventDateFields.map((field) => [field, ""]),
+        ) as LocalEventSchedule),
+  );
+  const collisions = useMemo(
+    () => (draft ? getScheduleCollisions(draft) : []),
+    [draft],
   );
 
   const nextYear = useMemo(
@@ -151,8 +232,10 @@ export default function EventDashboard({
   function selectEvent(nextYearValue: number) {
     const event = events.find((item) => item.year === nextYearValue);
     if (!event) return;
+    const nextDraft = eventForm(event);
     setCreating(false);
-    setDraft(eventForm(event));
+    dateAnchors.current = eventSchedule(nextDraft);
+    setDraft(nextDraft);
     navigate(nextYearValue, tab);
   }
 
@@ -162,12 +245,36 @@ export default function EventDashboard({
         .map((item) => (item._id === event._id ? event : item))
         .sort((a, b) => b.year - a.year),
     );
-    setDraft(eventForm(event));
+    const nextDraft = eventForm(event);
+    dateAnchors.current = eventSchedule(nextDraft);
+    setDraft(nextDraft);
+  }
+
+  function updateEventDate(field: EventDateField, nextValue: string) {
+    if (!draft) return;
+    const nextSchedule = cascadeScheduleField(
+      draft,
+      field,
+      nextValue,
+      dateAnchors.current[field],
+    );
+    if (isLocalDateTime(nextValue)) {
+      for (const cascadedField of getScheduleCascadeFields(field)) {
+        if (isLocalDateTime(nextSchedule[cascadedField])) {
+          dateAnchors.current[cascadedField] = nextSchedule[cascadedField];
+        }
+      }
+    }
+    setDraft({ ...draft, ...nextSchedule });
   }
 
   async function saveEvent(event: FormEvent) {
     event.preventDefault();
     if (!selected || !draft) return;
+    if (collisions.length > 0) {
+      toast.error(scheduleCollisionMessage(collisions[0]));
+      return;
+    }
     setBusy(true);
     try {
       const response = await fetch(`/api/admin/events/${selected._id}`, {
@@ -213,7 +320,9 @@ export default function EventDashboard({
                 : item.status,
         })),
       );
-      setDraft(eventForm(changed));
+      const nextDraft = eventForm(changed);
+      dateAnchors.current = eventSchedule(nextDraft);
+      setDraft(nextDraft);
       toast.success(
         action === "activate" ? "Evento ativado" : "Evento arquivado",
       );
@@ -225,20 +334,70 @@ export default function EventDashboard({
     }
   }
 
+  async function changeLifecycle(
+    action:
+      "start-voting" | "end-voting" | "publish-results" | "unpublish-results",
+  ) {
+    if (!selected) return;
+    const messages = {
+      "start-voting":
+        selected.votingStatus === "ended"
+          ? "Reabrir a votação? Os resultados serão ocultados automaticamente."
+          : "Iniciar a votação agora?",
+      "end-voting": "Encerrar a votação agora?",
+      "publish-results": "Publicar os resultados agora?",
+      "unpublish-results": "Ocultar os resultados agora?",
+    };
+    if (!window.confirm(messages[action])) return;
+
+    setBusy(true);
+    try {
+      const response = await fetch(
+        `/api/admin/events/${selected._id}/lifecycle`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action }),
+        },
+      );
+      if (!response.ok) throw new Error(await responseError(response));
+      const changed = (await response.json()) as HalloweenEvent;
+      replaceEvent(changed);
+      const successMessages = {
+        "start-voting": "Votação aberta",
+        "end-voting": "Votação encerrada",
+        "publish-results": "Resultados publicados",
+        "unpublish-results": "Resultados ocultados",
+      };
+      toast.success(successMessages[action]);
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro inesperado");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function openCreate() {
     if (!selected) return;
-    setCreating(true);
-    setDraft({
+    const nextDraft = {
       year: nextYear,
       title: `Halloween dos Freitas ${nextYear}`,
       timezone: selected.timezone,
       ...shiftEventSchedule(selected, nextYear),
-    });
+    };
+    setCreating(true);
+    dateAnchors.current = eventSchedule(nextDraft);
+    setDraft(nextDraft);
   }
 
   async function createEvent(event: FormEvent) {
     event.preventDefault();
     if (!selected || !draft) return;
+    if (collisions.length > 0) {
+      toast.error(scheduleCollisionMessage(collisions[0]));
+      return;
+    }
     setBusy(true);
     try {
       const response = await fetch("/api/admin/events", {
@@ -251,8 +410,10 @@ export default function EventDashboard({
       setEvents((current) =>
         [...current, created].sort((a, b) => b.year - a.year),
       );
+      const nextDraft = eventForm(created);
       setCreating(false);
-      setDraft(eventForm(created));
+      dateAnchors.current = eventSchedule(nextDraft);
+      setDraft(nextDraft);
       navigate(created.year, "settings");
       toast.success("Evento criado com as categorias do ano anterior");
     } catch (error) {
@@ -348,20 +509,24 @@ export default function EventDashboard({
             setValue={setDraft}
             disabled={busy}
             yearDisabled={false}
+            collisions={collisions}
+            onDateChange={updateEventDate}
           />
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={() => {
+                const nextDraft = eventForm(selected);
                 setCreating(false);
-                setDraft(eventForm(selected));
+                dateAnchors.current = eventSchedule(nextDraft);
+                setDraft(nextDraft);
               }}
               className="rounded-lg bg-gray-700 px-4 py-2"
             >
               Cancelar
             </button>
             <button
-              disabled={busy}
+              disabled={busy || collisions.length > 0}
               className="rounded-lg bg-orange-500 px-4 py-2 font-bold text-black disabled:opacity-50"
             >
               {busy ? "Criando..." : "Criar evento"}
@@ -381,7 +546,93 @@ export default function EventDashboard({
             setValue={setDraft}
             disabled={busy}
             yearDisabled
+            collisions={collisions}
+            onDateChange={updateEventDate}
           />
+          <section className="grid gap-4 rounded-xl border border-white/20 p-4 md:grid-cols-2">
+            <div className="space-y-3">
+              <div>
+                <h2 className="text-xl font-semibold">Votação</h2>
+                <p className="text-sm text-gray-300">
+                  {selected.votingStatus === "open"
+                    ? "A votação está aberta."
+                    : selected.votingStatus === "ended"
+                      ? "A votação foi encerrada."
+                      : "A votação ainda não foi iniciada."}
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={
+                  busy ||
+                  selected.status !== "active" ||
+                  (selected.votingStatus !== "open" && !eventHasStarted)
+                }
+                onClick={() =>
+                  changeLifecycle(
+                    selected.votingStatus === "open"
+                      ? "end-voting"
+                      : "start-voting",
+                  )
+                }
+                className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black disabled:opacity-50"
+              >
+                {selected.votingStatus === "open"
+                  ? "Encerrar votação"
+                  : selected.votingStatus === "ended"
+                    ? "Reabrir votação"
+                    : "Iniciar votação"}
+              </button>
+              {selected.status !== "active" && (
+                <p className="text-xs text-gray-300">
+                  Ative o evento para controlar a votação.
+                </p>
+              )}
+              {selected.status === "active" &&
+                selected.votingStatus !== "open" &&
+                !eventHasStarted && (
+                  <p className="text-xs text-gray-300">
+                    A votação só pode começar após o início do evento.
+                  </p>
+                )}
+            </div>
+            <div className="space-y-3">
+              <div>
+                <h2 className="text-xl font-semibold">Resultados</h2>
+                <p className="text-sm text-gray-300">
+                  {selected.resultsPublished
+                    ? "Os resultados estão publicados."
+                    : "Os resultados estão ocultos."}
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={
+                  busy ||
+                  (!selected.resultsPublished &&
+                    selected.votingStatus !== "ended")
+                }
+                onClick={() =>
+                  changeLifecycle(
+                    selected.resultsPublished
+                      ? "unpublish-results"
+                      : "publish-results",
+                  )
+                }
+                className="rounded-lg bg-green-600 px-4 py-2 font-semibold disabled:opacity-50"
+              >
+                {selected.resultsPublished
+                  ? "Ocultar resultados"
+                  : "Publicar resultados"}
+              </button>
+              {!selected.resultsPublished &&
+                selected.votingStatus !== "ended" && (
+                  <p className="text-xs text-gray-300">
+                    Encerre a votação antes de publicar os resultados.
+                  </p>
+                )}
+            </div>
+          </section>
           <div className="flex flex-wrap justify-between gap-3">
             <button
               type="button"
@@ -398,7 +649,7 @@ export default function EventDashboard({
                 : "Ativar evento"}
             </button>
             <button
-              disabled={busy}
+              disabled={busy || collisions.length > 0}
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold disabled:opacity-50"
             >
               {busy ? "Salvando..." : "Salvar alterações"}

@@ -12,14 +12,24 @@ export async function POST(
   const { id } = await params;
   if (!ObjectId.isValid(id)) return errorResponse("Evento inválido", 400);
   try {
-    const result = await (
-      await getDb()
-    )
+    const db = await getDb();
+    const result = await db
       .collection("events")
-      .updateOne(
-        { _id: new ObjectId(id) },
-        { $set: { status: "archived", updatedAt: new Date() } },
-      );
+      .updateOne({ _id: new ObjectId(id) }, [
+        {
+          $set: {
+            status: "archived",
+            votingStatus: {
+              $cond: [
+                { $eq: ["$votingStatus", "open"] },
+                "ended",
+                "$votingStatus",
+              ],
+            },
+            updatedAt: new Date(),
+          },
+        },
+      ]);
     if (!result.matchedCount)
       return errorResponse("Evento não encontrado", 404);
     return Response.json(await getEventById(id));

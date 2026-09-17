@@ -3,7 +3,7 @@ import {
   createGuestSession,
   getGuestSession,
 } from "@/lib/auth/guest-session";
-import { getCurrentEvent, getEventPhase } from "@/lib/events";
+import { getCurrentEvent, isVotingOpen } from "@/lib/events";
 import { errorResponse, normalizeEmail, readJsonObject } from "@/lib/http";
 import { getUserByEmail } from "@/lib/users";
 
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     if (!normalizedEmail) return errorResponse("Email inválido", 400);
 
     const event = await getCurrentEvent();
-    if (!event || getEventPhase(event) !== "voting") {
+    if (!event || !isVotingOpen(event)) {
       return errorResponse("A votação não está aberta", 403);
     }
 

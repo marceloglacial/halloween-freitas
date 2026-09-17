@@ -1,4 +1,5 @@
 type EventStatus = "active" | "archived";
+type VotingStatus = "not_started" | "open" | "ended";
 type RegistrationState = "upcoming" | "open" | "closed";
 type EventPhase =
   | "upcoming"
@@ -17,8 +18,7 @@ type HalloweenEvent = {
   startsAt: string;
   registrationOpensAt: string;
   registrationClosesAt: string;
-  votingOpensAt: string;
-  votingClosesAt: string;
-  resultsPublishedAt: string;
+  votingStatus: VotingStatus;
+  resultsPublished: boolean;
   status: EventStatus;
 };

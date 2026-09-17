@@ -1,7 +1,7 @@
 import { MongoServerError, ObjectId } from "mongodb";
 import { getGuestSession } from "@/lib/auth/guest-session";
 import { getDb } from "@/lib/db";
-import { getCurrentEvent, getEventPhase } from "@/lib/events";
+import { getCurrentEvent, isVotingOpen } from "@/lib/events";
 import { errorResponse, parseObjectId, readJsonObject } from "@/lib/http";
 import { getCategoryById } from "@/util/get-categories";
 import { getUserById } from "@/lib/users";
@@ -11,6 +11,10 @@ export async function GET() {
   try {
     const session = await getGuestSession();
     if (!session) return errorResponse("Sessão inválida", 401);
+    const event = await getCurrentEvent();
+    if (!event || event._id !== session.eventId || !isVotingOpen(event)) {
+      return errorResponse("A votação não está aberta", 403);
+    }
 
     const votes = await (
       await getDb()
@@ -39,11 +43,7 @@ export async function POST(request: Request) {
     if (!session) return errorResponse("Sessão inválida", 401);
 
     const event = await getCurrentEvent();
-    if (
-      !event ||
-      event._id !== session.eventId ||
-      getEventPhase(event) !== "voting"
-    ) {
+    if (!event || event._id !== session.eventId || !isVotingOpen(event)) {
       return errorResponse("A votação não está aberta", 403);
     }
 

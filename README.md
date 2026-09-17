@@ -1,42 +1,46 @@
 # Halloween dos Freitas
 
-Event registration, voting, results, and photo gallery built with Next.js 16,
-React 19, TypeScript, Tailwind CSS, Clerk, MongoDB, and Cloudinary.
+Event registration, costume voting, published results, and a photo gallery for
+the annual Halloween dos Freitas event.
 
-## Local setup
+## Technology
 
-1. Install dependencies with `pnpm install`.
-2. Copy `.env.example` to `.env.local` and fill in database, Clerk, Cloudinary,
-   and session values. Generate `SESSION_SECRET` with `openssl rand -base64 32`.
-3. Start the app with `pnpm dev` and open `http://localhost:3000`.
+- Next.js 16 App Router and React 19
+- TypeScript and Tailwind CSS 4
+- MongoDB for event, participant, category, and vote data
+- Clerk for administrator authentication
+- Cloudinary for participant images
 
-Run `pnpm lint`, `pnpm test`, and `pnpm build` before submitting changes.
+## Quick start
 
-## Event data migration
-
-Back up the database, configure `DATABASE_URL` and `DATABASE_NAME` in
-`.env.local` (or `.env`), then run:
+You need Node.js 22.13 or newer, pnpm 12.4.2, MongoDB with transaction support,
+and Clerk and Cloudinary projects.
 
 ```bash
-pnpm migrate:events
+pnpm install
+cp .env.example .env.local
 ```
 
-The idempotent migration creates the archived 2025 event in the
-`America/Toronto` timezone, associates existing users, categories, and votes,
-and creates uniqueness indexes. It stops without creating indexes when
-duplicate emails or votes require manual resolution.
+Fill in `.env.local`, then start the application with `pnpm dev` and open
+`http://localhost:3000`. See the [operations guide](docs/operations.md) for the
+complete environment reference and local service requirements.
 
-Future events are documents in the `events` collection, with one event per
-year. Admins can create a year, copy the previous year's categories, edit its
-schedule, and explicitly activate it from `/dashboard`. Activating a year
-archives the previously active event. All schedule fields are stored as BSON
-dates, while `timezone` is an IANA name.
+## Development commands
 
-## Access boundaries
+```bash
+pnpm test
+pnpm lint
+pnpm build
+```
 
-- Clerk users with `publicMetadata.role: "admin"` can access the dashboard and
-  `/api/admin/*` routes.
-- Guests enter their registered email to receive a signed, HTTP-only voting
-  session. Voting APIs never trust a client-provided voter ID.
-- Photos and published results are public. Email addresses are returned only
-  by authenticated admin endpoints.
+Other available commands are `pnpm start`, `pnpm format`, and the data-mutating
+`pnpm migrate:events`. Follow the operations guide before running the migration.
+
+## Documentation
+
+- [Architecture and domain rules](docs/architecture.md) explains event
+  ownership, lifecycle, voting, authorization, and privacy boundaries.
+- [Operations](docs/operations.md) covers environment configuration, local
+  development, administrator setup, migrations, validation, and deployment.
+- [Repository guidelines](AGENTS.md) defines coding and review instructions for
+  contributors and coding agents.

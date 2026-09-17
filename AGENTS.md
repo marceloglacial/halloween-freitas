@@ -1,36 +1,91 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
+## Project structure
 
-The project uses Next.js 16 App Router, React 19, TypeScript, and Tailwind CSS. Pages, layouts, loading states, and API handlers live in `app/`; dynamic segments use folders such as `app/resultados/[id]/`. Reusable UI is grouped by feature under `components/`. Put hooks in `hooks/`, shared server logic in `lib/`, declarations in `types/`, and static assets in `public/`.
+This is a Next.js 16 App Router application using React 19, strict TypeScript,
+Tailwind CSS 4, Clerk, MongoDB, and Cloudinary.
 
-## Build, Test, and Development Commands
+- `app/` contains pages, layouts, loading/error boundaries, and API handlers.
+- `components/` contains reusable UI grouped by feature.
+- `hooks/` contains client hooks; `lib/` contains shared domain and server logic;
+  `util/` contains small framework-independent helpers.
+- `types/` contains global declarations, `scripts/` operational scripts, and
+  `public/` static assets.
 
-Use pnpm; `pnpm-lock.yaml` is the authoritative lockfile.
+Read `docs/architecture.md` before changing event, voting, authorization, or
+data-ownership behavior. Read `docs/operations.md` before changing environment,
+migration, or deployment behavior.
+
+## Commands
+
+Use Node.js 22.13 or newer and pnpm; `pnpm-lock.yaml` is authoritative.
 
 - `pnpm install` installs dependencies.
-- `pnpm dev` starts the Turbopack development server at `http://localhost:3000`.
-- `pnpm build` creates a production build and catches many type and rendering errors.
-- `pnpm start` serves the completed production build.
-- `pnpm lint` runs the Next.js and TypeScript ESLint rules.
-- `pnpm test` runs the Vitest unit and API-handler test suite.
-- `pnpm format` applies Prettier, including Tailwind class ordering, across the repository.
-- `pnpm migrate:events` backfills event ownership and creates MongoDB indexes; back up the database first.
+- `pnpm dev` starts the development server at `http://localhost:3000`.
+- `pnpm test` runs the Vitest suite once.
+- `pnpm lint` runs ESLint.
+- `pnpm build` creates a production build.
+- `pnpm start` serves a completed production build.
+- `pnpm format` applies Prettier and Tailwind class ordering repository-wide.
+- `pnpm migrate:events` mutates event data and indexes; follow the operations
+  guide and back up the database first.
 
-Run lint and build before opening a pull request.
+For code changes, run `pnpm test`, `pnpm lint`, and `pnpm build`. Manually check
+affected responsive layouts, loading/error states, and authentication flows for
+UI changes. For documentation-only changes, formatting and link checks suffice.
 
-## Coding Style & Naming Conventions
+## Code conventions
 
-Write strict TypeScript and prefer the `@/` alias for repository-root imports. Follow the existing two-space indentation and Prettier output; do not manually reorder Tailwind classes. Use kebab-case for component files and route folders (`user-list-item.tsx`), PascalCase for React components, camelCase for functions and variables, and `useX` names for hooks. Keep route-specific code close to its route and extract broadly reused UI into `components/`.
+Use two-space indentation and let Prettier order Tailwind classes. Prefer the
+`@/` alias for repository-root imports. Use kebab-case for new component files
+and route folders, PascalCase for React components and types, camelCase for
+functions and variables, and `useX` for hooks. Do not rename unrelated legacy
+files merely to match these conventions.
 
-## Testing Guidelines
+Keep route-specific code close to its route and extract broadly reused behavior.
+Keep database and authorization logic in server modules. Parse and normalize
+requests through shared `lib/` helpers, return explicit HTTP statuses with
+Portuguese user-facing errors, and serialize MongoDB IDs and dates for clients.
 
-Vitest covers shared validation, event rules, session signing, and API authorization. Colocate tests as `*.test.ts` or `*.test.tsx`. For every change, run `pnpm test`, `pnpm lint`, and `pnpm build`, then manually exercise affected responsive layouts, loading states, and authentication flows. Add regression tests for authorization, privacy, and voting-integrity fixes.
+## Required invariants
 
-## Commit & Pull Request Guidelines
+- Scope users, categories, and votes by `eventId`.
+- Store registration schedules as BSON dates and interpret them with the
+  event's IANA timezone.
+- Accept registrations only for the active event during its registration
+  window; allow admins to open voting only after the event starts; accept votes
+  only while voting is open; publish results only after voting ends and an admin
+  explicitly enables them.
+- Derive guest voter identity from the signed, HTTP-only `guest_session` cookie,
+  never from a client-supplied voter ID.
+- Protect `/api/admin/*` with Clerk and require
+  `publicMetadata.role === "admin"`.
+- Never return email addresses from public endpoints.
+- Preserve uniqueness for `(eventId, normalizedEmail)` registrations and
+  `(eventId, voterId, categoryId)` votes.
 
-Recent history favors short, imperative subjects such as `fix mobile and add back button` and `update home`. Keep each commit focused and describe the user-visible outcome. Pull requests should include a concise summary, testing notes, linked issue when applicable, and screenshots or recordings for visual changes. Call out new environment variables, data migrations, or deployment considerations explicitly.
+## Testing and review
 
-## Security & Configuration
+Colocate tests as `*.test.ts` or `*.test.tsx`. Cover invalid input and failure
+statuses in route tests. Add regression tests for authorization, privacy,
+schedule boundaries, normalization, and voting integrity; use fixed or injected
+dates instead of wall-clock-dependent assertions.
 
-Store secrets only in ignored `.env*` files. Database-backed routes expect `DATABASE_URL` and `DATABASE_NAME`; never commit credentials or production data. Review server/client boundaries before exposing values through `NEXT_PUBLIC_*` variables.
+When making changes, update relevant documentation and `AGENTS.md` files
+whenever the change affects documented behavior, architecture, workflows, or
+contributor instructions.
+
+Use short, imperative commit subjects. Pull requests should summarize the
+user-visible outcome and validation, link an issue when applicable, and include
+screenshots for visual changes. Call out environment changes, migrations,
+indexes, and deployment requirements explicitly.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

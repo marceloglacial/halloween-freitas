@@ -13,32 +13,53 @@ const event: HalloweenEvent = {
   timezone: "America/Toronto",
   startsAt: "2026-11-01T00:00:00.000Z",
   registrationOpensAt: "2026-09-01T04:00:00.000Z",
-  registrationClosesAt: "2026-10-15T04:00:00.000Z",
-  votingOpensAt: "2026-11-01T00:00:00.000Z",
-  votingClosesAt: "2026-11-01T05:00:00.000Z",
-  resultsPublishedAt: "2026-11-01T06:00:00.000Z",
+  registrationClosesAt: "2026-10-31T23:59:00.000Z",
+  votingStatus: "not_started",
+  resultsPublished: false,
   status: "active",
 };
 
 describe("event phases", () => {
-  it("moves through registration, voting, and results", () => {
+  it("combines the registration schedule with manual lifecycle states", () => {
     expect(getEventPhase(event, new Date("2026-09-15T00:00:00Z"))).toBe(
       "registration",
     );
-    expect(getEventPhase(event, new Date("2026-11-01T01:00:00Z"))).toBe(
-      "voting",
+    expect(getEventPhase({ ...event, votingStatus: "open" })).toBe("voting");
+    expect(getEventPhase({ ...event, votingStatus: "ended" })).toBe(
+      "awaiting-results",
     );
+    expect(
+      getEventPhase({
+        ...event,
+        votingStatus: "ended",
+        resultsPublished: true,
+      }),
+    ).toBe("results");
+  });
+
+  it("does not open voting based on wall-clock time", () => {
     expect(getEventPhase(event, new Date("2026-11-01T07:00:00Z"))).toBe(
-      "results",
+      "upcoming",
     );
   });
 
-  it("publishes only completed or archived events", () => {
-    const duringRegistration = new Date("2026-09-15T00:00:00Z");
-    expect(resultsArePublic(event, duringRegistration)).toBe(false);
+  it("publishes only explicit results after voting ends", () => {
+    expect(resultsArePublic(event)).toBe(false);
     expect(
-      resultsArePublic({ ...event, status: "archived" }, duringRegistration),
+      resultsArePublic({
+        ...event,
+        status: "archived",
+        votingStatus: "ended",
+        resultsPublished: true,
+      }),
     ).toBe(true);
+    expect(
+      resultsArePublic({
+        ...event,
+        status: "archived",
+        resultsPublished: true,
+      }),
+    ).toBe(false);
   });
 
   it("opens registration inclusively and closes it exclusively", () => {
@@ -49,7 +70,7 @@ describe("event phases", () => {
       getRegistrationState(event, new Date(event.registrationOpensAt)),
     ).toBe("open");
     expect(
-      getRegistrationState(event, new Date("2026-10-15T03:59:59.999Z")),
+      getRegistrationState(event, new Date("2026-10-31T23:58:59.999Z")),
     ).toBe("open");
     expect(
       getRegistrationState(event, new Date(event.registrationClosesAt)),

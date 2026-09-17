@@ -1,7 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import BackButton from "@/components/back-button";
 import VoteGrid from "@/components/votacao/vote-grid";
+import FeatureUnavailable from "@/components/feature-unavailable";
 import { getGuestSession } from "@/lib/auth/guest-session";
+import { getCurrentEvent, isVotingOpen } from "@/lib/events";
 import { getPublicUsersForEvent } from "@/lib/users";
 import { getCategoryById } from "@/util/get-categories";
 import { isEligibleCandidate } from "@/lib/voting";
@@ -13,8 +15,18 @@ export default async function CategoryPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const event = await getCurrentEvent();
+  if (!event || !isVotingOpen(event)) {
+    return (
+      <FeatureUnavailable
+        title="Votação encerrada"
+        message="A votação não está aberta no momento."
+      />
+    );
+  }
   const session = await getGuestSession();
   if (!session) redirect("/votacao");
+  if (session.eventId !== event._id) redirect("/votacao");
 
   const category = await getCategoryById((await params).id);
   if (!category || category.eventId !== session.eventId) notFound();

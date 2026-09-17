@@ -22,6 +22,21 @@ export async function POST(
         .collection("events")
         .findOne({ _id: eventId }, { session });
       if (!event) throw new Error("EVENT_NOT_FOUND");
+      await db.collection("events").updateMany(
+        {
+          status: "active",
+          votingStatus: "open",
+          _id: { $ne: eventId },
+        },
+        {
+          $set: {
+            status: "archived",
+            votingStatus: "ended",
+            updatedAt: new Date(),
+          },
+        },
+        { session },
+      );
       await db
         .collection("events")
         .updateMany(
