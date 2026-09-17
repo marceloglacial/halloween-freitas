@@ -1,40 +1,25 @@
-"use client";
-
-import { useUsers } from "@/hooks/useUsers";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import VotacaoForm from "@/components/votacao/form";
 import BackgroundVideo from "@/components/background-video";
-import { setUserCookie } from "@/actions";
+import FeatureUnavailable from "@/components/feature-unavailable";
+import VotingLogin from "@/components/votacao/voting-login";
+import { getCurrentEvent, isVotingOpen } from "@/lib/events";
 
-export default function PoolHome() {
-  const { loading, error, getUserByEmail, user } = useUsers();
-  const router = useRouter();
+export const dynamic = "force-dynamic";
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    await getUserByEmail(email);
-  };
-
-  useEffect(() => {
-    if (error) toast.error(error);
-  }, [user, error]);
-
-  useEffect(() => {
-    if (user) {
-      setUserCookie(user).then(() => {
-        router.push("/votacao/categories");
-      });
-    }
-  }, [user, router]);
+export default async function VotingLoginPage() {
+  const event = await getCurrentEvent();
+  if (!event || !isVotingOpen(event)) {
+    return (
+      <FeatureUnavailable
+        title="Votação encerrada"
+        message="A votação não está aberta no momento."
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen w-full">
       <BackgroundVideo />
-      <VotacaoForm loading={loading} onSubmit={handleSubmit} />
+      <VotingLogin />
     </div>
   );
 }

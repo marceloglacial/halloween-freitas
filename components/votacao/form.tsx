@@ -28,6 +28,7 @@ export default function VotacaoForm({ loading, onSubmit }: VotacaoFormProps) {
         <input
           type="email"
           name="email"
+          aria-label="Email"
           placeholder="Seu email"
           className="rounded-lg border bg-black/70 px-4 py-2 lg:text-lg"
           required

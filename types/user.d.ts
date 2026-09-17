@@ -1,11 +1,14 @@
 type User = {
   _id: string;
+  eventId: string;
   fullName: string;
   email: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
   group?: boolean;
   junior?: boolean;
 };
+
+type PublicUser = Omit<User, "email">;
 
 interface UserListItemProps {
   user: User;
@@ -31,4 +34,4 @@ interface UserListSearchProps {
 
 type UserWithVotes = {
   votes: number;
-} & User;
+} & PublicUser;

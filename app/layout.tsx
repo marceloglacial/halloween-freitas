@@ -17,27 +17,31 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const content = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
+    <ClerkProvider>{children}</ClerkProvider>
+  ) : (
+    children
+  );
+
   return (
-    <ClerkProvider>
-      <html lang="en" className="scroll-smooth">
-        <body className={`${defaultFont.className} antialiased`}>
-          {children}
-          <Toaster
-            richColors
-            position="bottom-center"
-            offset="12vh"
-            toastOptions={{
-              cancelButtonStyle: {
-                color: "white",
-                backgroundColor: "red",
-              },
-              actionButtonStyle: {
-                backgroundColor: "green",
-              },
-            }}
-          />
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="pt-BR" className="scroll-smooth">
+      <body className={`${defaultFont.className} antialiased`}>
+        {content}
+        <Toaster
+          richColors
+          position="bottom-center"
+          offset="12vh"
+          toastOptions={{
+            cancelButtonStyle: {
+              color: "white",
+              backgroundColor: "red",
+            },
+            actionButtonStyle: {
+              backgroundColor: "green",
+            },
+          }}
+        />
+      </body>
+    </html>
   );
 }

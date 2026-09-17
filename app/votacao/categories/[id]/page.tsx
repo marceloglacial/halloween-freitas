@@ -1,50 +1,47 @@
+import { notFound, redirect } from "next/navigation";
 import BackButton from "@/components/back-button";
-import { fetchData } from "@/util/fetch-data";
 import VoteGrid from "@/components/votacao/vote-grid";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import FeatureUnavailable from "@/components/feature-unavailable";
+import { getGuestSession } from "@/lib/auth/guest-session";
+import { getCurrentEvent, isVotingOpen } from "@/lib/events";
+import { getPublicUsersForEvent } from "@/lib/users";
+import { getCategoryById } from "@/util/get-categories";
+import { isEligibleCandidate } from "@/lib/voting";
 
-interface CategoryPageParams {
-  id: string;
-}
+export const dynamic = "force-dynamic";
 
-interface CategoryPageProps {
-  params: CategoryPageParams;
-}
-
-export default async function CategoryPage({ params }: CategoryPageProps) {
-  const { id } = await params;
-  const category: Category = await fetchData(`categories/${id}`);
-  const users: User[] = await fetchData("users");
-
-  if (!category) return <>Categoria não encontrada.</>;
-  if (!users) return <>Erro ao carregar os usuários.</>;
-
-  // Get user from cookies
-  const cookieStore = await cookies();
-  const userCookie = cookieStore.get("user");
-  const user: User = userCookie ? JSON.parse(userCookie.value) : null;
-
-  if (!user?.fullName) {
-    redirect("/votacao");
+export default async function CategoryPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const event = await getCurrentEvent();
+  if (!event || !isVotingOpen(event)) {
+    return (
+      <FeatureUnavailable
+        title="Votação encerrada"
+        message="A votação não está aberta no momento."
+      />
+    );
   }
+  const session = await getGuestSession();
+  if (!session) redirect("/votacao");
+  if (session.eventId !== event._id) redirect("/votacao");
 
-  // Filter group
-  const isGroup = category.title?.toLowerCase().includes("grupo");
-  const isJunior = category.title?.toLowerCase().includes("j");
-  const allUsers: User[] = users.filter((u) => {
-    if (isGroup) return !!u.group === isGroup;
-    if (isJunior) return !!u.junior === isJunior;
-    return u;
-  });
+  const category = await getCategoryById((await params).id);
+  if (!category || category.eventId !== session.eventId) notFound();
+
+  const users = (await getPublicUsersForEvent(session.eventId)).filter((user) =>
+    isEligibleCandidate(category, user, session.userId),
+  );
 
   return (
-    <section className="min-h-screen w-screen justify-center px-8 py-16 text-center">
+    <section className="min-h-screen w-full px-8 py-16 text-center">
       <BackButton href="/votacao/categories" />
       <h1 className="mt-8 mb-8 text-4xl lg:text-6xl">
         {category.icon} {category.title}
       </h1>
-      <VoteGrid user={user} users={allUsers} categoryId={category._id} />
+      <VoteGrid users={users} categoryId={category._id} />
     </section>
   );
 }

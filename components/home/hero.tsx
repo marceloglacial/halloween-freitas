@@ -2,9 +2,18 @@ import { secondaryFont } from "@/util/fonts";
 import { FC, JSX } from "react";
 import Countdown from "@/components/countdown";
 import BackgroundVideo from "@/components/background-video";
-import { IS_PAST } from "@/constants/globals";
 
-const Hero: FC = (): JSX.Element => {
+interface HeroProps {
+  startsAt?: string;
+  showCountdown: boolean;
+  initialNow: string;
+}
+
+const Hero: FC<HeroProps> = ({
+  startsAt,
+  showCountdown,
+  initialNow,
+}): JSX.Element => {
   return (
     <div className="relative flex items-center justify-center lg:min-h-screen 2xl:min-h-[900px]">
       <BackgroundVideo />
@@ -21,7 +30,9 @@ const Hero: FC = (): JSX.Element => {
             dos Freitas
           </h1>
 
-          {IS_PAST && <Countdown />}
+          {showCountdown && startsAt && (
+            <Countdown targetDate={startsAt} initialNow={initialNow} />
+          )}
         </div>
       </div>
     </div>

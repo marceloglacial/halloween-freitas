@@ -4,7 +4,7 @@ import { createContext, useContext, useState, ReactNode } from "react";
 import { UserImageModal } from "./user-image-modal";
 
 interface UserImageModalContextType {
-  openModal: (images: User[], initialIndex: number) => void;
+  openModal: (images: PublicUser[], initialIndex: number) => void;
 }
 
 const UserImageModalContext = createContext<
@@ -13,10 +13,10 @@ const UserImageModalContext = createContext<
 
 export function UserImageModalProvider({ children }: { children: ReactNode }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalImages, setModalImages] = useState<User[]>([]);
+  const [modalImages, setModalImages] = useState<PublicUser[]>([]);
   const [modalInitialIndex, setModalInitialIndex] = useState(0);
 
-  const openModal = (images: User[], initialIndex: number) => {
+  const openModal = (images: PublicUser[], initialIndex: number) => {
     setModalImages(images);
     setModalInitialIndex(initialIndex);
     setIsModalOpen(true);

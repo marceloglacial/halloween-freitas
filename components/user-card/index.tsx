@@ -1,8 +1,8 @@
 import { FC, JSX } from "react";
-import { getCldImageUrl } from "next-cloudinary";
+import { CldImage } from "next-cloudinary";
 
 interface UserCardProps {
-  user: User;
+  user: PublicUser;
   selected?: boolean;
 }
 
@@ -10,11 +10,6 @@ const UserCard: FC<UserCardProps> = ({
   user,
   selected = false,
 }): JSX.Element => {
-  const url = getCldImageUrl({
-    width: 960,
-    height: 600,
-    src: user.imageUrl || "halloween-freitas/apple-icon_fqkaye",
-  });
   return (
     <div
       className={
@@ -23,7 +18,14 @@ const UserCard: FC<UserCardProps> = ({
       }
     >
       <div className="h-40 w-full sm:h-60">
-        <img src={url} alt="Photo of User" />
+        <CldImage
+          width={960}
+          height={600}
+          sizes="(max-width: 640px) 50vw, 25vw"
+          src={user.imageUrl || "halloween-freitas/apple-icon_fqkaye"}
+          alt={`Foto de ${user.fullName}`}
+          className="h-full w-full object-cover"
+        />
       </div>
       <span className="p-4 backdrop-blur-lg">{user.fullName}</span>
     </div>

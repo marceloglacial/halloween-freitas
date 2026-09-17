@@ -1,63 +1,46 @@
-# Halloween Freitas
+# Halloween dos Freitas
 
-A modern event landing page built with Next.js, React, and Tailwind CSS for the Halloween Freitas event. Features include a countdown timer, event info, schedule, registration form, and responsive design.
+Event registration, costume voting, published results, and a photo gallery for
+the annual Halloween dos Freitas event.
 
-## Features
+## Technology
 
-- Countdown timer to event
-- Event information and schedule
-- Registration form (API route)
-- Custom card components
-- Responsive layout
-- Optimized fonts and assets
+- Next.js 16 App Router and React 19
+- TypeScript and Tailwind CSS 4
+- MongoDB for event, participant, category, and vote data
+- Clerk for administrator authentication
+- Cloudinary for participant images
 
-## Tech Stack
+## Quick start
 
-- Next.js (App Router)
-- React
-- Tailwind CSS
-- TypeScript
-
-## Project Structure
-
-```
-app/         # Main app directory (routing, layout, pages, API)
-components/  # Reusable UI components (card, countdown, form, home, footer)
-constants/   # Global constants
-hooks/       # Custom React hooks
-public/      # Static assets (images, video)
-types/       # TypeScript type definitions
-util/        # Utility functions
-```
-
-## Getting Started
-
-Install dependencies:
+You need Node.js 22.13 or newer, pnpm 12.4.2, MongoDB with transaction support,
+and Clerk and Cloudinary projects.
 
 ```bash
 pnpm install
+cp .env.example .env.local
 ```
 
-Run the development server:
+Fill in `.env.local`, then start the application with `pnpm dev` and open
+`http://localhost:3000`. See the [operations guide](docs/operations.md) for the
+complete environment reference and local service requirements.
+
+## Development commands
 
 ```bash
-pnpm dev
+pnpm test
+pnpm lint
+pnpm build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the site.
+Other available commands are `pnpm start`, `pnpm format`, and the data-mutating
+`pnpm migrate:events`. Follow the operations guide before running the migration.
 
-## Editing
+## Documentation
 
-- Main page: `app/page.tsx`
-- Layout: `app/layout.tsx`
-- Global styles: `app/globals.css`
-- Components: `components/`
-- API route: `app/api/register/route.ts`
-
-## Deployment
-
-Deploy easily on [Vercel](https://vercel.com/) or any platform supporting Next.js.
-
----
-
-For questions or contributions, feel free to open an issue or pull request.
+- [Architecture and domain rules](docs/architecture.md) explains event
+  ownership, lifecycle, voting, authorization, and privacy boundaries.
+- [Operations](docs/operations.md) covers environment configuration, local
+  development, administrator setup, migrations, validation, and deployment.
+- [Repository guidelines](AGENTS.md) defines coding and review instructions for
+  contributors and coding agents.

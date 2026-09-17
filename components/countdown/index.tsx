@@ -1,11 +1,9 @@
 "use client";
 import React, { JSX } from "react";
 import { useCountdown } from "@/hooks/useCountdown";
-import { EVENT_DATE } from "@/constants/globals";
 import { isTimeLeftZero } from "@/util/countdown";
 import TimerBlock from "./timer-block";
 
-const TARGET_DATE: Date = new Date(EVENT_DATE);
 const timerUnits = [
   { key: "days", label: "dias" },
   { key: "hours", label: "horas" },
@@ -13,8 +11,11 @@ const timerUnits = [
   { key: "seconds", label: "seg" },
 ] as const;
 
-const Countdown: React.FC = (): JSX.Element => {
-  const timeLeft: TimeLeft = useCountdown(TARGET_DATE);
+const Countdown: React.FC<{ targetDate: string; initialNow: string }> = ({
+  targetDate,
+  initialNow,
+}): JSX.Element => {
+  const timeLeft: TimeLeft = useCountdown(targetDate, initialNow);
 
   if (isTimeLeftZero(timeLeft)) return <></>;
 

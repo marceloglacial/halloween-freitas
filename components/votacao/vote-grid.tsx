@@ -1,26 +1,25 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import UserCard from "../user-card";
 import { toast } from "sonner";
 
-export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
+export default function VoteGrid({ users, categoryId }: VoteGridProps) {
+  const router = useRouter();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [voted, setVoted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   const handleVote = async () => {
     if (!selectedUserId) return;
 
     setLoading(true);
-    setError(null);
     try {
       const res = await fetch("/api/votes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          voterId: user._id,
           voteForId: selectedUserId,
           categoryId,
         }),
@@ -34,7 +33,7 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
         action: {
           label: "Voltar",
           onClick: () => {
-            window.location.href = "/votacao/categories";
+            router.push("/votacao/categories");
           },
         },
       });
@@ -46,8 +45,6 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
           onClick: () => close(),
         },
       });
-      setError(errors.message);
-      console.debug(error);
     } finally {
       setLoading(false);
     }
@@ -62,6 +59,7 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
       <div className="sticky top-4 z-40 mb-12 flex justify-center">
         <input
           type="text"
+          aria-label="Buscar candidato por nome"
           value={search}
           onChange={(e) => {
             setSelectedUserId(null);
@@ -76,17 +74,20 @@ export default function VoteGrid({ user, users, categoryId }: VoteGridProps) {
       )}
       <div className="mx-auto grid max-w-3xl grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-4">
         {filteredUsers.map((user) => (
-          <div
+          <button
+            type="button"
             key={user._id}
             onClick={() =>
               voted
                 ? toast.error("Você já votou!")
                 : setSelectedUserId(user._id)
             }
-            className={voted ? "opacity-50" : ""}
+            className={`text-left ${voted ? "opacity-50" : ""}`}
+            disabled={voted}
+            aria-pressed={selectedUserId === user._id}
           >
             <UserCard user={user} selected={selectedUserId === user._id} />
-          </div>
+          </button>
         ))}
       </div>
       {selectedUserId && !voted && (

@@ -15,6 +15,7 @@ export const UserListSearch: React.FC<UserListSearchProps> = ({
   return (
     <input
       type="text"
+      aria-label="Buscar usuários por nome ou email"
       value={search}
       onChange={handleChange}
       placeholder="Search users by name or email..."

@@ -1,0 +1,22 @@
+packages:
+  - "."
+
+overrides:
+  "@babel/core": 7.29.6
+  "@humanfs/node@<0.16.8": 0.16.8
+  baseline-browser-mapping: 2.11.23
+  "brace-expansion@<1.1.18": 1.1.18
+  browserslist: 4.28.7
+  "minimatch@<3.1.4": 3.1.4
+  "picomatch@<2.3.2": 2.3.2
+  "picomatch@>=4.0.0 <4.0.4": 4.0.7
+
+allowBuilds:
+  "@clerk/shared": true
+  "@tailwindcss/oxide": true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - "@types/node@22.20.3"

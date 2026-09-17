@@ -1,5 +1,3 @@
-// Temporary mock API for categories
-
 import { NextResponse } from "next/server";
 import { getCategoryById } from "@/util/get-categories";
 

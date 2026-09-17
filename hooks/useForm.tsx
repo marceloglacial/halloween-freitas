@@ -14,7 +14,7 @@ export function useForm() {
     const fullName = formData.get("fullName") as string;
     const email = formData.get("email") as string;
     try {
-      const res = await fetch("/api/users", {
+      const res = await fetch("/api/registrations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fullName, email }),
@@ -23,10 +23,14 @@ export function useForm() {
       if (res.ok && data._id) {
         toast.success("Inscrição realizada com sucesso!");
         form.reset();
-      } else if (data.error === "User already exists") {
+      } else if (res.status === 409) {
         toast.error("Este email já está inscrito.");
       } else {
-        toast.error("Ocorreu um erro. Tente novamente.");
+        toast.error(
+          typeof data?.error === "string"
+            ? data.error
+            : "Ocorreu um erro. Tente novamente.",
+        );
       }
     } catch {
       toast.error("Erro de conexão. Tente novamente.");

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { calculateTimeLeft } from "@/util/countdown";
 
 interface CountdownProps {
   days: number;
@@ -7,44 +8,23 @@ interface CountdownProps {
   seconds: number;
 }
 
-export function useCountdown(targetDate: Date): CountdownProps {
-  const calculateTimeLeft = useCallback((): CountdownProps => {
-    const now = new Date().getTime();
-    const difference = targetDate.getTime() - now;
-
-    if (difference <= 0) {
-      return {
-        days: 0,
-        hours: 0,
-        minutes: 0,
-        seconds: 0,
-      };
-    }
-
-    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-    const hours = Math.floor(
-      (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-    );
-    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-    return {
-      days,
-      hours,
-      minutes,
-      seconds,
-    };
-  }, [targetDate]);
-
-  const [timeLeft, setTimeLeft] = useState<CountdownProps>(calculateTimeLeft());
+export function useCountdown(
+  targetDate: string,
+  initialNow: string,
+): CountdownProps {
+  const [timeLeft, setTimeLeft] = useState<CountdownProps>(() =>
+    calculateTimeLeft(targetDate, new Date(initialNow).getTime()),
+  );
 
   useEffect(() => {
+    const update = () => setTimeLeft(calculateTimeLeft(targetDate, Date.now()));
+    update();
     const interval = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
+      update();
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [calculateTimeLeft, targetDate]);
+  }, [targetDate]);
 
   return timeLeft;
 }

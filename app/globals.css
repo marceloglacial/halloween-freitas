@@ -2,7 +2,7 @@
 
 :root {
   --background: #000000;
-  --foreground: #FFFFFF;
+  --foreground: #ffffff;
 }
 
 @theme inline {
@@ -15,7 +15,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #000000;
-    --foreground: #FFFFFF;
+    --foreground: #ffffff;
   }
 }
 
@@ -26,5 +26,5 @@ body {
 }
 
 h1 {
-  font-family: 'Metal Mania', Arial, Helvetica, sans-serif;
+  font-family: "Metal Mania", Arial, Helvetica, sans-serif;
 }

@@ -15,6 +15,7 @@ const Form: FC = (): JSX.Element => {
         <input
           type="text"
           name="fullName"
+          aria-label="Nome e sobrenome"
           required
           className="rounded-xl border border-orange-500 bg-transparent p-5 text-white placeholder:text-white focus:ring-0 focus:outline-none"
           placeholder="Nome e Sobrenome"
@@ -25,6 +26,7 @@ const Form: FC = (): JSX.Element => {
         <input
           type="email"
           name="email"
+          aria-label="Email"
           required
           className="rounded-xl border border-orange-500 bg-transparent p-5 text-white placeholder:text-white focus:ring-0 focus:outline-none"
           placeholder="Email"

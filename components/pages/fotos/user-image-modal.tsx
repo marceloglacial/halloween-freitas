@@ -1,13 +1,13 @@
 "use client";
 
 import { CldImage } from "next-cloudinary";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGesture } from "@use-gesture/react";
 
 interface UserImageModalProps {
   isOpen: boolean;
   onClose: () => void;
-  images: User[];
+  images: PublicUser[];
   initialIndex: number;
 }
 
@@ -18,6 +18,7 @@ export function UserImageModal({
   initialIndex,
 }: UserImageModalProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     setCurrentIndex(initialIndex);
@@ -43,6 +44,12 @@ export function UserImageModal({
   );
 
   useEffect(() => {
+    if (!isOpen) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();
@@ -57,12 +64,12 @@ export function UserImageModal({
       }
     };
 
-    if (isOpen) {
-      document.addEventListener("keydown", handleKeyDown);
-    }
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus();
     };
   }, [isOpen, onClose, images.length]);
 
@@ -72,6 +79,9 @@ export function UserImageModal({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Foto de ${currentImage.fullName}`}
       className="bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center bg-black"
       onClick={onClose}
     >
@@ -81,10 +91,13 @@ export function UserImageModal({
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal
       >
         <button
+          ref={closeButtonRef}
           className="absolute top-8 right-8 cursor-pointer rounded-full bg-orange-400 p-2 text-white hover:text-gray-800"
           onClick={onClose}
+          aria-label="Fechar galeria"
         >
           <svg
+            aria-hidden="true"
             xmlns="http://www.w3.org/2000/svg"
             className="h-6 w-6"
             fill="none"
@@ -104,7 +117,7 @@ export function UserImageModal({
           width={800}
           height={1200}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
-          alt={` Foto de ${currentImage.fullName}`}
+          alt={`Foto de ${currentImage.fullName}`}
           className="h-auto max-h-[80vh] w-auto max-w-[80vw] object-contain"
         />
         <div className="mt-2 text-center text-lg font-semibold text-gray-800">
@@ -118,8 +131,10 @@ export function UserImageModal({
               prevIndex === 0 ? images.length - 1 : prevIndex - 1,
             );
           }}
+          aria-label="Foto anterior"
         >
           <svg
+            aria-hidden="true"
             xmlns="http://www.w3.org/2000/svg"
             className="h-10 w-10"
             fill="none"
@@ -142,8 +157,10 @@ export function UserImageModal({
               prevIndex === images.length - 1 ? 0 : prevIndex + 1,
             );
           }}
+          aria-label="Próxima foto"
         >
           <svg
+            aria-hidden="true"
             xmlns="http://www.w3.org/2000/svg"
             className="h-10 w-10"
             fill="none"
