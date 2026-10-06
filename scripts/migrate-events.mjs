@@ -1,9 +1,11 @@
 import { existsSync } from "node:fs";
 import { loadEnvFile } from "node:process";
 import { MongoClient, ObjectId } from "mongodb";
+import { createRequiredIndexes } from "./database-indexes.mjs";
 
-const envFile = [".env.local", ".env"].find((path) => existsSync(path));
-if (envFile) loadEnvFile(envFile);
+for (const envFile of [".env.local", ".env"]) {
+  if (existsSync(envFile)) loadEnvFile(envFile);
+}
 
 const url = process.env.DATABASE_URL;
 const databaseName = process.env.DATABASE_NAME;
@@ -22,15 +24,6 @@ function categoryEligibility(title = "") {
     return "junior";
   }
   return "all";
-}
-
-async function assertNoDuplicates(collection, pipeline, label) {
-  const duplicates = await collection.aggregate(pipeline).limit(1).toArray();
-  if (duplicates.length) {
-    throw new Error(
-      `Resolve duplicate ${label} records before creating indexes`,
-    );
-  }
 }
 
 try {
@@ -103,7 +96,7 @@ try {
     { eventId: { $exists: false } },
     { $set: { eventId } },
   );
-  for await (const user of users.find({ eventId })) {
+  for await (const user of users.find({})) {
     const normalizedEmail = String(user.email ?? "")
       .trim()
       .toLowerCase();
@@ -131,61 +124,7 @@ try {
     { $set: { eventId } },
   );
 
-  await assertNoDuplicates(
-    events,
-    [
-      { $group: { _id: "$year", count: { $sum: 1 } } },
-      { $match: { count: { $gt: 1 } } },
-    ],
-    "event year",
-  );
-  await assertNoDuplicates(
-    users,
-    [
-      { $match: { eventId } },
-      {
-        $group: {
-          _id: { eventId: "$eventId", email: "$normalizedEmail" },
-          count: { $sum: 1 },
-        },
-      },
-      { $match: { count: { $gt: 1 } } },
-    ],
-    "user email",
-  );
-  await assertNoDuplicates(
-    votes,
-    [
-      { $match: { eventId } },
-      {
-        $group: {
-          _id: {
-            eventId: "$eventId",
-            voterId: "$voterId",
-            categoryId: "$categoryId",
-          },
-          count: { $sum: 1 },
-        },
-      },
-      { $match: { count: { $gt: 1 } } },
-    ],
-    "vote",
-  );
-
-  await Promise.all([
-    events.createIndex({ slug: 1 }, { unique: true }),
-    events.createIndex({ year: 1 }, { unique: true }),
-    events.createIndex(
-      { status: 1 },
-      { unique: true, partialFilterExpression: { status: "active" } },
-    ),
-    users.createIndex({ eventId: 1, normalizedEmail: 1 }, { unique: true }),
-    categories.createIndex({ eventId: 1, order: 1 }),
-    votes.createIndex(
-      { eventId: 1, voterId: 1, categoryId: 1 },
-      { unique: true },
-    ),
-  ]);
+  await createRequiredIndexes(db);
 
   console.log(`Event migration complete: ${eventId.toString()}`);
 } finally {

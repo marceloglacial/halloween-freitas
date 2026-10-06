@@ -80,6 +80,10 @@ pnpm lint
 pnpm build
 ```
 
+Use `pnpm check:indexes` to verify the configured database's required indexes
+without changing data. The command exits unsuccessfully if an index is missing
+or misconfigured.
+
 Use `pnpm start` to serve a completed production build. Use `pnpm format` to
 apply Prettier, including Tailwind class ordering, across the repository.
 
@@ -108,10 +112,11 @@ The seeded event uses a strictly ordered registration schedule. Lifecycle
 backfilling is idempotent: existing manual values are preserved on reruns, while
 obsolete voting and results timestamps are removed.
 
-The script stops before index creation when it finds duplicate event years,
-registrations, or votes. Resolve the reported duplicates and rerun the script;
-the completed earlier steps are safe to repeat. If an unexpected write or
-partial failure cannot be reconciled, restore the backup before retrying.
+The script checks every event and stops before index creation when it finds
+duplicate event years, slugs, active events, registrations, or votes. Resolve
+the reported duplicates and rerun the script; the completed earlier steps are
+safe to repeat. If an unexpected write or partial failure cannot be reconciled,
+restore the backup before retrying.
 
 ## Deployment checklist
 
@@ -125,6 +130,8 @@ partial failure cannot be reconciled, restore the backup before retrying.
 - Run `pnpm test`, `pnpm lint`, and `pnpm build` against the release revision.
 - Run the event migration only when upgrading a pre-event database, and only
   after taking a verified backup.
+- Run `pnpm check:indexes` against the production database after migrations and
+  fail the deployment check if any required index is missing or misconfigured.
 
 After deployment, verify the public home page, registration state, admin sign-in
 and dashboard authorization, manual voting controls, locked voting pages,
