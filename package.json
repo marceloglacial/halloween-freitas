@@ -13,6 +13,7 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "test": "vitest run",
+    "check:indexes": "node scripts/check-database-indexes.mjs",
     "migrate:events": "node scripts/migrate-events.mjs"
   },
   "dependencies": {
