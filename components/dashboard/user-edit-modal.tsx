@@ -7,10 +7,14 @@ export function UserEditModal({
   setModalUser,
   handleEdit,
   handleCreate,
+  handleResetAccess,
   closeModal,
   loading,
   error,
-}: UserEditModalProps & { handleCreate: (user: Partial<User>) => void }) {
+}: UserEditModalProps & {
+  handleCreate: (user: Partial<User>) => void;
+  handleResetAccess: (user: Partial<AdminUser>) => void;
+}) {
   const nameInputRef = React.useRef<HTMLInputElement>(null);
   React.useEffect(() => {
     if (!showModal) return;
@@ -142,6 +146,23 @@ export function UserEditModal({
             </button>
           </div>
         </form>
+        {isEdit && modalUser.clerkUserId && (
+          <div className="mt-4 grid gap-2 border-t border-gray-700 pt-4">
+            <p className="text-sm">
+              Este convidado já tem uma conta vinculada. Editar o email não
+              transfere o acesso. Salve o email correto antes de redefinir o
+              vínculo.
+            </p>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => handleResetAccess(modalUser)}
+              className="rounded-lg border border-orange-400 px-4 py-2 text-orange-300 disabled:opacity-50"
+            >
+              Redefinir vínculo de acesso
+            </button>
+          </div>
+        )}
         {error && <div className="mt-2 text-red-500">{error}</div>}
       </div>
     </div>

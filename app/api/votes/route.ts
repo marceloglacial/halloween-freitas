@@ -1,20 +1,23 @@
 import { MongoServerError, ObjectId } from "mongodb";
-import { getGuestSession } from "@/lib/auth/guest-session";
+import { GuestAccessError } from "@/lib/auth/guest-registration";
+import { getVotingGuest } from "@/lib/auth/voting-guest";
 import { getDb } from "@/lib/db";
-import { getCurrentEvent, isVotingOpen } from "@/lib/events";
-import { errorResponse, parseObjectId, readJsonObject } from "@/lib/http";
+import {
+  errorResponse,
+  logServerError,
+  parseObjectId,
+  readJsonObject,
+} from "@/lib/http";
 import { getCategoryById } from "@/util/get-categories";
 import { getUserById } from "@/lib/users";
 import { isEligibleCandidate } from "@/lib/voting";
 
-export async function GET() {
+export async function GET(request?: Request) {
   try {
-    const session = await getGuestSession();
-    if (!session) return errorResponse("Sessão inválida", 401);
-    const event = await getCurrentEvent();
-    if (!event || event._id !== session.eventId || !isVotingOpen(event)) {
-      return errorResponse("A votação não está aberta", 403);
-    }
+    const requestedEventId = request
+      ? (new URL(request.url).searchParams.get("eventId") ?? undefined)
+      : undefined;
+    const session = await getVotingGuest(requestedEventId);
 
     const votes = await (
       await getDb()
@@ -32,23 +35,18 @@ export async function GET() {
       votes.map((vote) => ({ categoryId: vote.categoryId.toString() })),
     );
   } catch (error) {
-    console.error("Vote lookup failed", error);
+    if (error instanceof GuestAccessError)
+      return errorResponse(error.message, error.status);
+    logServerError("Vote lookup failed", error);
     return errorResponse("Não foi possível carregar os votos", 500);
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const session = await getGuestSession();
-    if (!session) return errorResponse("Sessão inválida", 401);
-
-    const event = await getCurrentEvent();
-    if (!event || event._id !== session.eventId || !isVotingOpen(event)) {
-      return errorResponse("A votação não está aberta", 403);
-    }
-
     const body = await readJsonObject(request);
     if (!body) return errorResponse("Corpo da requisição inválido", 400);
+    const session = await getVotingGuest(body.eventId);
     const categoryId = parseObjectId(body.categoryId);
     const voteForId = parseObjectId(body.voteForId);
     if (!categoryId || !voteForId) return errorResponse("Voto inválido", 400);
@@ -66,7 +64,10 @@ export async function POST(request: Request) {
     if (!candidate || candidate.eventId !== session.eventId) {
       return errorResponse("Candidato não encontrado", 404);
     }
-    if (!isEligibleCandidate(category, candidate, session.userId)) {
+    if (
+      candidate.status === "cancelled" ||
+      !isEligibleCandidate(category, candidate, session.userId)
+    ) {
       return errorResponse("Candidato inelegível para esta categoria", 400);
     }
 
@@ -79,10 +80,12 @@ export async function POST(request: Request) {
     });
     return Response.json({ message: "Voto registrado com sucesso" });
   } catch (error) {
+    if (error instanceof GuestAccessError)
+      return errorResponse(error.message, error.status);
     if (error instanceof MongoServerError && error.code === 11000) {
       return errorResponse("Você já votou nesta categoria", 409);
     }
-    console.error("Vote creation failed", error);
+    logServerError("Vote creation failed", error);
     return errorResponse("Não foi possível registrar o voto", 500);
   }
 }

@@ -5,6 +5,36 @@ export function errorResponse(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
 
+export function logServerError(context: string, error: unknown) {
+  // Exception messages and SDK response bodies can contain credentials or email.
+  const locations =
+    error instanceof Error
+      ? (error.stack ?? "")
+          .split("\n")
+          .slice(1)
+          .flatMap((frame) => {
+            const location = frame.match(
+              /\/([A-Za-z0-9_.-]+\.[cm]?[jt]sx?):(\d+):(\d+)\)?$/,
+            );
+            return location
+              ? [`${location[1]}:${location[2]}:${location[3]}`]
+              : [];
+          })
+          .slice(0, 6)
+      : [];
+  console.error(context, {
+    errorType: error instanceof Error ? error.constructor.name : typeof error,
+    code:
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      typeof error.code === "number"
+        ? error.code
+        : undefined,
+    locations,
+  });
+}
+
 export function parseObjectId(value: unknown): ObjectId | null {
   return typeof value === "string" && ObjectId.isValid(value)
     ? new ObjectId(value)

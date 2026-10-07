@@ -15,7 +15,11 @@ const CategoryLink: FC<CategoryLinkProps> = ({
   firstClassname,
 }) => (
   <Link
-    href={alreadyVoted ? "#" : `/votacao/categories/${category._id}`}
+    href={
+      alreadyVoted
+        ? "#"
+        : `/votacao/categories/${category._id}?eventId=${category.eventId}`
+    }
     key={category._id}
     className={`${firstClassname} flex items-center justify-start gap-6 rounded-xl p-4 lg:p-8 ${secondaryFont.className} text-left text-3xl ${alreadyVoted ? "cursor-not-allowed bg-gray-400 opacity-60" : "bg-purple-600"}`}
     aria-disabled={alreadyVoted}

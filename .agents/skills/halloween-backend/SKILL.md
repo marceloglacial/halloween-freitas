@@ -20,7 +20,7 @@ Start with the affected `app/api/` handler, its colocated tests, the shared help
 
 Use [halloween-event-workflows](../halloween-event-workflows/SKILL.md) when the change affects schedules, registration, voting, authorization, or results behavior. It guides domain tracing and regressions without requiring unrelated subsystems to be loaded.
 
-At protected handlers, verify Clerk admin authorization before protected reads or writes. At guest voting handlers, use the verified server cookie identity. Treat a client-provided event or record ID as input to validate and scope, not proof of ownership. When a helper looks up a record by ID alone, ensure the caller verifies the record's owning event before using it in an event-scoped operation.
+At protected handlers, verify Clerk admin authorization before protected reads or writes. At guest voting handlers, resolve the verified Clerk session to its event registration through `lib/auth/voting-guest.ts`. Use `lib/auth/guest-registration.ts` for access independent of voting. Keep ownership claims in the authenticated POST access endpoint and preserve linked Clerk IDs during ordinary email edits. Treat a client-provided event or record ID as input to validate and scope, not proof of ownership. When a helper looks up a record by ID alone, ensure the caller verifies the record's owning event before using it in an event-scoped operation.
 
 Construct explicit write fields from validated input rather than applying a request body wholesale. For uniqueness conflicts, handle the database's duplicate-key result as well as any pre-check; pre-checks alone cannot enforce concurrent uniqueness. Follow existing transaction boundaries for event creation and activation.
 

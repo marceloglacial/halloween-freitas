@@ -3,6 +3,7 @@ import "./globals.css";
 import { defaultFont } from "@/util/fonts";
 import { Toaster } from "sonner";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ptBR } from "@clerk/localizations/pt-BR";
 
 export const metadata: Metadata = {
   title: "Halloween dos Freitas",
@@ -18,7 +19,30 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const content = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
-    <ClerkProvider>{children}</ClerkProvider>
+    <ClerkProvider
+      localization={ptBR}
+      appearance={{
+        variables: {
+          colorPrimary: "#fb923c",
+          colorBackground: "#1c1917",
+          colorForeground: "#ffffff",
+        },
+        elements: {
+          socialButtonsBlockButton: {
+            backgroundColor: "#27272a",
+            color: "#ffffff",
+          },
+          formFieldInput: {
+            backgroundColor: "#09090b",
+            color: "#ffffff",
+            borderColor: "#fb923c",
+          },
+          formButtonPrimary: { color: "#000000" },
+        },
+      }}
+    >
+      {children}
+    </ClerkProvider>
   ) : (
     children
   );

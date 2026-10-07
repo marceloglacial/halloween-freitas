@@ -8,11 +8,3 @@ export function getDatabaseConfig() {
 
   return { url, name };
 }
-
-export function getSessionSecret() {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret || secret.length < 32) {
-    throw new Error("SESSION_SECRET must contain at least 32 characters");
-  }
-  return secret;
-}

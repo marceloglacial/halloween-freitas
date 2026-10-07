@@ -9,7 +9,7 @@ import {
   parseObjectId,
   readJsonObject,
 } from "@/lib/http";
-import { getUsersForEvent } from "@/lib/users";
+import { getAdminUsersForEvent } from "@/lib/users";
 
 async function adminEvent(eventId: unknown) {
   if (!(await isAdmin())) return errorResponse("Não autorizado", 401);
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       new URL(request.url).searchParams.get("eventId"),
     );
     if (event instanceof Response) return event;
-    return Response.json(await getUsersForEvent(event._id));
+    return Response.json(await getAdminUsersForEvent(event._id));
   } catch (error) {
     console.error("Admin user listing failed", error);
     return errorResponse("Não foi possível carregar os usuários", 500);

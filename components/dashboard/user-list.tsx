@@ -16,6 +16,7 @@ export default function UserList({ event }: { event: HalloweenEvent }) {
     handleDelete,
     handleEdit,
     handleCreate,
+    handleResetAccess,
     loading,
     modalUser,
     openEditModal,
@@ -57,7 +58,7 @@ export default function UserList({ event }: { event: HalloweenEvent }) {
         ) : filteredUsers.length === 0 ? (
           <li className="text-center text-gray-400">No users found.</li>
         ) : (
-          filteredUsers.map((user: User) => (
+          filteredUsers.map((user: AdminUser) => (
             <UserListItem
               key={user._id}
               user={user}
@@ -73,6 +74,7 @@ export default function UserList({ event }: { event: HalloweenEvent }) {
         setModalUser={setModalUser}
         handleEdit={handleEdit}
         handleCreate={handleCreate}
+        handleResetAccess={handleResetAccess}
         closeModal={closeModal}
         loading={loading}
         error={error}

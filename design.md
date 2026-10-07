@@ -110,7 +110,7 @@ they are not currently implemented.
 | Screen                     | Purpose and layout                                                | Important states                                                                       |
 | -------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | `/`                        | Hero, countdown, party information, program, registration, footer | Pre-event, registration upcoming/open/closed, voting soon/open/ended, post-event       |
-| `/votacao`                 | Centered email entry for registered guests                        | Entering, rejected email or connection error, voting unavailable                       |
+| `/votacao`                 | Verified Google/email-code access for registered guests           | Entering, rejected email or connection error, voting unavailable                       |
 | `/votacao/categories`      | Category tiles with guest greeting                                | Available category, already voted, guest session unavailable                           |
 | `/votacao/categories/[id]` | Candidate search, selectable photo grid, floating vote action     | No matches, selected candidate, submitting, vote success or failure                    |
 | `/resultados`              | Published category tiles and event navigation                     | Published results, no published results                                                |
@@ -127,7 +127,7 @@ is open; otherwise the section displays the opening or closing date.
 
 Registration asks for full name and email and explains that each adult needs a
 separate email. During submission, disable the inputs and action and show
-“Enviando...”. Success uses a toast and resets the form; duplicate registration,
+“Enviando...”. Success resets the form and leaves a persistent “Presença confirmada!” panel; duplicate registration,
 server rejection, and connection failure produce error toasts.
 
 At the event start, the homepage lifecycle area replaces pre-event content with
@@ -143,8 +143,9 @@ results publication checks.
 
 ### Voting
 
-Guests enter their registered email to start a server-managed session. Clerk is
-used for administrators, not this guest entry flow. Keep voting actions tied to
+Guests follow `/votacao` to event-specific `/acesso`, choose Google or an email
+verification code, and return to voting. Clerk authenticates both guests and
+administrators; the server links each guest to their existing event registration. Keep voting actions tied to
 the event's open state and enforce voting integrity on the server as described
 in the architecture guide.
 
@@ -184,7 +185,8 @@ communicate lifecycle restrictions; UI availability must match server rules.
 
 Participant dialogs edit name, email, group/junior eligibility, and a Cloudinary
 photo. Pending requests disable relevant inputs and show progress text; failures
-appear inline. The participant dialog focuses the name field and handles Escape,
+appear inline. Linked participants have an explicit “Redefinir vínculo de acesso”
+action with confirmation; ordinary email edits preserve ownership. The participant dialog focuses the name field and handles Escape,
 but does not share all focus and scroll behavior of the photo dialogs.
 
 ## Responsive and interaction patterns

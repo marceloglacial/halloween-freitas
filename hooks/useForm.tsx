@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 export function useForm() {
   const [loading, setLoading] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   const handleSubmit = async (e: FormSubmitEvent) => {
     e.preventDefault();
@@ -22,6 +23,7 @@ export function useForm() {
       const data = await res.json();
       if (res.ok && data._id) {
         toast.success("Inscrição realizada com sucesso!");
+        setConfirmed(true);
         form.reset();
       } else if (res.status === 409) {
         toast.error("Este email já está inscrito.");
@@ -39,5 +41,5 @@ export function useForm() {
     }
   };
 
-  return { loading, handleSubmit };
+  return { loading, confirmed, handleSubmit };
 }

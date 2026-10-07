@@ -13,7 +13,7 @@ Choose the relevant starting points rather than loading every subsystem:
 
 - **Schedules and lifecycle:** `lib/event-schedule.ts` handles local schedule input and timezone conversion; `lib/events.ts` resolves events and exposes lifecycle predicates. Follow mutations into `app/api/admin/events/` and homepage consumers when their behavior is affected.
 - **Registration:** `app/api/registrations/route.ts`, `lib/users.ts`, and `lib/http.ts` connect event availability, normalized identity, and request validation.
-- **Guest identity and voting:** `lib/auth/guest-session.ts`, `app/api/guest-session/route.ts`, and `app/api/votes/route.ts` establish and verify identity. Follow candidate eligibility into `lib/voting.ts` and category lookup helpers.
+- **Guest identity and voting:** `lib/auth/guest-registration.ts` and `app/api/guest-access/route.ts` link verified Clerk identities to event registrations; `lib/auth/voting-guest.ts` and `app/api/votes/route.ts` enforce voting access. The retired guest-session endpoint returns 410. Follow candidate eligibility into `lib/voting.ts` and category lookup helpers.
 - **Admin access and public results:** `lib/auth/admin.ts` supplies authorization; protected handlers enforce it. Trace result visibility and public serialization through `lib/results.ts` and the relevant API handler.
 
 For each affected operation, identify its event lookup, ownership filter, authorization check, lifecycle predicate, and client serializer before editing it. A current-event lookup can fall back to an archived event, so availability must come from the appropriate predicate rather than the existence of a returned event.

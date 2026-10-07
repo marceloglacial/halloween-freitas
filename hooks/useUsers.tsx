@@ -1,12 +1,12 @@
 import { useCallback, useState } from "react";
 
 export function useUsers(eventId: string) {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [showModal, setShowModal] = useState(false);
-  const [modalUser, setModalUser] = useState<Partial<User>>({});
+  const [modalUser, setModalUser] = useState<Partial<AdminUser>>({});
 
   const fetchUsers = useCallback(
     async function fetchUsers() {
@@ -90,6 +90,50 @@ export function useUsers(eventId: string) {
     }
   }
 
+  async function handleResetAccess(user: Partial<AdminUser>) {
+    const saved = users.find((entry) => entry._id === user._id);
+    if (
+      !saved?.clerkUserId ||
+      !window.confirm(
+        `Redefinir o acesso de ${saved.fullName} (${saved.email})? Depois, o convidado deverá verificar esse email novamente. Corrija e salve o email antes de redefinir se a conta anterior não deve recuperar o acesso.`,
+      )
+    )
+      return;
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/admin/users/access-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId,
+          userId: saved._id,
+          expectedClerkUserId: saved.clerkUserId,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Não foi possível redefinir o acesso.");
+      }
+      setUsers((previous) =>
+        previous.map((entry) =>
+          entry._id === saved._id
+            ? { ...entry, clerkUserId: undefined }
+            : entry,
+        ),
+      );
+      setShowModal(false);
+    } catch (failure) {
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : "Erro de conexão. Tente novamente.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const q = search.trim().toLowerCase();
   const filteredUsers = !q
     ? users
@@ -99,7 +143,7 @@ export function useUsers(eventId: string) {
           .some((field) => field!.toLowerCase().includes(q)),
       );
 
-  function openEditModal(user?: User | null) {
+  function openEditModal(user?: AdminUser | null) {
     if (user) {
       setModalUser(user);
     } else {
@@ -148,6 +192,7 @@ export function useUsers(eventId: string) {
     handleDelete,
     handleEdit,
     handleCreate,
+    handleResetAccess,
     loading,
     modalUser,
     openEditModal,

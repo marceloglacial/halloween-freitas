@@ -205,6 +205,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
+  "@clerk/localizations>@clerk/shared": 4.32.0
   "@babel/core": 7.29.6
   "@humanfs/node@<0.16.8": 0.16.8
   baseline-browser-mapping: 2.11.23
@@ -217,6 +218,9 @@ overrides:
 importers:
   .:
     dependencies:
+      "@clerk/localizations":
+        specifier: 4.16.1
+        version: 4.16.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       "@clerk/nextjs":
         specifier: ^7.9.2
         version: 7.9.3(next@16.4.0(@babel/core@7.29.6(supports-color@7.2.0))(@types/node@22.20.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -412,6 +416,13 @@ packages:
     resolution:
       {
         integrity: sha512-UsvHaBOSzOKU9F7Z68UOQDcOAYRpdnKyzAsWgtqYfF3XdOgbzSdKVuTCx79PkyNR/UnUeqK++fLyz6cNHyc19g==,
+      }
+    engines: { node: ">=20.9.0" }
+
+  "@clerk/localizations@4.16.1":
+    resolution:
+      {
+        integrity: sha512-dYJpUu7EnQ/lIl5n02X4Q+sq0+YxYZVQwVqL4Wwq0ds759oG3WQ6735JU9vQIhCimK133daU+6rWwjeSR8x2PQ==,
       }
     engines: { node: ">=20.9.0" }
 
@@ -4699,6 +4710,13 @@ snapshots:
       "@clerk/shared": 4.32.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       standardwebhooks: 1.0.0
       tslib: 2.8.1
+    transitivePeerDependencies:
+      - react
+      - react-dom
+
+  "@clerk/localizations@4.16.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)":
+    dependencies:
+      "@clerk/shared": 4.32.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
     transitivePeerDependencies:
       - react
       - react-dom

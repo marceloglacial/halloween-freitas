@@ -20,6 +20,7 @@ describe("database indexes", () => {
     const issues = await getIndexIssues(indexDatabase());
     expect(issues).toHaveLength(requiredIndexes.length);
     expect(issues).toContain("registration: missing");
+    expect(issues).toContain("guest ownership: missing");
   });
 
   it("accepts indexes only when their options match", async () => {
@@ -36,6 +37,41 @@ describe("database indexes", () => {
       ),
     );
     expect(await getIndexIssues(db)).toEqual([]);
+  });
+
+  it("rejects a guest ownership index that also covers legacy unlinked records", async () => {
+    const definitions = Object.groupBy(
+      requiredIndexes,
+      ({ collection }) => collection,
+    );
+    const indexes = Object.fromEntries(
+      Object.entries(definitions).map(([collection, entries]) => [
+        collection,
+        entries.map(({ key, options }) => ({ key, ...options })),
+      ]),
+    );
+    indexes.users.find(
+      (index) => index.key.clerkUserId,
+    ).partialFilterExpression = undefined;
+    expect(await getIndexIssues(indexDatabase(indexes))).toEqual([
+      "guest ownership: incorrect partial filter",
+    ]);
+  });
+
+  it("stops before creating indexes when linked ownership is duplicated", async () => {
+    const db = {
+      collection: () => ({
+        aggregate: (pipeline) => ({
+          limit: () => ({
+            next: async () =>
+              pipeline[0]?.$match?.clerkUserId ? { count: 2 } : null,
+          }),
+        }),
+      }),
+    };
+    await expect(assertNoDuplicateData(db)).rejects.toThrow(
+      "Resolve duplicate guest ownership records",
+    );
   });
 
   it("checks registration duplicates across every event", async () => {

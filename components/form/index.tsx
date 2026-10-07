@@ -2,9 +2,26 @@
 
 import React, { FC, JSX } from "react";
 import { useForm } from "@/hooks/useForm";
+import Link from "next/link";
 
 const Form: FC = (): JSX.Element => {
-  const { loading, handleSubmit } = useForm();
+  const { loading, confirmed, handleSubmit } = useForm();
+  if (confirmed)
+    return (
+      <div
+        role="status"
+        className="grid gap-4 rounded-2xl border border-orange-400 p-6 text-center"
+      >
+        <p className="text-xl text-orange-300">Presença confirmada! 🎃</p>
+        <p>
+          Você já está inscrito. Não precisa entrar nem verificar seu email para
+          confirmar presença.
+        </p>
+        <Link href="/votacao" className="text-orange-300 underline">
+          Acessar votação quando estiver aberta
+        </Link>
+      </div>
+    );
   return (
     <form
       className="mx-auto grid w-full max-w-sm gap-8"

@@ -4,7 +4,11 @@ import { useRouter } from "next/navigation";
 import UserCard from "../user-card";
 import { toast } from "sonner";
 
-export default function VoteGrid({ users, categoryId }: VoteGridProps) {
+export default function VoteGrid({
+  users,
+  categoryId,
+  eventId,
+}: VoteGridProps) {
   const router = useRouter();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,6 +26,7 @@ export default function VoteGrid({ users, categoryId }: VoteGridProps) {
         body: JSON.stringify({
           voteForId: selectedUserId,
           categoryId,
+          eventId,
         }),
       });
       const data = await res.json();
@@ -33,7 +38,7 @@ export default function VoteGrid({ users, categoryId }: VoteGridProps) {
         action: {
           label: "Voltar",
           onClick: () => {
-            router.push("/votacao/categories");
+            router.push(`/votacao/categories?eventId=${eventId}`);
           },
         },
       });

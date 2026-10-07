@@ -81,13 +81,14 @@ Portuguese user-facing errors, and serialize MongoDB IDs and dates for clients.
   window; allow admins to open voting only after the event starts; accept votes
   only while voting is open; publish results only after voting ends and an admin
   explicitly enables them.
-- Derive guest voter identity from the signed, HTTP-only `guest_session` cookie,
-  never from a client-supplied voter ID.
+- Derive guest voter identity from the verified Clerk session and its
+  event-scoped registration link, never from a client-supplied voter ID or email.
+  Claim unlinked registrations atomically using a Clerk-verified email.
 - Protect `/api/admin/*` with Clerk and require
   `publicMetadata.role === "admin"`.
 - Never return email addresses from public endpoints.
-- Preserve uniqueness for `(eventId, normalizedEmail)` registrations and
-  `(eventId, voterId, categoryId)` votes.
+- Preserve uniqueness for `(eventId, normalizedEmail)` registrations, linked
+  `(eventId, clerkUserId)` ownership, and `(eventId, voterId, categoryId)` votes.
 
 ## Testing and review
 

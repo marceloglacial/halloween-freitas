@@ -23,11 +23,9 @@ Install dependencies and create the local environment file:
 ```bash
 pnpm install
 cp .env.example .env.local
-openssl rand -base64 32
 ```
 
-Put the generated value in `SESSION_SECRET`, configure the remaining variables,
-then start the application:
+Configure the variables, then start the application:
 
 ```bash
 pnpm dev
@@ -37,14 +35,13 @@ The development server is available at `http://localhost:3000`.
 
 ## Environment variables
 
-| Variable                            | Purpose                                                       |
-| ----------------------------------- | ------------------------------------------------------------- |
-| `DATABASE_URL`                      | MongoDB connection string                                     |
-| `DATABASE_NAME`                     | Database containing event collections                         |
-| `SESSION_SECRET`                    | HMAC secret for guest voting sessions; at least 32 characters |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Public Clerk application key                                  |
-| `CLERK_SECRET_KEY`                  | Server-side Clerk key                                         |
-| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud used for participant photos                  |
+| Variable                            | Purpose                                      |
+| ----------------------------------- | -------------------------------------------- |
+| `DATABASE_URL`                      | MongoDB connection string                    |
+| `DATABASE_NAME`                     | Database containing event collections        |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Public Clerk application key                 |
+| `CLERK_SECRET_KEY`                  | Server-side Clerk key                        |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Cloudinary cloud used for participant photos |
 
 Store values in an ignored `.env.local` or `.env` file. Values prefixed with
 `NEXT_PUBLIC_` are included in browser bundles and must not contain secrets.
@@ -62,6 +59,79 @@ the Clerk user's public metadata to:
 
 Being signed in without this metadata is not sufficient. The dashboard and
 every `/api/admin/*` handler check the role independently.
+
+## Guest authentication
+
+Reuse the same Clerk application for guests and administrators. Configure email
+as the required identifier, verification at sign-up, and email verification
+codes for sign-in. New guests must not need a password, phone, username, name,
+or extra profile setup. Enable Google for sign-up and sign-in alongside email
+codes. Preserve existing administrator account access and metadata; disabling
+new-user passwords must not disable the existing admin sign-in method.
+
+The application uses localized Clerk components at `/acesso` and
+`/acesso/cadastro`. Both return through `/acesso/concluir` with event context;
+Clerk sessions are reused. Keep email-code access available when Google fails or
+an invitation is opened inside a messaging-app browser. Google OAuth does not
+support embedded in-app browsers; the page explains the email-code/regular-browser
+fallback. Clerk manages code expiry, resend throttling, and same-email OAuth
+account linking. A different email never silently merges MongoDB registrations.
+
+For production, configure custom Google OAuth client credentials in Clerk and
+register Clerk's exact authorized redirect URI in Google Cloud. Configure the
+production domain/origins, consent screen, and intended audience; a testing-only
+OAuth app may restrict users. Preserve Google's email-subaddress protection and
+use email codes for affected registration aliases. Configure these settings
+before rollout, then exercise both new and existing guest accounts plus admin
+sign-in. See Clerk's [sign-in options](https://clerk.com/docs/guides/configure/auth-strategies/sign-up-sign-in-options),
+[Google setup](https://clerk.com/docs/guides/configure/auth-strategies/social-connections/google),
+and [account linking](https://clerk.com/docs/guides/configure/auth-strategies/social-connections/account-linking).
+
+Only the normal Clerk public/server keys are application environment variables;
+Google's client secret belongs in Clerk, never the browser bundle. No custom
+email provider is needed for authentication. Initial RSVP sends no authentication
+email and remains saved even if later sign-in fails.
+
+### Registration ownership and host recovery
+
+Existing records link lazily after verified access. Each event retains its
+registration IDs, display names, votes, and normalized-email uniqueness. Account
+changes do not transfer a linked registration. Ambiguous matching records or a
+registration linked to another Clerk ID require host assistance.
+
+In the selected event's participant editor, save the correct registration email
+first, then choose **Redefinir vínculo de acesso** and confirm. The action clears
+only the expected link and keeps all votes. The intended guest signs in using
+that saved email to link again. An account that still verifies the saved email
+can claim the released link; resetting alone is not an email-ownership ban. A
+stale reset is rejected: reload the list and review the current owner before
+retrying. The guest's Clerk account is not deleted or signed out globally.
+
+### Index deployment for existing event-scoped databases
+
+Before deploying F01, confirm the target database and take a verified backup.
+Run `pnpm check:indexes` to inspect required indexes. The new partial unique
+`(eventId, clerkUserId)` index covers string Clerk IDs and leaves unlinked legacy
+registrations untouched. Resolve duplicate linked ownership without guessing or
+transferring guest accounts, then run the authorized index-only command:
+
+```bash
+pnpm create:indexes
+pnpm check:indexes
+```
+
+The command checks duplicates, creates required indexes, and verifies their
+options. It does not backfill event data, link accounts, change records, or send
+emails. An existing index with incorrect options requires explicit operator
+review; the command does not drop it. Do not rerun the legacy event migration
+merely to deploy guest linking. Provision the new index before enabling F01 so
+concurrent claims remain unique across instances.
+
+The guest-cookie authentication endpoint is intentionally incompatible: it now
+returns 410, and obsolete cookies cannot authorize any protected operation.
+After deployment, remove the unused `SESSION_SECRET` from deployment configuration.
+Check Google/email-code sign-in, account recovery, signed-out protected APIs,
+closed voting, host reset, and guest dashboard denial while admin access works.
 
 ## Cloudinary uploads
 
@@ -123,8 +193,6 @@ restore the backup before retrying.
 - Configure every variable from `.env.example` in the deployment environment.
 - Use a MongoDB deployment that supports sessions, transactions, and the
   indexes created by the migration.
-- Keep `SESSION_SECRET` stable across instances and deployments so active guest
-  sessions remain verifiable.
 - Configure the production URL and allowed origins in Clerk, and verify the
   Cloudinary `halloween-freitas` upload preset restrictions.
 - Run `pnpm test`, `pnpm lint`, and `pnpm build` against the release revision.

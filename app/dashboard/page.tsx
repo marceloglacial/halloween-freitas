@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { isAdmin } from "@/lib/auth/admin";
 import { getEvents } from "@/lib/events";
 import { Metadata } from "next";
-import { redirect } from "next/navigation";
+import FeatureUnavailable from "@/components/feature-unavailable";
 
 export const metadata: Metadata = {
   title: "Dashboard - Halloween dos Freitas",
@@ -18,7 +18,13 @@ export default async function DashboardPage({
 }) {
   const { userId, redirectToSignIn } = await auth();
   if (!userId) redirectToSignIn({ returnBackUrl: "/dashboard" });
-  if (!(await isAdmin(userId))) redirect("/logout");
+  if (!(await isAdmin(userId)))
+    return (
+      <FeatureUnavailable
+        title="Acesso restrito"
+        message="Esta área é reservada aos administradores. Sua sessão de convidado continua ativa."
+      />
+    );
 
   const [events, query] = await Promise.all([getEvents(), searchParams]);
   const requestedYear = Number(query.year);

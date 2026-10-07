@@ -2,16 +2,30 @@ import { ObjectId } from "mongodb";
 import { redirect } from "next/navigation";
 import CategoryList from "@/components/votacao/category-list";
 import FeatureUnavailable from "@/components/feature-unavailable";
-import { getGuestSession } from "@/lib/auth/guest-session";
+import {
+  getGuestRegistration,
+  GuestAccessError,
+} from "@/lib/auth/guest-registration";
+import { guestAccessUrl, validGuestEventId } from "@/util/guest-access";
 import { getDb } from "@/lib/db";
 import { getCurrentEvent, isVotingOpen } from "@/lib/events";
 import { getCategories } from "@/util/get-categories";
 
 export const dynamic = "force-dynamic";
 
-export default async function VotingCategoriesPage() {
+export default async function VotingCategoriesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ eventId?: string }>;
+}) {
   const event = await getCurrentEvent();
-  if (!event || !isVotingOpen(event)) {
+  const query = await searchParams;
+  if (
+    !event ||
+    !isVotingOpen(event) ||
+    (query.eventId !== undefined &&
+      (!validGuestEventId(query.eventId) || query.eventId !== event._id))
+  ) {
     return (
       <FeatureUnavailable
         title="Votação encerrada"
@@ -19,9 +33,13 @@ export default async function VotingCategoriesPage() {
       />
     );
   }
-  const session = await getGuestSession();
-  if (!session) redirect("/votacao");
-  if (session.eventId !== event._id) redirect("/votacao");
+  let session;
+  try {
+    session = await getGuestRegistration(event._id);
+  } catch (error) {
+    if (!(error instanceof GuestAccessError)) throw error;
+    redirect(guestAccessUrl(event._id, "/votacao/categories"));
+  }
 
   const [categories, votes] = await Promise.all([
     getCategories(session.eventId),

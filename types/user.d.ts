@@ -6,9 +6,11 @@ type User = {
   imageUrl?: string | null;
   group?: boolean;
   junior?: boolean;
+  status?: "confirmed" | "cancelled";
 };
 
-type PublicUser = Omit<User, "email">;
+type PublicUser = Omit<User, "email" | "status">;
+type AdminUser = User & { clerkUserId?: string };
 
 interface UserListItemProps {
   user: User;
@@ -18,8 +20,8 @@ interface UserListItemProps {
 
 interface UserEditModalProps {
   showModal: boolean;
-  modalUser: Partial<User>;
-  setModalUser: (u: Partial<User>) => void;
+  modalUser: Partial<AdminUser>;
+  setModalUser: (u: Partial<AdminUser>) => void;
   handleEdit: (user: Partial<User>) => void;
   closeModal: () => void;
   loading: boolean;

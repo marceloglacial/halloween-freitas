@@ -8,7 +8,7 @@ the annual Halloween dos Freitas event.
 - Next.js 16 App Router and React 19
 - TypeScript and Tailwind CSS 4
 - MongoDB for event, participant, category, and vote data
-- Clerk for administrator authentication
+- Clerk for verified guest and administrator authentication
 - Cloudinary for participant images
 
 ## Quick start

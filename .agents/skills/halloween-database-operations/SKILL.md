@@ -10,6 +10,7 @@ Read the [operations guide](../../../docs/operations.md) before database or envi
 ## Choose the operation
 
 - **Verify indexes:** inspect `scripts/check-database-indexes.mjs` and the expected definitions in `scripts/database-indexes.mjs`. `pnpm check:indexes` reads the configured database and returns a failing status for missing or misconfigured indexes. A failed check is evidence to report, not authorization to repair the database.
+- **Create indexes on an event-scoped database:** `pnpm create:indexes` checks duplicates, creates required indexes, and verifies them without backfilling registration records. Confirm the target and verified backup before authorized execution.
 - **Maintain migration code:** inspect `scripts/migrate-events.mjs`, shared index definitions, and their tests. Follow the migration's actual write order and idempotency behavior before changing it. Keep operational consequences documented in the operations guide.
 - **Run a legacy migration:** `pnpm migrate:events` writes records and indexes. Use it for the documented pre-event upgrade when the user's task authorizes that database mutation; loading this skill alone grants no authorization.
 

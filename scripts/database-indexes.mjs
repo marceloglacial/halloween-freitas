@@ -33,6 +33,15 @@ export const requiredIndexes = [
     options: {},
   },
   {
+    collection: "users",
+    label: "guest ownership",
+    key: { eventId: 1, clerkUserId: 1 },
+    options: {
+      unique: true,
+      partialFilterExpression: { clerkUserId: { $type: "string" } },
+    },
+  },
+  {
     collection: "votes",
     label: "vote",
     key: { eventId: 1, voterId: 1, categoryId: 1 },
@@ -41,6 +50,20 @@ export const requiredIndexes = [
 ];
 
 const duplicateChecks = [
+  {
+    collection: "users",
+    label: "guest ownership",
+    pipeline: [
+      { $match: { clerkUserId: { $type: "string" } } },
+      {
+        $group: {
+          _id: { eventId: "$eventId", clerkUserId: "$clerkUserId" },
+          count: { $sum: 1 },
+        },
+      },
+      { $match: { count: { $gt: 1 } } },
+    ],
+  },
   {
     collection: "events",
     label: "event year",

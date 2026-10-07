@@ -1,13 +1,23 @@
-import BackgroundVideo from "@/components/background-video";
 import FeatureUnavailable from "@/components/feature-unavailable";
-import VotingLogin from "@/components/votacao/voting-login";
+import { redirect } from "next/navigation";
+import { guestAccessUrl, validGuestEventId } from "@/util/guest-access";
 import { getCurrentEvent, isVotingOpen } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
-export default async function VotingLoginPage() {
+export default async function VotingLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ eventId?: string }>;
+}) {
   const event = await getCurrentEvent();
-  if (!event || !isVotingOpen(event)) {
+  const query = await searchParams;
+  if (
+    !event ||
+    !isVotingOpen(event) ||
+    (query.eventId !== undefined &&
+      (!validGuestEventId(query.eventId) || query.eventId !== event._id))
+  ) {
     return (
       <FeatureUnavailable
         title="Votação encerrada"
@@ -16,10 +26,5 @@ export default async function VotingLoginPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen w-full">
-      <BackgroundVideo />
-      <VotingLogin />
-    </div>
-  );
+  redirect(guestAccessUrl(event._id));
 }
