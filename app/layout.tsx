@@ -26,6 +26,10 @@ export default function RootLayout({
           colorPrimary: "#fb923c",
           colorBackground: "#1c1917",
           colorForeground: "#ffffff",
+          colorMutedForeground: "#d6d3d1",
+          colorInput: "#292524",
+          colorInputForeground: "#ffffff",
+          colorBorder: "#57534e",
         },
         elements: {
           socialButtonsBlockButton: {
@@ -37,6 +41,13 @@ export default function RootLayout({
             color: "#ffffff",
             borderColor: "#fb923c",
           },
+          otpCodeFieldInput: {
+            backgroundColor: "#292524",
+            color: "#ffffff",
+            borderColor: "#a8a29e",
+            caretColor: "#fb923c",
+          },
+          formResendCodeLink: { color: "#fdba74" },
           formButtonPrimary: { color: "#000000" },
         },
       }}
