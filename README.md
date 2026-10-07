@@ -38,6 +38,8 @@ Other available commands are `pnpm start`, `pnpm format`, and the data-mutating
 
 ## Documentation
 
+- [UI design reference](design.md) describes the visual language, responsive
+  layouts, user journeys, interaction states, and accessibility guidance.
 - [Architecture and domain rules](docs/architecture.md) explains event
   ownership, lifecycle, voting, authorization, and privacy boundaries.
 - [Operations](docs/operations.md) covers environment configuration, local
