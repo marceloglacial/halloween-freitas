@@ -136,3 +136,74 @@ restore the backup before retrying.
 After deployment, verify the public home page, registration state, admin sign-in
 and dashboard authorization, manual voting controls, locked voting pages,
 results visibility, and the photo gallery.
+
+## AI agent tooling
+
+Next.js bundles version-matched documentation under
+`node_modules/next/dist/docs/`. The managed block in `AGENTS.md` directs agents
+there, and `CLAUDE.md` imports those same project instructions. Preserve the
+managed block when editing contributor guidance.
+
+### Installed workflow skills
+
+The official skills are versioned in `.agents/skills`, alongside the project's
+frontend, backend, event, and database skills:
+
+- `next-dev-loop`: runtime verification through Next.js MCP and a real browser.
+- `next-bundle-optimizer`: bundle auditing and requested optimization.
+- `next-cache-components-adoption`: requested Cache Components migration.
+- `next-cache-components-optimizer`: static-shell optimization after adoption.
+- `next-partial-prefetching-adoption`: requested Partial Prefetching migration.
+- `next-partial-prefetching-optimizer`: navigation optimization after adoption.
+
+Source: [vercel/next.js skills at revision
+fa8dcf34f1629dacc62f1952ee8a66a2439781a5](https://github.com/vercel/next.js/tree/fa8dcf34f1629dacc62f1952ee8a66a2439781a5/skills),
+resolved from `canary`. Complete upstream skill directories are retained. Read
+only the skill relevant to the task and follow its version and feature
+prerequisites. Installation does not enable caching or prefetching features or
+run any optimization workflow.
+
+### Personal tooling setup
+
+The runtime skill requires Next.js 16.3+ using Turbopack and a directly available
+`agent-browser` CLI at version 0.31.1 or newer. This setup installs 0.38.2. To
+reproduce it on another contributor's machine:
+
+```bash
+npm install -g agent-browser@0.38.2
+agent-browser install
+agent-browser --version
+codex mcp add next-devtools -- npx -y next-devtools-mcp@latest
+```
+
+The MCP registration lives in the contributor's personal Codex configuration;
+it is not installed by `pnpm install`. The repository's `.mcp.json` provides the
+same server definition for clients supporting that file. Codex users should use
+the personal registration rather than assuming `.mcp.json` is loaded. Preserve
+other MCP entries, and start a new agent session after registration if the tools
+are not yet available.
+
+### Runtime verification
+
+Start `pnpm dev`, or reuse the existing server URL and PID in `.next/dev/lock`.
+Follow `next-dev-loop` for its worktree-scoped browser session, saved login
+state, React DevTools, and MCP preflight. Read `agent-browser skills get core`
+before driving the CLI. Routine verification can remain headless; a login that
+requires user interaction uses the skill's headed flow.
+
+The development-only `/_next/mcp` endpoint provides tool discovery, route
+listing, compilation diagnostics, and runtime errors. Discover tools rather
+than assuming names or signatures. Browser warnings and errors are forwarded to
+the development terminal by Next.js's default `logging.browserToTerminal`
+behavior; no additional logging configuration is needed.
+
+If discovery fails, check the running server's actual port, Next.js version,
+Turbopack availability, and the agent client's MCP configuration. If browser
+preflight fails, check the CLI version and browser installation. Report missing
+service credentials or database connectivity separately from tooling failures.
+Runtime verification supplements `pnpm test`, `pnpm lint`, and `pnpm build`.
+Preserve `.next` while a development server is running, and stop only servers
+started for the current task. Close the scoped verification browser when done.
+
+Automatic Next.js feedback remains disabled; this setup does not change
+telemetry or enable feedback reporting.

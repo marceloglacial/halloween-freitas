@@ -1,0 +1,4 @@
+interface:
+  display_name: "Halloween Frontend"
+  short_description: "Build public pages and administrator interfaces"
+  default_prompt: "Use $halloween-frontend to implement a UI change in this repository."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Halloween Database Operations"
+  short_description: "Verify indexes and maintain event migrations"
+  default_prompt: "Use $halloween-database-operations to verify the required database indexes in this repository."

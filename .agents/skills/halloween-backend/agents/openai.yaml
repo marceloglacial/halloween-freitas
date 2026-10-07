@@ -1,0 +1,4 @@
+interface:
+  display_name: "Halloween Backend"
+  short_description: "Build API handlers and shared server logic"
+  default_prompt: "Use $halloween-backend to implement a server or API change in this repository."

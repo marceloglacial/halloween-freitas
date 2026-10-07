@@ -16,6 +16,31 @@ Read `docs/architecture.md` before changing event, voting, authorization, or
 data-ownership behavior. Read `docs/operations.md` before changing environment,
 migration, or deployment behavior.
 
+## Project skills
+
+- Use [halloween-frontend](.agents/skills/halloween-frontend/SKILL.md)
+  for pages, components, client hooks, and responsive user interfaces.
+- Use [halloween-backend](.agents/skills/halloween-backend/SKILL.md)
+  for API handlers, server queries, request validation, and response contracts.
+- Use [halloween-event-workflows](.agents/skills/halloween-event-workflows/SKILL.md)
+  for event schedules, registration, guest voting, authorization, and results behavior.
+- Use [halloween-database-operations](.agents/skills/halloween-database-operations/SKILL.md)
+  for index verification and event migration work.
+
+## Next.js runtime verification
+
+Use [next-dev-loop](.agents/skills/next-dev-loop/SKILL.md) to verify relevant
+application edits against the running development server and browser. Reuse an
+existing server identified by `.next/dev/lock` rather than starting or stopping
+another contributor's session. Inspect framework compilation/runtime diagnostics
+and the affected browser behavior; runtime checks complement the required tests,
+lint, and production build below.
+
+Read the [agent tooling setup](docs/operations.md#ai-agent-tooling) for browser
+and MCP prerequisites. The installed Next.js optimization skills are available
+for requested audits or optimization work; installing them does not enable
+Cache Components or Partial Prefetching.
+
 ## Commands
 
 Use Node.js 22.13 or newer and pnpm; `pnpm-lock.yaml` is authoritative.

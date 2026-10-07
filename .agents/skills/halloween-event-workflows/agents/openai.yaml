@@ -1,0 +1,4 @@
+interface:
+  display_name: "Halloween Event Workflows"
+  short_description: "Change event schedules, registration, and voting"
+  default_prompt: "Use $halloween-event-workflows to implement an event lifecycle change in this repository."
