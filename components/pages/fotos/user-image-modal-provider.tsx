@@ -27,12 +27,15 @@ export function UserImageModalProvider({ children }: { children: ReactNode }) {
   return (
     <UserImageModalContext.Provider value={{ openModal }}>
       {children}
-      <UserImageModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        images={modalImages}
-        initialIndex={modalInitialIndex}
-      />
+      {isModalOpen && (
+        <UserImageModal
+          key={modalInitialIndex}
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          images={modalImages}
+          initialIndex={modalInitialIndex}
+        />
+      )}
     </UserImageModalContext.Provider>
   );
 }

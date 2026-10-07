@@ -20,10 +20,6 @@ export function UserImageModal({
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    setCurrentIndex(initialIndex);
-  }, [initialIndex]);
-
   const bind = useGesture(
     {
       onDrag: ({ swipe: [swipeX] }) => {
