@@ -1,11 +1,11 @@
 ---
 name: halloween-event-workflows
-description: Change Halloween Freitas event schedules, registration, guest voting, authorization, or results publication. Use for domain behavior and related API regressions; ordinary visual styling does not require this skill.
+description: Change Halloween Freitas event schedules, RSVP and contestant lifecycle, verified guest voting, authorization, results, or gallery publication. Use for domain behavior and related API regressions; ordinary visual styling does not require this skill.
 ---
 
 # Halloween Event Workflows
 
-Read the [architecture guide](../../../docs/architecture.md) before changing domain behavior. It is authoritative for lifecycle, ownership, and trust boundaries. Resolve code paths below from the repository root, three directories above this skill. Follow the root contributor instructions, including the installed Next.js guides when writing framework code.
+Read [product](../../../docs/product.md), [lifecycle](../../../docs/lifecycle.md), [architecture](../../../docs/architecture.md), and [data model](../../../docs/data-model.md) before changing domain behavior. Together they define the rebuild target contract for lifecycle, ownership, and trust boundaries; legacy code may differ until its rebuild issue is complete. Resolve code paths below from the repository root, three directories above this skill. Follow the root contributor instructions, including the installed Next.js guides when writing framework code.
 
 ## Trace the affected behavior
 
@@ -20,9 +20,9 @@ For each affected operation, identify its event lookup, ownership filter, author
 
 ## Apply the domain rules
 
-Use the architecture guide's lifecycle and trust-boundary sections to determine the intended transitions. Registration follows the schedule; voting and results depend on administrator-controlled state. Changing a timestamp must not accidentally substitute for a manual transition.
+Use the target lifecycle and architecture documents to determine intended transitions. RSVP eligibility is schedule-derived and independent of the administrator-controlled contestant-entry state. First voting opening requires event start and frozen candidates, then permanently cuts off new RSVPs and contestant additions/deletions. Reopening voting does not reverse those cutoffs. Results and the party album have separate explicit publication controls.
 
-For schedule changes, trace local input through parsing, BSON storage, and client serialization. Preserve the documented local wall-clock relationship between registration closing and event start; use the event timezone rather than the machine timezone.
+For schedule changes, trace both scheduled starts through local input, instant storage, and client serialization. There is no scheduled registration end; `rsvpOpen` is derived from `registrationStartsAt`, active edition state, and the permanent first-voting cutoff. Reject invalid and daylight-saving ambiguous/nonexistent local times using the event timezone rather than the machine timezone.
 
 For participant, category, and vote changes, follow the owning event through reads, writes, and guest sessions. Evaluate authorization and public data shaping at the server boundary even when the client already restricts an action. If the requested behavior changes a documented rule, update the authoritative guide alongside the implementation.
 

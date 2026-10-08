@@ -5,7 +5,7 @@ description: Build or change Halloween Freitas pages, React components, client h
 
 # Halloween Frontend
 
-Resolve project paths from the repository root, three directories above this skill. Follow [AGENTS.md](../../../AGENTS.md) and read the relevant installed guide under `node_modules/next/dist/docs/` before writing Next.js code. Use the current feature's components and styles as the starting point; preserve the user's requested design direction.
+Resolve project paths from the repository root, three directories above this skill. Follow [AGENTS.md](../../../AGENTS.md) and read the relevant installed guide under `node_modules/next/dist/docs/` before writing Next.js code. Use [product](../../../docs/product.md) and [lifecycle](../../../docs/lifecycle.md) for target behavior, and [design.md](../../../design.md) for the visual direction and homepage layout. Existing components are reference material when their behavior conflicts with the rebuild contract.
 
 ## Find the rendering and interaction boundaries
 
