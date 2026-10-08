@@ -15,12 +15,23 @@ export const metadata: Metadata = {
   },
 };
 
+const clerkLocalization = {
+  ...ptBR,
+  signIn: {
+    ...(ptBR.signIn ?? {}),
+    start: {
+      ...(ptBR.signIn?.start ?? {}),
+      titleCombined: "Continuar no Halloween dos Freitas",
+    },
+  },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const content = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
     <ClerkProvider
-      localization={ptBR}
+      localization={clerkLocalization}
       appearance={{
         variables: {
           colorPrimary: "#fb923c",
