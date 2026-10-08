@@ -92,6 +92,9 @@ Portuguese user-facing errors, and serialize MongoDB IDs and dates for clients.
 
 ## Testing and review
 
+When starting work on a GitHub issue, create and switch to a branch from the
+default branch named `issue-<number>-<slug>` before making changes.
+
 Never commit changes automatically. Leave all changes uncommitted for the user
 to review first; commit only after the user explicitly asks.
 
