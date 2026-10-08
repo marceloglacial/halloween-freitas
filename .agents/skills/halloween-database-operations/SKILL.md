@@ -1,29 +1,25 @@
 ---
 name: halloween-database-operations
-description: Verify Halloween Freitas MongoDB indexes, maintain its event migration, or carry out an authorized legacy event-data migration. Use for database operations and their deployment prerequisites, not ordinary application queries or UI changes.
+description: Design or maintain MongoDB schemas, event-scoped indexes, and explicitly authorized database operations for the Halloween Freitas rebuild. Use for database operations, not ordinary application queries.
 ---
 
 # Halloween Database Operations
 
-Read the [operations guide](../../../docs/operations.md) before database or environment work. For ownership or uniqueness changes, also read the [architecture guide](../../../docs/architecture.md). These documents are authoritative; resolve code paths below from the repository root, three directories above this skill.
+Read [operations](../../../docs/operations.md), [architecture](../../../docs/architecture.md), and [data model](../../../docs/data-model.md) before changing database behavior. Follow [AGENTS.md](../../../AGENTS.md). These documents define the rebuild target; existing scripts and indexes describe legacy code only.
 
-## Choose the operation
+## Design for annual editions
 
-- **Verify indexes:** inspect `scripts/check-database-indexes.mjs` and the expected definitions in `scripts/database-indexes.mjs`. `pnpm check:indexes` reads the configured database and returns a failing status for missing or misconfigured indexes. A failed check is evidence to report, not authorization to repair the database.
-- **Create indexes on an event-scoped database:** `pnpm create:indexes` checks duplicates, creates required indexes, and verifies them without backfilling registration records. Confirm the target and verified backup before authorized execution.
-- **Maintain migration code:** inspect `scripts/migrate-events.mjs`, shared index definitions, and their tests. Follow the migration's actual write order and idempotency behavior before changing it. Keep operational consequences documented in the operations guide.
-- **Run a legacy migration:** `pnpm migrate:events` writes records and indexes. Use it for the documented pre-event upgrade when the user's task authorizes that database mutation; loading this skill alone grants no authorization.
+- Use `eventId` as the canonical edition key for every RSVP, contestant, asset, round, ballot, result, and audit record.
+- Derive unique constraints from the target data model. Include `eventId` in ownership and uniqueness checks so concurrent operations cannot cross editions.
+- Use atomic conditional updates or transactions for enrollment cutoffs, active-edition changes, ballot uniqueness, publication, and multi-record corrections.
+- Keep Cloudinary cleanup idempotent and retryable; failed external deletion must not restore a removed asset to public application data.
 
-## Establish the target and prerequisites
+## Migration and live-operation boundaries
 
-Confirm which environment and database the requested operation targets without printing connection strings or secret values. Inspect the scripts' environment loading and `lib/env.ts` when configuration behavior matters; avoid assuming that a shell variable or environment file wins without checking.
+The rebuild has no historical data migration requirement. Do not adapt or run the legacy event migration against the new model. Annual operation creates or activates editions without resetting prior data.
 
-Before a migration, establish the intended target and a verified backup as required by the operations guide. If authorization, target, or backup is missing, finish available read-only preparation and request the missing prerequisite before writing. Verify transaction support when preparing the full admin event workflow; a standalone MongoDB instance is insufficient for event creation and activation.
+Inspect command behavior, configuration loading, target database, transaction support, and backup status before any live write. Index creation, migration, reset, and cleanup commands are data operations. Require explicit user authorization and a confirmed target before running them; a skill invocation or failed check grants no authorization to mutate. Never print connection strings or credentials.
 
-## Handle results and failures
+## Verification and reporting
 
-For index verification, report the exit status and each missing or misconfigured index. For a completed migration, run the read-only index check and report both outcomes.
-
-On migration failure, inspect the error and which writes may already have completed. Follow the operations guide's duplicate-resolution and partial-failure guidance: rerun only after the reported problem is resolved and completed steps are understood to be safe to repeat. If an unexpected write or partial failure cannot be reconciled, stop and use the documented backup-restoration path within the user's authorization. Bound retries by a resolved cause rather than repeating the same failing mutation.
-
-For code changes, test index definitions and migration behavior relevant to the change, including idempotency and duplicate handling where affected. Use fixtures or an isolated test database for mutating verification; distinguish those checks from execution against the user's configured database. Run the checks required by `AGENTS.md` and report any migration, index, environment, or deployment requirements introduced by the change.
+Test index definitions, duplicate handling, atomic claims, event isolation, and retry behavior with isolated fixtures. Do not use a production database for tests. For live operations, report the exact target, prerequisites, command outcome, and any partial writes or manual action still needed. Follow the validation scope in `AGENTS.md` and the scenario matrix in [testing](../../../docs/testing.md).

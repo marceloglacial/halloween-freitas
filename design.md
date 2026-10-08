@@ -3,13 +3,15 @@
 Halloween dos Freitas is an annual party website for guests registering their
 attendance, voting on costumes, viewing published results, and browsing photos.
 Administrators manage events and participants through a separate dashboard.
-This document records the existing UI and gives guidance for extending it.
-Recommendations are identified explicitly; they do not imply that the current
-application already implements them.
+This document is the visual reference for the rebuild. Recommendations are
+identified explicitly; they do not imply that the current application already
+implements them.
 
-For lifecycle, authorization, and privacy requirements, see
-[Architecture and domain rules](docs/architecture.md). For setup and deployment,
-see [Operations](docs/operations.md).
+The [product](docs/product.md), [lifecycle](docs/lifecycle.md),
+[architecture](docs/architecture.md), and [data model](docs/data-model.md)
+documents define behavior and privacy. For setup and deployment, see
+[Operations](docs/operations.md). Preserve the existing homepage section layout
+and visual identity while implementing those contracts.
 
 ## Identity and content
 
@@ -25,9 +27,10 @@ happened, and how to continue. Some existing dashboard labels are English;
 Portuguese is the recommended default for new interface copy.
 
 Display event dates in the event's IANA timezone and format public dates using
-`pt-BR`. Event details and availability should follow the selected event rather
-than assume a fixed year. The homepage's program currently lists costume award
-categories in static copy; voting and results render event category records.
+`pt-BR`. Event details and availability follow the selected annual edition
+rather than assume a fixed year. Keep attendance RSVP, contestant entry, and the
+contestant photo gallery visually distinct from the party photo album; see the
+product and lifecycle documents for their access and publication rules.
 
 ## Visual language
 
@@ -107,35 +110,39 @@ they are not currently implemented.
 
 ## Screens and journeys
 
-| Screen                     | Purpose and layout                                                | Important states                                                                       |
-| -------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `/`                        | Hero, countdown, party information, program, registration, footer | Pre-event, registration upcoming/open/closed, voting soon/open/ended, post-event       |
-| `/votacao`                 | Verified Google/email-code access for registered guests           | Entering, rejected email or connection error, voting unavailable                       |
-| `/votacao/categories`      | Category tiles with guest greeting                                | Available category, already voted, guest session unavailable                           |
-| `/votacao/categories/[id]` | Candidate search, selectable photo grid, floating vote action     | No matches, selected candidate, submitting, vote success or failure                    |
-| `/resultados`              | Published category tiles and event navigation                     | Published results, no published results                                                |
-| `/resultados/[id]`         | Prominent first place and remaining ranked participants           | Vote counts and percentages, category with no votes                                    |
-| `/fotos`                   | Event navigation, name search, photo grid and enlarged viewer     | No photos or matches, selected photo                                                   |
-| `/dashboard`               | Event selector, settings and participants, event creation         | Authentication/authorization, active or archived event, validation and pending actions |
+| Screen                     | Purpose and layout                                                 | Important states                                                                       |
+| -------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `/`                        | Hero, countdown, party information, program, registration, footer  | Pre-event, registration upcoming/open/closed, voting soon/open/ended, post-event       |
+| `/votacao`                 | Verified Google/email-code access for registered guests            | Entering, rejected email or connection error, voting unavailable                       |
+| `/votacao/categories`      | Category tiles with guest greeting                                 | Available category, already voted, guest session unavailable                           |
+| `/votacao/categories/[id]` | Candidate search, selectable photo grid, floating vote action      | No matches, selected candidate, submitting, vote success or failure                    |
+| `/resultados`              | Published category tiles and event navigation                      | Published results, no published results                                                |
+| `/resultados/[id]`         | Prominent first place and remaining ranked participants            | Vote counts and percentages, category with no votes                                    |
+| `/fotos`                   | Contestant photo gallery with event navigation, search, and viewer | No photos or matches, selected photo                                                   |
+| `/dashboard`               | Event selector, settings and participants, event creation          | Authentication/authorization, active or archived event, validation and pending actions |
 
 ### Homepage and registration
 
 Before the event starts, show event information, the program, and the registration
 section. The countdown appears when an event start is available and the initial
-homepage state is pre-event. The registration form is shown only when registration
-is open; otherwise the section displays the opening or closing date.
+homepage state is pre-event. Show the attendance RSVP form when its scheduled
+start has passed and the edition remains before its permanent first-voting
+cutoff; otherwise show the relevant opening or closed state. RSVP availability
+remains independent of whether contestant entry is open. Preserve the existing
+section layout while communicating these states.
 
 Registration asks for full name and email and explains that each adult needs a
 separate email. During submission, disable the inputs and action and show
 “Enviando...”. Success resets the form and leaves a persistent “Presença confirmada!” panel; duplicate registration,
 server rejection, and connection failure produce error toasts.
 
-At the event start, the homepage lifecycle area replaces pre-event content with
-a centered panel for “Votação em breve”, “Votação aberta”, or “Votação encerrada”.
-Only the open state offers an active link to vote. The lifecycle area refreshes
-the current event every ten seconds and retains its last valid event on fetch
-failure. The hero is separate from this polling component, so its countdown
-visibility is based on the initial server-rendered state.
+At the event start, the homepage lifecycle area can replace pre-event content
+with a centered panel for “Votação em breve”, “Votação aberta”, or “Votação
+encerrada”. Only the open state offers an active link to vote. First opening
+voting also ends new RSVP and contestant membership changes permanently, while
+previously registered guests can still authenticate. Keep this behavior inside
+the existing homepage section layout. The lifecycle area reflects server-backed
+state and retains its established visual treatment.
 
 Published results after voting ends, an archived event, or no current event show
 the post-event cards linking to results and photos. Those links do not bypass
@@ -160,34 +167,43 @@ button appears after selection and changes to “Votando...” during submission
 After success, candidate buttons are disabled and a persistent success toast
 offers “Voltar” to the category list. Failure displays an error toast.
 
-### Results and gallery
+### Results and photo galleries
 
 Results category tiles reuse the purple category treatment. Results details
 give first place a large name, photograph, and medal, with remaining participants
 in compact rows. Counts and percentages support the ranking; categories with
 no votes have an explicit message. Public views exclude email addresses.
 
-The gallery lists participants with photos, sorted by name, and searches within
-the selected event. Event navigation appears when multiple events are available
-and marks the selected event with an orange background and `aria-current`.
-The enlarged gallery viewer supports previous/next buttons, arrow keys, swipes,
-Escape, and clicking the backdrop; navigation wraps at either end. Gallery and
-results image dialogs focus their close button, lock body scrolling, and restore
-the prior focus when closed.
+The contestant photo gallery shows only eligible contestant imagery and remains
+separate from party photos. Its existing gallery lists entries with photos,
+sorted by name, and searches within the selected event. Event navigation marks
+the selected edition with an orange background and `aria-current`. The enlarged
+viewer supports previous/next buttons, arrow keys, swipes, Escape, and backdrop
+click; navigation wraps at either end. Dialogs focus the close button, lock body
+scrolling, and restore prior focus when closed.
+
+The party photo album is a separate edition-scoped gallery. Before an admin
+publishes it, show a waiting state without exposing photos or their metadata.
+After publication, use the same dark surfaces, orange accents, responsive
+thumbnail grid, and accessible enlarged-photo viewer. Clearly identify this as
+party photography and avoid reusing contestant names, eligibility, or photo
+controls. The public party album route and navigation are defined with the
+gallery feature work; this visual reference does not assign a new route.
 
 ### Administration
 
 The dashboard provides event selection, status badges, settings and participant
-tabs, and a form to create a new year. Event settings include the timezone,
-registration opening, event start, derived registration closing, manual voting
-controls, and results publication. Disabled controls and explanatory text
+tabs, and a form to create a new edition. Event settings show the timezone and
+the scheduled RSVP and event starts. Keep RSVP availability, manual contestant
+entry controls, voting round controls, results publication, and party album
+publication visibly distinct. Disabled controls and explanatory text
 communicate lifecycle restrictions; UI availability must match server rules.
 
-Participant dialogs edit name, email, group/junior eligibility, and a Cloudinary
-photo. Pending requests disable relevant inputs and show progress text; failures
-appear inline. Linked participants have an explicit “Redefinir vínculo de acesso”
-action with confirmation; ordinary email edits preserve ownership. The participant dialog focuses the name field and handles Escape,
-but does not share all focus and scroll behavior of the photo dialogs.
+Guest and contestant dialogs make ownership and edition clear. Before the first
+voting opening, authorized actions follow the contestant-entry state. After it,
+administrators may correct existing records and replace existing contestant
+photos, with an audit record, while contestant membership remains fixed. Pending
+requests disable relevant inputs and show progress text; failures appear inline.
 
 ## Responsive and interaction patterns
 

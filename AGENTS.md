@@ -21,11 +21,14 @@ reports the result. Read only skills that apply to the requested work.
 | Requested Next.js bundle or Cache Components / Partial Prefetching work | The matching `next-*` skill under `.agents/skills/`     |
 
 For event, voting, authorization, or data-ownership changes, read
-`docs/architecture.md`. For environment, migration, or deployment changes, read
-`docs/operations.md`. For visual changes, use `design.md` as the design
-reference; preserve the existing homepage layout unless the user requests a
-redesign. Keep the existing Next.js, React, TypeScript, Tailwind CSS, Clerk,
-MongoDB, and Cloudinary stack unless the user changes that requirement.
+`docs/product.md`, `docs/lifecycle.md`, `docs/architecture.md`, and
+`docs/data-model.md`; these define the rebuild target even when legacy code
+differs. For environment, database, or deployment changes, read
+`docs/operations.md`. Use `docs/testing.md` for applicable acceptance scenarios
+and `design.md` for visual changes; preserve the existing homepage layout unless
+the user requests a redesign. Keep the existing Next.js, React, TypeScript,
+Tailwind CSS, Clerk, MongoDB, and Cloudinary stack unless the user changes that
+requirement.
 
 The primary agent remains accountable for delegated work. Give each subagent a
 bounded task and the applicable repository and skill instructions. Subagents

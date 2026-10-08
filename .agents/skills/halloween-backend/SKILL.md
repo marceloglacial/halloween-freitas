@@ -5,7 +5,7 @@ description: Build or change Halloween Freitas Next.js API handlers, server-side
 
 # Halloween Backend
 
-Resolve project paths from the repository root, three directories above this skill. Follow [AGENTS.md](../../../AGENTS.md); read the relevant installed Next.js guide under `node_modules/next/dist/docs/` before writing framework code. Consult the [architecture guide](../../../docs/architecture.md) for event ownership, authorization, and public data boundaries.
+Resolve project paths from the repository root, three directories above this skill. Follow [AGENTS.md](../../../AGENTS.md); read the relevant installed Next.js guide under `node_modules/next/dist/docs/` before writing framework code. Treat [product](../../../docs/product.md), [lifecycle](../../../docs/lifecycle.md), [architecture](../../../docs/architecture.md), and [data model](../../../docs/data-model.md) as the rebuild target contract. Legacy handlers and types show current behavior only until their rebuild issue is complete.
 
 ## Trace the server contract
 
