@@ -1,116 +1,73 @@
-# Repository Guidelines
+# Agent instructions
 
-## Project structure
+These instructions apply throughout the repository. More specific nested
+`AGENTS.md` files add local guidance. Follow system and developer instructions,
+then the user's request, these repository rules, and the relevant skill. Resolve
+conflicts in favor of higher-priority instructions. Treat source code,
+configuration, and command output as the source of truth for repository state.
 
-This is a Next.js 16 App Router application using React 19, strict TypeScript,
-Tailwind CSS 4, Clerk, MongoDB, and Cloudinary.
+## Orchestration and skill routing
 
-- `app/` contains pages, layouts, loading/error boundaries, and API handlers.
-- `components/` contains reusable UI grouped by feature.
-- `hooks/` contains client hooks; `lib/` contains shared domain and server logic;
-  `util/` contains small framework-independent helpers.
-- `types/` contains global declarations, `scripts/` operational scripts, and
-  `public/` static assets.
+The primary agent owns the task, routes it to the relevant project skill, and
+reports the result. Read only skills that apply to the requested work.
 
-Read `docs/architecture.md` before changing event, voting, authorization, or
-data-ownership behavior. Read `docs/operations.md` before changing environment,
-migration, or deployment behavior.
+| Work                                                                    | Read before acting                                      |
+| ----------------------------------------------------------------------- | ------------------------------------------------------- |
+| Pages, components, client hooks, responsive UI                          | `.agents/skills/halloween-frontend/SKILL.md`            |
+| API handlers, server queries, request validation, response contracts    | `.agents/skills/halloween-backend/SKILL.md`             |
+| Event schedules, registration, guest voting, authorization, results     | `.agents/skills/halloween-event-workflows/SKILL.md`     |
+| Database indexes or event migrations                                    | `.agents/skills/halloween-database-operations/SKILL.md` |
+| Requested Next.js runtime verification                                  | `.agents/skills/next-dev-loop/SKILL.md`                 |
+| Requested Next.js bundle or Cache Components / Partial Prefetching work | The matching `next-*` skill under `.agents/skills/`     |
 
-## Project skills
+For event, voting, authorization, or data-ownership changes, read
+`docs/architecture.md`. For environment, migration, or deployment changes, read
+`docs/operations.md`. For visual changes, use `design.md` as the design
+reference; preserve the existing homepage layout unless the user requests a
+redesign. Keep the existing Next.js, React, TypeScript, Tailwind CSS, Clerk,
+MongoDB, and Cloudinary stack unless the user changes that requirement.
 
-- Use [halloween-frontend](.agents/skills/halloween-frontend/SKILL.md)
-  for pages, components, client hooks, and responsive user interfaces.
-- Use [halloween-backend](.agents/skills/halloween-backend/SKILL.md)
-  for API handlers, server queries, request validation, and response contracts.
-- Use [halloween-event-workflows](.agents/skills/halloween-event-workflows/SKILL.md)
-  for event schedules, registration, guest voting, authorization, and results behavior.
-- Use [halloween-database-operations](.agents/skills/halloween-database-operations/SKILL.md)
-  for index verification and event migration work.
+The primary agent remains accountable for delegated work. Give each subagent a
+bounded task and the applicable repository and skill instructions. Subagents
+inherit the same branch, data-safety, and review rules; they do not commit,
+publish, merge, or deploy work.
 
-## Next.js runtime verification
+## Work and branch safety
 
-Use [next-dev-loop](.agents/skills/next-dev-loop/SKILL.md) to verify relevant
-application edits against the running development server and browser. Reuse an
-existing server identified by `.next/dev/lock` rather than starting or stopping
-another contributor's session. Inspect framework compilation/runtime diagnostics
-and the affected browser behavior; runtime checks complement the required tests,
-lint, and production build below.
+- For a GitHub issue, work on exactly that implementation issue; use epics as
+  context, not as additional work items.
+- Before changing files, inspect the current branch, working tree, and
+  worktrees. Start issue work from the default branch on a clean, dedicated
+  `issue-<number>-<slug>` branch.
+- If the tree contains uncommitted work or the target branch/worktree is already
+  in use, preserve it. Do not stash, reset, clean, overwrite, or mix that work;
+  stop and ask the user to resolve the conflict or choose an isolated worktree.
+- Never commit, push, merge, or deploy automatically. Leave changes uncommitted
+  for human review. Review feedback authorizes corrections to the current work
+  only; each Git publication or deployment step needs separate explicit
+  authorization.
+- Do not run destructive database or infrastructure operations without explicit
+  user authorization. Read the relevant operations guidance first.
+- Start another issue only after the current changes are integrated or safely
+  isolated in a different worktree.
 
-Read the [agent tooling setup](docs/operations.md#ai-agent-tooling) for browser
-and MCP prerequisites. The installed Next.js optimization skills are available
-for requested audits or optimization work; installing them does not enable
-Cache Components or Partial Prefetching.
+## Implementation and validation
 
-## Commands
+Inspect the current implementation and relevant versioned documentation before
+changing code. This Next.js version may differ from familiar APIs; consult the
+matching guide in `node_modules/next/dist/docs/` before writing Next.js code.
+Keep route-specific code near its route, shared behavior in the appropriate
+shared module, and data and authorization logic on the server.
 
-Use Node.js 22.13 or newer and pnpm; `pnpm-lock.yaml` is authoritative.
+Match validation to the change. For code changes, run `pnpm test`, `pnpm lint`,
+and `pnpm build`, plus the relevant runtime checks for UI behavior. For
+documentation-only changes, check formatting and links. Do not run unrelated
+database operations. Use fixed or injected dates for time-sensitive tests.
 
-- `pnpm install` installs dependencies.
-- `pnpm dev` starts the development server at `http://localhost:3000`.
-- `pnpm test` runs the Vitest suite once.
-- `pnpm lint` runs ESLint.
-- `pnpm build` creates a production build.
-- `pnpm start` serves a completed production build.
-- `pnpm format` applies Prettier and Tailwind class ordering repository-wide.
-- `pnpm migrate:events` mutates event data and indexes; follow the operations
-  guide and back up the database first.
-
-For code changes, run `pnpm test`, `pnpm lint`, and `pnpm build`. Manually check
-affected responsive layouts, loading/error states, and authentication flows for
-UI changes. For documentation-only changes, formatting and link checks suffice.
-
-## Code conventions
-
-Use two-space indentation and let Prettier order Tailwind classes. Prefer the
-`@/` alias for repository-root imports. Use kebab-case for new component files
-and route folders, PascalCase for React components and types, camelCase for
-functions and variables, and `useX` for hooks. Do not rename unrelated legacy
-files merely to match these conventions.
-
-Keep route-specific code close to its route and extract broadly reused behavior.
-Keep database and authorization logic in server modules. Parse and normalize
-requests through shared `lib/` helpers, return explicit HTTP statuses with
-Portuguese user-facing errors, and serialize MongoDB IDs and dates for clients.
-
-## Required invariants
-
-- Scope users, categories, and votes by `eventId`.
-- Store registration schedules as BSON dates and interpret them with the
-  event's IANA timezone.
-- Accept registrations only for the active event during its registration
-  window; allow admins to open voting only after the event starts; accept votes
-  only while voting is open; publish results only after voting ends and an admin
-  explicitly enables them.
-- Derive guest voter identity from the verified Clerk session and its
-  event-scoped registration link, never from a client-supplied voter ID or email.
-  Claim unlinked registrations atomically using a Clerk-verified email.
-- Protect `/api/admin/*` with Clerk and require
-  `publicMetadata.role === "admin"`.
-- Never return email addresses from public endpoints.
-- Preserve uniqueness for `(eventId, normalizedEmail)` registrations, linked
-  `(eventId, clerkUserId)` ownership, and `(eventId, voterId, categoryId)` votes.
-
-## Testing and review
-
-When starting work on a GitHub issue, create and switch to a branch from the
-default branch named `issue-<number>-<slug>` before making changes.
-
-Never commit changes automatically. Leave all changes uncommitted for the user
-to review first; commit only after the user explicitly asks.
-
-Colocate tests as `*.test.ts` or `*.test.tsx`. Cover invalid input and failure
-statuses in route tests. Add regression tests for authorization, privacy,
-schedule boundaries, normalization, and voting integrity; use fixed or injected
-dates instead of wall-clock-dependent assertions.
-
-When making changes, update relevant documentation and `AGENTS.md` files
-whenever the change affects documented behavior, architecture, workflows, or
-contributor instructions.
-
-Use short, imperative commit subjects. Pull requests should summarize the
-user-visible outcome and validation, link an issue when applicable, and include
-screenshots for visual changes. Call out environment changes, migrations,
-indexes, and deployment requirements explicitly.
+Keep documentation aligned with behavior: update architecture, operations,
+design, or skill guidance when a change alters the contract those documents
+describe. Report the scope, changed files, acceptance criteria, checks and
+results, and remaining risks; leave all changes ready for human review.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
