@@ -92,6 +92,9 @@ Portuguese user-facing errors, and serialize MongoDB IDs and dates for clients.
 
 ## Testing and review
 
+Never commit changes automatically. Leave all changes uncommitted for the user
+to review first; commit only after the user explicitly asks.
+
 Colocate tests as `*.test.ts` or `*.test.tsx`. Cover invalid input and failure
 statuses in route tests. Add regression tests for authorization, privacy,
 schedule boundaries, normalization, and voting integrity; use fixed or injected
