@@ -95,6 +95,29 @@ describe("admin events API", () => {
     expect(mocks.getMongoClient).not.toHaveBeenCalled();
   });
 
+  it("rejects an event starting before registration before opening a database session", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/admin/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          year: 2026,
+          title: "Halloween 2026",
+          timezone: "America/Toronto",
+          registrationStartsAt: "2026-10-31T20:01",
+          eventStartsAt: "2026-10-31T20:00",
+          categories: [
+            { title: "Geral", icon: "🎃", order: 0, eligibility: "all" },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.getMongoClient).not.toHaveBeenCalled();
+    expect(mocks.insertOne).not.toHaveBeenCalled();
+  });
+
   it("creates a first edition with BSON dates and event-scoped categories", async () => {
     const insertedId = new ObjectId();
     mocks.insertOne.mockResolvedValue({ insertedId });

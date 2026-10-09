@@ -85,6 +85,27 @@ describe("admin event item API", () => {
     expect(update).not.toHaveProperty("startsAt");
   });
 
+  it("rejects an event starting before registration without updating the event", async () => {
+    const response = await PUT(
+      new Request("http://localhost", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          year: event.year,
+          title: event.title,
+          timezone: event.timezone,
+          registrationStartsAt: "2026-10-31T20:01",
+          eventStartsAt: "2026-10-31T20:00",
+        }),
+      }),
+      params,
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.getDb).not.toHaveBeenCalled();
+    expect(mocks.updateOne).not.toHaveBeenCalled();
+  });
+
   it("rejects a change to the immutable event year", async () => {
     const response = await PUT(
       new Request("http://localhost", {

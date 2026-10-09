@@ -77,7 +77,7 @@ export function getScheduleFieldBounds(
 ): LocalDateTimeBounds {
   if (field === "registrationStartsAt") return {};
 
-  const minimum = shiftLocalDateTime(schedule.registrationStartsAt, 1);
+  const minimum = shiftLocalDateTime(schedule.registrationStartsAt, 0);
   const hasValidEventYear =
     Number.isInteger(eventYear) && eventYear >= 2000 && eventYear <= 2100;
   return {
@@ -94,7 +94,7 @@ export function getScheduleCollisions(
   if (
     !isLocalDateTime(registrationStart) ||
     !isLocalDateTime(eventStart) ||
-    eventStart > registrationStart
+    eventStart >= registrationStart
   ) {
     return [];
   }
@@ -229,7 +229,7 @@ export function parseEventInput(
   ) {
     return { error: "O início do evento deve pertencer ao ano selecionado" };
   }
-  if (parsedDates.eventStartsAt <= parsedDates.registrationStartsAt) {
+  if (parsedDates.eventStartsAt < parsedDates.registrationStartsAt) {
     return {
       error: scheduleCollisionMessage({
         earlierField: "registrationStartsAt",
