@@ -20,7 +20,7 @@ export default async function Home() {
     <>
       <main>
         <Hero
-          startsAt={event?.startsAt}
+          startsAt={event?.eventStartsAt}
           showCountdown={initialHomeState === "pre_event"}
           initialNow={initialNow}
         />

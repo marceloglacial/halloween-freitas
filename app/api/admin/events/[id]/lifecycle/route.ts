@@ -39,7 +39,7 @@ export async function POST(
       "start-voting": {
         _id: eventId,
         status: "active",
-        startsAt: { $lte: now },
+        eventStartsAt: { $lte: now },
       },
       "end-voting": {
         _id: eventId,
@@ -68,7 +68,7 @@ export async function POST(
       const event = await getEventById(id);
       if (!event) return errorResponse("Evento não encontrado", 404);
       if (body.action === "start-voting") {
-        if (event.status === "active" && new Date(event.startsAt) > now) {
+        if (event.status === "active" && new Date(event.eventStartsAt) > now) {
           return errorResponse(
             "A votação só pode começar após o início do evento",
             409,

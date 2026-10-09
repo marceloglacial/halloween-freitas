@@ -7,7 +7,7 @@ function getCards(event: HalloweenEvent | null): CardProps[] {
         dateStyle: "long",
         timeStyle: "short",
         timeZone: event.timezone,
-      }).format(new Date(event.startsAt))
+      }).format(new Date(event.eventStartsAt))
     : "Data a confirmar";
   return [
     {

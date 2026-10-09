@@ -15,9 +15,8 @@ type HalloweenEvent = {
   slug: string;
   title: string;
   timezone: string;
-  startsAt: string;
-  registrationOpensAt: string;
-  registrationClosesAt: string;
+  registrationStartsAt: string;
+  eventStartsAt: string;
   votingStatus: VotingStatus;
   resultsPublished: boolean;
   status: EventStatus;

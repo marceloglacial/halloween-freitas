@@ -46,10 +46,14 @@ A destructive reset is permitted only as an explicitly approved rebuild step
 with the database target confirmed. Annual operation creates or activates a new
 edition while retaining prior editions; it never resets the database.
 
-The package still contains `check:indexes` and `create:indexes` scripts for the
-pre-rebuild schema. They do not cover the target data model's round-scoped
-ballot key or new entities; do not run them against the rebuild database.
-Replace them with target-schema tooling before any future index operation.
+The `check:indexes` and `create:indexes` scripts verify and create declared
+indexes, including unique event year and slug, a partial unique active-edition
+index, and event-scoped category ordering. They are idempotent and check for
+known duplicates before index creation, but they do not reset, seed, or migrate
+documents. The ballot key will need to be updated to include `roundId` when the
+round model is implemented. Review the index definitions and verify the target
+database before any authorized index operation; never use them on a legacy
+database.
 
 Database schema, indexes, and transaction prerequisites are defined alongside
 the implementation contract in [architecture](architecture.md) and

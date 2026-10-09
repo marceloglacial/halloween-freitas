@@ -4,6 +4,7 @@ import { isAdmin } from "@/lib/auth/admin";
 import { getEvents } from "@/lib/events";
 import { Metadata } from "next";
 import FeatureUnavailable from "@/components/feature-unavailable";
+import { getCategories } from "@/util/get-categories";
 
 export const metadata: Metadata = {
   title: "Dashboard - Halloween dos Freitas",
@@ -32,11 +33,13 @@ export default async function DashboardPage({
     events.find((event) => event.year === requestedYear) ??
     events.find((event) => event.status === "active") ??
     events[0];
+  const initialCategories = selected ? await getCategories(selected._id) : [];
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 md:px-8 md:py-12">
       <EventDashboard
         initialEvents={events}
+        initialCategories={initialCategories}
         initialYear={selected?.year}
         initialTab={query.tab === "settings" ? "settings" : "guests"}
         initialNow={new Date().toISOString()}

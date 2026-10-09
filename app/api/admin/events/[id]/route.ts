@@ -5,6 +5,23 @@ import { parseEventInput } from "@/lib/event-schedule";
 import { getEventById } from "@/lib/events";
 import { errorResponse, readJsonObject } from "@/lib/http";
 
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  if (!(await isAdmin())) return errorResponse("Não autorizado", 401);
+  const { id } = await params;
+  if (!ObjectId.isValid(id)) return errorResponse("Evento inválido", 400);
+  try {
+    const event = await getEventById(id);
+    if (!event) return errorResponse("Evento não encontrado", 404);
+    return Response.json(event);
+  } catch (error) {
+    console.error("Admin event lookup failed", error);
+    return errorResponse("Não foi possível carregar o evento", 500);
+  }
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> },

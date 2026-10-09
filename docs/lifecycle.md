@@ -46,6 +46,12 @@ and audit those corrections. Incomplete drafts remain private and cannot enter
 the ballot. Eligibility requires the configured category, consent, and required
 contest photo to be valid at freeze time.
 
+Administrators can edit category names, icons, eligibility, and order, and can
+add or remove categories before voting first opens. The first voting opening
+permanently locks category configuration for the edition. A category with
+existing ballots cannot be removed; category IDs remain stable when categories
+are edited or reordered.
+
 ## Voting rounds
 
 Voting is manual, event-scoped, and requires both `eventStartsAt` to have passed

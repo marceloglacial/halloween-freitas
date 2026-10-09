@@ -16,8 +16,8 @@ const SignUp: FC<{
 }> = ({ event, registrationState }): JSX.Element => {
   const registrationMessage =
     registrationState === "upcoming"
-      ? `As inscrições abrem em ${formatEventDate(event.registrationOpensAt, event.timezone)}.`
-      : `As inscrições foram encerradas em ${formatEventDate(event.registrationClosesAt, event.timezone)}.`;
+      ? `As inscrições abrem em ${formatEventDate(event.registrationStartsAt, event.timezone)}.`
+      : "As inscrições estão encerradas para esta edição.";
 
   return (
     <section
