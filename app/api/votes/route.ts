@@ -2,6 +2,7 @@ import { MongoServerError, ObjectId } from "mongodb";
 import { GuestAccessError } from "@/lib/auth/guest-registration";
 import { getVotingGuest } from "@/lib/auth/voting-guest";
 import { getDb } from "@/lib/db";
+import { getContestantEntryForVote } from "@/lib/contestant-entries";
 import {
   errorResponse,
   logServerError,
@@ -9,8 +10,6 @@ import {
   readJsonObject,
 } from "@/lib/http";
 import { getCategoryById } from "@/util/get-categories";
-import { getUserById } from "@/lib/users";
-import { isEligibleCandidate } from "@/lib/voting";
 
 export async function GET(request?: Request) {
   try {
@@ -50,24 +49,17 @@ export async function POST(request: Request) {
     const categoryId = parseObjectId(body.categoryId);
     const voteForId = parseObjectId(body.voteForId);
     if (!categoryId || !voteForId) return errorResponse("Voto inválido", 400);
-    if (session.userId === voteForId.toString()) {
-      return errorResponse("Você não pode votar em si mesmo", 400);
-    }
-
-    const [category, candidate] = await Promise.all([
-      getCategoryById(categoryId.toString()),
-      getUserById(voteForId.toString()),
-    ]);
+    const category = await getCategoryById(categoryId.toString());
     if (!category || category.eventId !== session.eventId) {
       return errorResponse("Categoria não encontrada", 404);
     }
-    if (!candidate || candidate.eventId !== session.eventId) {
-      return errorResponse("Candidato não encontrado", 404);
-    }
-    if (
-      candidate.status === "cancelled" ||
-      !isEligibleCandidate(category, candidate, session.userId)
-    ) {
+    const candidate = await getContestantEntryForVote(
+      session.eventId,
+      voteForId.toString(),
+      category,
+      session.userId,
+    );
+    if (!candidate) {
       return errorResponse("Candidato inelegível para esta categoria", 400);
     }
 

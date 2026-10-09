@@ -1,7 +1,11 @@
 import { ObjectId } from "mongodb";
 import { isAdmin } from "@/lib/auth/admin";
-import { getDb } from "@/lib/db";
+import { getDb, getMongoClient } from "@/lib/db";
 import { getEventById } from "@/lib/events";
+import {
+  freezeContestantEntries,
+  reopenContestantEntries,
+} from "@/lib/contestant-entry-freeze";
 import { errorResponse, readJsonObject, logServerError } from "@/lib/http";
 
 const lifecycleActions = [
@@ -32,6 +36,7 @@ export async function POST(
   if (!body || !isLifecycleAction(body.action)) {
     return errorResponse("Ação inválida", 400);
   }
+  const action = body.action;
 
   try {
     const db = await getDb();
@@ -86,16 +91,45 @@ export async function POST(
       "unpublish-results": { resultsPublished: false, updatedAt: now },
     };
 
-    const result = await db
-      .collection("events")
-      .updateOne(filters[body.action], { $set: updates[body.action] });
+    let result: { matchedCount: number } = { matchedCount: 0 };
+    if (
+      action === "close-contest-entry" ||
+      action === "reopen-contest-entry" ||
+      action === "start-voting"
+    ) {
+      const session = (await getMongoClient()).startSession();
+      try {
+        await session.withTransaction(async () => {
+          result = await db.collection("events").updateOne(
+            filters[action],
+            {
+              $set: updates[action],
+              $inc: { contestEntryMutationVersion: 1 },
+            },
+            { session },
+          );
+          if (!result.matchedCount) return;
+          if (action === "reopen-contest-entry") {
+            await reopenContestantEntries(db, eventId, session, now);
+          } else {
+            await freezeContestantEntries(db, eventId, session, now);
+          }
+        });
+      } finally {
+        await session.endSession();
+      }
+    } else {
+      result = await db
+        .collection("events")
+        .updateOne(filters[action], { $set: updates[action] });
+    }
 
     if (!result.matchedCount) {
       const event = await getEventById(id);
       if (!event) return errorResponse("Evento não encontrado", 404);
       if (
-        body.action === "close-contest-entry" ||
-        body.action === "reopen-contest-entry"
+        action === "close-contest-entry" ||
+        action === "reopen-contest-entry"
       ) {
         if (event.status !== "active") {
           return errorResponse(
@@ -110,7 +144,7 @@ export async function POST(
           );
         }
         if (
-          body.action === "close-contest-entry" &&
+          action === "close-contest-entry" &&
           event.contestEntryStatus === "closed"
         ) {
           return errorResponse(
@@ -119,7 +153,7 @@ export async function POST(
           );
         }
         if (
-          body.action === "reopen-contest-entry" &&
+          action === "reopen-contest-entry" &&
           event.contestEntryStatus !== "closed"
         ) {
           return errorResponse(
@@ -128,7 +162,7 @@ export async function POST(
           );
         }
       }
-      if (body.action === "start-voting") {
+      if (action === "start-voting") {
         if (event.status === "active" && new Date(event.eventStartsAt) > now) {
           return errorResponse(
             "A votação só pode começar após o início do evento",
@@ -137,10 +171,10 @@ export async function POST(
         }
         return errorResponse("Ative o evento antes de iniciar a votação", 409);
       }
-      if (body.action === "end-voting") {
+      if (action === "end-voting") {
         return errorResponse("A votação não está aberta", 409);
       }
-      if (body.action === "publish-results") {
+      if (action === "publish-results") {
         return errorResponse(
           "Encerre a votação antes de publicar os resultados",
           409,

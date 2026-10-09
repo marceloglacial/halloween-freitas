@@ -9,3 +9,10 @@ type PublicContestantEntry = {
   entryType: ContestantEntryType;
   displayName: string;
 };
+
+type VotingCandidate = {
+  _id: string;
+  eventId: string;
+  fullName: string;
+  imageUrl: string;
+};

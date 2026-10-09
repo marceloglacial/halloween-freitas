@@ -5,6 +5,7 @@ import {
   contestantOwnership,
   createContestantEntry,
   getContestantEntriesForRsvp,
+  getVotingCandidatesForCategory,
   isContestantEntryType,
   requireContestantRsvpInEvent,
   serializePublicContestantEntry,
@@ -15,14 +16,21 @@ const categoryId = new ObjectId("507f1f77bcf86cd799439012");
 const rsvpId = new ObjectId("507f1f77bcf86cd799439013");
 const dbMocks = vi.hoisted(() => ({
   find: vi.fn(),
+  findOne: vi.fn(),
   sort: vi.fn(),
   toArray: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
   getDb: vi.fn(async () => ({
-    collection: () => ({ find: dbMocks.find }),
+    collection: (name: string) =>
+      name === "categories"
+        ? { findOne: dbMocks.findOne }
+        : { find: dbMocks.find },
   })),
+}));
+vi.mock("@/lib/contestant-photos", () => ({
+  contestPhotoPreviewUrl: vi.fn(() => "https://private.example/temporary"),
 }));
 
 describe("contestant entry schema and ownership", () => {
@@ -213,6 +221,23 @@ describe("contestant entry schema and ownership", () => {
           consentByRsvpId: rsvpId.toString(),
         },
       }),
+    ).toBeNull();
+    expect(
+      serializePublicContestantEntry({
+        ...entry,
+        status: "locked",
+        contestPhoto: {
+          assetId: "private-asset-id",
+          publicId: "private-cloudinary-id",
+          format: "png",
+          bytes: 1024,
+          width: 800,
+          height: 600,
+          uploadedAt: new Date("2026-10-01T00:00:00.000Z"),
+          consentAt: new Date("2026-10-01T00:00:00.000Z"),
+          consentByRsvpId: rsvpId.toString(),
+        },
+      }),
     ).toEqual({
       _id: entry._id.toString(),
       eventId: eventId.toString(),
@@ -220,5 +245,74 @@ describe("contestant entry schema and ownership", () => {
       entryType: "group",
       displayName: "The Freitas",
     });
+  });
+
+  it("queries locked entries and returns no private asset identifiers", async () => {
+    const candidate = createContestantEntry({
+      eventId: eventId.toString(),
+      categoryId: categoryId.toString(),
+      entryType: "individual",
+      rsvpId: rsvpId.toString(),
+      displayName: "Ana",
+    });
+    const contestPhoto = {
+      assetId: "internal-asset-id",
+      publicId: `contest-photos/${eventId.toString()}/internal-cloudinary-id`,
+      format: "png" as const,
+      bytes: 1024,
+      width: 800,
+      height: 600,
+      uploadedAt: new Date("2026-10-01T00:00:00.000Z"),
+      consentAt: new Date("2026-10-01T00:00:00.000Z"),
+      consentByRsvpId: rsvpId.toString(),
+    };
+    const lockedEntry = {
+      ...candidate,
+      status: "locked" as const,
+      contestPhoto,
+    };
+    const candidatesFind = {
+      sort: vi.fn().mockReturnThis(),
+      toArray: vi.fn().mockResolvedValue([lockedEntry]),
+    };
+    dbMocks.findOne.mockResolvedValue({
+      _id: categoryId,
+      eventId,
+      eligibility: "all",
+    });
+    dbMocks.find.mockReturnValue(candidatesFind);
+
+    const candidates = await getVotingCandidatesForCategory(
+      eventId.toString(),
+      {
+        _id: categoryId.toString(),
+        eventId: eventId.toString(),
+        title: "Geral",
+        icon: "🎃",
+        order: 1,
+        eligibility: "all",
+      },
+      new ObjectId("507f1f77bcf86cd799439016").toString(),
+    );
+
+    expect(candidates).toEqual([
+      {
+        _id: candidate._id.toString(),
+        eventId: eventId.toString(),
+        fullName: "Ana",
+        imageUrl: "https://private.example/temporary",
+      },
+    ]);
+    expect(dbMocks.find).toHaveBeenCalledWith({
+      eventId,
+      categoryId,
+      status: "locked",
+    });
+    expect(candidatesFind.sort).toHaveBeenCalledWith({
+      displayName: 1,
+      _id: 1,
+    });
+    expect(JSON.stringify(candidates)).not.toContain("internal-asset-id");
+    expect(JSON.stringify(candidates)).not.toContain("internal-cloudinary-id");
   });
 });

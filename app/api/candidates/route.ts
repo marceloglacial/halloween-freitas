@@ -2,8 +2,7 @@ import { GuestAccessError } from "@/lib/auth/guest-registration";
 import { getVotingGuest } from "@/lib/auth/voting-guest";
 import { getCategoryById } from "@/util/get-categories";
 import { errorResponse, logServerError } from "@/lib/http";
-import { getPublicVotingUsersForEvent } from "@/lib/users";
-import { isEligibleCandidate } from "@/lib/voting";
+import { getVotingCandidatesForCategory } from "@/lib/contestant-entries";
 
 export async function GET(request: Request) {
   try {
@@ -17,11 +16,14 @@ export async function GET(request: Request) {
       return errorResponse("Categoria não encontrada", 404);
     }
 
-    const users = await getPublicVotingUsersForEvent(session.eventId);
-    const candidates = users.filter((user) =>
-      isEligibleCandidate(category, user, session.userId),
+    const candidates = await getVotingCandidatesForCategory(
+      session.eventId,
+      category,
+      session.userId,
     );
-    return Response.json(candidates);
+    return Response.json(candidates, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     if (error instanceof GuestAccessError)
       return errorResponse(error.message, error.status);
