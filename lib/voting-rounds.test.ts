@@ -2,9 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import { ObjectId } from "mongodb";
 import {
   getFinalVotingRound,
+  getFinalVotingRoundForCategory,
+  getRoundCandidateIds,
   getOpenVotingRound,
   hasVotedInRoundCategory,
   roundIncludesCategory,
+  roundAllowsCandidate,
 } from "@/lib/voting-rounds";
 
 describe("voting rounds", () => {
@@ -63,6 +66,67 @@ describe("voting rounds", () => {
       },
       { projection: { _id: 1 } },
     );
+  });
+
+  it("selects a runoff for categories in scope and primary results for others", async () => {
+    const otherCategoryId = new ObjectId("507f1f77bcf86cd799439015");
+    const candidateId = new ObjectId("507f1f77bcf86cd799439016");
+    const runoff = {
+      _id: roundId,
+      eventId,
+      type: "runoff" as const,
+      status: "ended" as const,
+      categoryIds: [categoryId],
+      candidateIdsByCategory: [{ categoryId, candidateIds: [candidateId] }],
+      openedAt: new Date("2026-10-31T00:00:00Z"),
+    };
+    const primary = {
+      ...runoff,
+      _id: new ObjectId("507f1f77bcf86cd799439017"),
+      type: "primary" as const,
+      categoryIds: [categoryId, otherCategoryId],
+      candidateIdsByCategory: undefined,
+    };
+    const toArray = vi.fn().mockResolvedValue([runoff, primary]);
+    const db = {
+      collection: vi.fn(() => ({
+        find: () => ({ sort: () => ({ toArray }) }),
+      })),
+    } as never;
+
+    await expect(
+      getFinalVotingRoundForCategory(
+        eventId.toString(),
+        categoryId.toString(),
+        db,
+      ),
+    ).resolves.toBe(runoff);
+    await expect(
+      getFinalVotingRoundForCategory(
+        eventId.toString(),
+        otherCategoryId.toString(),
+        db,
+      ),
+    ).resolves.toBe(primary);
+    expect(getRoundCandidateIds(runoff, categoryId.toString())).toEqual([
+      candidateId,
+    ]);
+    expect(
+      roundAllowsCandidate(
+        runoff,
+        eventId.toString(),
+        categoryId.toString(),
+        candidateId.toString(),
+      ),
+    ).toBe(true);
+    expect(
+      roundAllowsCandidate(
+        runoff,
+        eventId.toString(),
+        categoryId.toString(),
+        otherCategoryId.toString(),
+      ),
+    ).toBe(false);
   });
 
   it("treats malformed voter/category identities as not voted", async () => {

@@ -35,6 +35,7 @@ vi.mock("@/lib/voting-rounds", () => ({
   getOpenVotingRound: mocks.getOpenVotingRound,
   hasVotedInRoundCategory: mocks.hasVotedInRoundCategory,
   roundIncludesCategory: () => true,
+  getRoundCandidateIds: () => undefined,
 }));
 vi.mock("@/components/back-button", () => ({ default: () => null }));
 vi.mock("@/components/votacao/vote-grid", () => ({ default: () => null }));
@@ -114,6 +115,7 @@ describe("voting category page", () => {
       eventId,
       expect.objectContaining({ _id: categoryId }),
       rsvpId,
+      undefined,
     );
   });
 });

@@ -7,7 +7,8 @@ import {
   reopenContestantEntries,
 } from "@/lib/contestant-entry-freeze";
 import { errorResponse, readJsonObject, logServerError } from "@/lib/http";
-import type { VotingRoundDocument } from "@/lib/voting-rounds";
+import { findFirstPlaceTies } from "@/lib/runoff";
+import type { BallotDocument, VotingRoundDocument } from "@/lib/voting-rounds";
 
 const lifecycleActions = [
   "close-contest-entry",
@@ -95,6 +96,7 @@ export async function POST(
     };
 
     let result: { matchedCount: number } = { matchedCount: 0 };
+    let runoffOpened = false;
     if (
       action === "close-contest-entry" ||
       action === "reopen-contest-entry" ||
@@ -185,6 +187,7 @@ export async function POST(
       const session = (await getMongoClient()).startSession();
       try {
         await session.withTransaction(async () => {
+          runoffOpened = false;
           const rounds = db.collection<VotingRoundDocument>("votingRounds");
           const currentRound = await rounds.findOne(
             { eventId, status: "open" },
@@ -192,7 +195,11 @@ export async function POST(
           );
           result = await db
             .collection("events")
-            .updateOne(filters[action], { $set: updates[action] }, { session });
+            .updateOne(
+              filters[action],
+              { $set: { updatedAt: now } },
+              { session },
+            );
           if (!result.matchedCount) return;
           if (!currentRound) throw new Error("OPEN_VOTING_ROUND_NOT_FOUND");
           const endedRound = await rounds.updateOne(
@@ -201,7 +208,78 @@ export async function POST(
             { session },
           );
           if (!endedRound.matchedCount) {
-            throw new Error("OPEN_PRIMARY_ROUND_NOT_FOUND");
+            throw new Error("OPEN_VOTING_ROUND_CLOSE_FAILED");
+          }
+
+          if (currentRound.type === "primary") {
+            const existingRunoff = await rounds.findOne(
+              { eventId, type: "runoff" },
+              { session },
+            );
+            if (existingRunoff) {
+              throw new Error("RUNOFF_ALREADY_EXISTS_WHILE_PRIMARY_OPEN");
+            }
+            const ballots = await db
+              .collection<BallotDocument>("votes")
+              .find(
+                { eventId, roundId: currentRound._id },
+                {
+                  projection: { categoryId: 1, candidateId: 1 },
+                  session,
+                },
+              )
+              .toArray();
+            const candidateScopes = findFirstPlaceTies(
+              currentRound.categoryIds,
+              ballots,
+            );
+            if (candidateScopes.length > 0) {
+              const runoff: VotingRoundDocument = {
+                _id: new ObjectId(),
+                eventId,
+                type: "runoff",
+                status: "open",
+                categoryIds: candidateScopes.map(
+                  ({ categoryId }) => categoryId,
+                ),
+                candidateIdsByCategory: candidateScopes,
+                openedAt: now,
+              };
+              await rounds.insertOne(runoff, { session });
+              result = await db
+                .collection("events")
+                .updateOne(
+                  filters[action],
+                  { $set: { resultsPublished: false, updatedAt: now } },
+                  { session },
+                );
+              if (!result.matchedCount) {
+                throw new Error("RUNOFF_EVENT_UPDATE_FAILED");
+              }
+              runoffOpened = true;
+            } else {
+              result = await db
+                .collection("events")
+                .updateOne(
+                  filters[action],
+                  { $set: updates[action] },
+                  { session },
+                );
+              if (!result.matchedCount) {
+                throw new Error("VOTING_EVENT_END_FAILED");
+              }
+            }
+          } else {
+            result = await db
+              .collection("events")
+              .updateOne(
+                filters[action],
+                { $set: updates[action] },
+                { session },
+              );
+            if (!result.matchedCount) {
+              throw new Error("VOTING_EVENT_END_FAILED");
+            }
           }
         });
       } finally {
@@ -283,7 +361,11 @@ export async function POST(
       }
     }
 
-    return Response.json(await getEventById(id));
+    const response = Response.json(await getEventById(id));
+    if (action === "end-voting" && runoffOpened) {
+      response.headers.set("X-Runoff-Opened", "true");
+    }
+    return response;
   } catch (error) {
     logServerError("Admin event lifecycle update failed", error);
     return errorResponse("Não foi possível atualizar o evento", 500);

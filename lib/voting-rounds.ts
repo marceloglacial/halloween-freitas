@@ -4,6 +4,10 @@ import { parseObjectId } from "@/lib/http";
 
 export type VotingRoundType = "primary" | "runoff";
 export type VotingRoundStatus = "open" | "ended";
+export type VotingRoundCandidateScope = {
+  categoryId: ObjectId;
+  candidateIds: ObjectId[];
+};
 
 export type VotingRoundDocument = {
   _id: ObjectId;
@@ -11,6 +15,7 @@ export type VotingRoundDocument = {
   type: VotingRoundType;
   status: VotingRoundStatus;
   categoryIds: ObjectId[];
+  candidateIdsByCategory?: VotingRoundCandidateScope[];
   openedAt: Date;
   endedAt?: Date;
   reopenedAt?: Date;
@@ -53,6 +58,34 @@ export async function getFinalVotingRound(
   return rounds[0] ?? null;
 }
 
+export async function getFinalVotingRoundForCategory(
+  eventId: string,
+  categoryId: string,
+  db?: Db,
+): Promise<VotingRoundDocument | null> {
+  const eventObjectId = parseObjectId(eventId);
+  const categoryObjectId = parseObjectId(categoryId);
+  if (!eventObjectId || !categoryObjectId) return null;
+  const rounds = await (db ?? (await getDb()))
+    .collection<VotingRoundDocument>("votingRounds")
+    .find({ eventId: eventObjectId, status: "ended" })
+    .sort({ openedAt: -1, _id: -1 })
+    .toArray();
+  const runoffRound = rounds.find(
+    (round) =>
+      round.type === "runoff" &&
+      round.categoryIds.some((id) => id.equals(categoryObjectId)),
+  );
+  if (runoffRound) return runoffRound;
+  return (
+    rounds.find(
+      (round) =>
+        round.type === "primary" &&
+        round.categoryIds.some((id) => id.equals(categoryObjectId)),
+    ) ?? null
+  );
+}
+
 export async function hasVotedInRoundCategory(
   eventId: string,
   roundId: ObjectId,
@@ -85,5 +118,39 @@ export function roundIncludesCategory(
   return (
     round.eventId.toString() === eventId &&
     round.categoryIds.some((id) => id.toString() === categoryId)
+  );
+}
+
+export function getRoundCandidateIds(
+  round: Pick<VotingRoundDocument, "type" | "candidateIdsByCategory">,
+  categoryId: string,
+): ObjectId[] | undefined {
+  if (round.type === "primary") return undefined;
+  const categoryObjectId = parseObjectId(categoryId);
+  if (!categoryObjectId) return [];
+  return (
+    round.candidateIdsByCategory?.find((scope) =>
+      scope.categoryId.equals(categoryObjectId),
+    )?.candidateIds ?? []
+  );
+}
+
+export function roundAllowsCandidate(
+  round: Pick<
+    VotingRoundDocument,
+    "eventId" | "type" | "categoryIds" | "candidateIdsByCategory"
+  >,
+  eventId: string,
+  categoryId: string,
+  candidateId: string,
+) {
+  if (!roundIncludesCategory(round, eventId, categoryId)) return false;
+  if (round.type === "primary") return true;
+  const candidateObjectId = parseObjectId(candidateId);
+  return Boolean(
+    candidateObjectId &&
+    getRoundCandidateIds(round, categoryId)?.some((id) =>
+      id.equals(candidateObjectId),
+    ),
   );
 }

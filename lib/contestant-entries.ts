@@ -1,4 +1,4 @@
-import { ObjectId, type ClientSession, type Db } from "mongodb";
+import { ObjectId, type ClientSession, type Db, type Filter } from "mongodb";
 import { getDb } from "@/lib/db";
 import { normalizeName, parseObjectId } from "@/lib/http";
 import { contestPhotoPreviewUrl } from "@/lib/contestant-photos";
@@ -147,6 +147,7 @@ export async function getVotingCandidatesForCategory(
   eventId: string,
   category: Category,
   voterRsvpId: string,
+  allowedCandidateIds?: ObjectId[],
 ): Promise<VotingCandidate[]> {
   const eventObjectId = parseObjectId(eventId);
   const categoryObjectId = parseObjectId(category._id);
@@ -169,13 +170,16 @@ export async function getVotingCandidatesForCategory(
     }>("categories")
     .findOne({ _id: categoryObjectId, eventId: eventObjectId });
   if (!categoryDocument) return [];
+  if (allowedCandidateIds?.length === 0) return [];
+  const entryQuery: Filter<ContestantEntryDocument> = {
+    eventId: eventObjectId,
+    categoryId: categoryObjectId,
+    status: "locked",
+    ...(allowedCandidateIds ? { _id: { $in: allowedCandidateIds } } : {}),
+  };
   const entries = await db
     .collection<ContestantEntryDocument>("contestants")
-    .find({
-      eventId: eventObjectId,
-      categoryId: categoryObjectId,
-      status: "locked",
-    })
+    .find(entryQuery)
     .sort({ displayName: 1, _id: 1 })
     .toArray();
   const categoryEligibility = categoryDocument.eligibility ?? "all";

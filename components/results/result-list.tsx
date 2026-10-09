@@ -2,23 +2,31 @@ import React, { FC, JSX } from "react";
 import { ResultsUser } from "./results-user";
 
 export const ResultList: FC<Results> = ({ users, totalVotes }): JSX.Element => {
-  const firstPlace = users[0];
-  const allUsers = users.slice(1);
+  const firstPlaceVotes = users[0]?.votes;
+  const firstPlaces = users.filter((user) => user.votes === firstPlaceVotes);
+  const remainingUsers = users.slice(firstPlaces.length);
 
   return (
     <div className="mx-auto grid max-w-4xl gap-24 lg:grid-cols-2">
-      <div>
-        <ResultsUser position={1} user={firstPlace} totalVotes={totalVotes} />
+      <div className="flex flex-col gap-6">
+        {firstPlaces.map((user) => (
+          <ResultsUser
+            key={user._id}
+            position={1}
+            user={user}
+            totalVotes={totalVotes}
+          />
+        ))}
       </div>
       <div className="flex flex-col gap-3">
-        {allUsers.map((user, index) => (
+        {remainingUsers.map((user, index) => (
           <React.Fragment key={user._id}>
             <ResultsUser
-              position={index + 2}
+              position={firstPlaces.length + index + 1}
               user={user}
               totalVotes={totalVotes}
             />
-            {index < allUsers.length - 1 && (
+            {index < remainingUsers.length - 1 && (
               <hr className="border-t border-white/20" />
             )}
           </React.Fragment>

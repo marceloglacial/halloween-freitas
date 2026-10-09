@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   updateMany: vi.fn(),
   categoryToArray: vi.fn(),
   contestantToArray: vi.fn(),
+  ballotToArray: vi.fn(),
   roundFindOne: vi.fn(),
   roundFindMany: vi.fn(),
   roundInsertOne: vi.fn(),
@@ -37,10 +38,12 @@ vi.mock("@/lib/db", () => ({
                 insertOne: mocks.roundInsertOne,
                 updateOne: mocks.roundUpdateOne,
               }
-            : {
-                find: () => ({ toArray: mocks.contestantToArray }),
-                updateMany: mocks.updateMany,
-              },
+            : name === "votes"
+              ? { find: () => ({ toArray: mocks.ballotToArray }) }
+              : {
+                  find: () => ({ toArray: mocks.contestantToArray }),
+                  updateMany: mocks.updateMany,
+                },
   }),
   getMongoClient: vi.fn().mockResolvedValue({
     startSession: () => ({
@@ -75,12 +78,23 @@ describe("event lifecycle controls", () => {
     mocks.updateMany.mockResolvedValue({ modifiedCount: 0 });
     mocks.categoryToArray.mockResolvedValue([]);
     mocks.contestantToArray.mockResolvedValue([]);
+    mocks.ballotToArray.mockResolvedValue([]);
     mocks.roundFindOne.mockResolvedValue({
       _id: new ObjectId("507f1f77bcf86cd799439016"),
       status: "open",
       type: "primary",
       categoryIds: [],
     });
+    mocks.roundFindOne.mockImplementation((filter) =>
+      filter.type === "runoff"
+        ? null
+        : {
+            _id: new ObjectId("507f1f77bcf86cd799439016"),
+            status: "open",
+            type: "primary",
+            categoryIds: [],
+          },
+    );
     mocks.roundFindMany.mockResolvedValue([
       {
         _id: new ObjectId("507f1f77bcf86cd799439016"),
@@ -219,6 +233,53 @@ describe("event lifecycle controls", () => {
       { session: expect.anything() },
     );
     expect(mocks.withTransaction).toHaveBeenCalledOnce();
+  });
+
+  it("opens a category-scoped runoff for tied leaders when ending the primary round", async () => {
+    const categoryId = new ObjectId("507f1f77bcf86cd799439018");
+    const candidateA = new ObjectId("507f1f77bcf86cd799439019");
+    const candidateB = new ObjectId("507f1f77bcf86cd799439020");
+    const candidateC = new ObjectId("507f1f77bcf86cd799439021");
+    const primaryId = new ObjectId("507f1f77bcf86cd799439022");
+    mocks.roundFindOne.mockResolvedValue({
+      _id: primaryId,
+      status: "open",
+      type: "primary",
+      categoryIds: [categoryId],
+    });
+    mocks.roundFindOne.mockImplementation((filter) =>
+      filter.type === "runoff"
+        ? null
+        : {
+            _id: primaryId,
+            status: "open",
+            type: "primary",
+            categoryIds: [categoryId],
+          },
+    );
+    mocks.ballotToArray.mockResolvedValue([
+      { categoryId, candidateId: candidateA },
+      { categoryId, candidateId: candidateB },
+      { categoryId, candidateId: candidateC },
+      { categoryId, candidateId: candidateA },
+      { categoryId, candidateId: candidateB },
+    ]);
+
+    const response = await request("end-voting");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("X-Runoff-Opened")).toBe("true");
+    expect(mocks.roundInsertOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventId: new ObjectId(eventId),
+        type: "runoff",
+        status: "open",
+        categoryIds: [categoryId],
+        candidateIdsByCategory: [
+          { categoryId, candidateIds: [candidateA, candidateB] },
+        ],
+      }),
+      { session: expect.anything() },
+    );
   });
 
   it("closes contest entry atomically before voting", async () => {
