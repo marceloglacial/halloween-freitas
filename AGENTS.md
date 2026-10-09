@@ -14,6 +14,7 @@ reports the result. Read only skills that apply to the requested work.
 | Work                                                                                  | Read before acting                                      |
 | ------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | Selecting or executing one GitHub issue                                               | `.agents/skills/issue-workflow/SKILL.md`                |
+| Finalizing a reviewed GitHub issue after explicit user approval                       | `.agents/skills/issue-finalization/SKILL.md`            |
 | Pages, components, client hooks, responsive UI, or design alignment                   | `.agents/skills/frontend-design/SKILL.md`               |
 | API handlers, server queries, request validation, or response contracts               | `.agents/skills/backend-data/SKILL.md`                  |
 | Annual editions, schedules, RSVP, contestant-entry windows, or enrollment cutoffs     | `.agents/skills/event-lifecycle/SKILL.md`               |
@@ -56,15 +57,23 @@ continue without delegation.
 - For a GitHub issue, work on exactly that implementation issue; use epics as
   context, not as additional work items.
 - Before changing files, inspect the current branch, working tree, and
-  worktrees. Start issue work from the default branch on a clean, dedicated
-  `issue-<number>-<slug>` branch.
+  worktrees. Start each issue in its own worktree on a clean, dedicated
+  `issue-<number>-<slug>` branch based on the default branch.
 - If the tree contains uncommitted work or the target branch/worktree is already
   in use, preserve it. Do not stash, reset, clean, overwrite, or mix that work;
   stop and ask the user to resolve the conflict or choose an isolated worktree.
-- Never commit, push, merge, or deploy automatically. Leave changes uncommitted
-  for human review. Review feedback authorizes corrections to the current work
-  only; each Git publication or deployment step needs separate explicit
-  authorization.
+- Development ends with implementation, required validation, and a summary of
+  changes, checks, and risks. Leave issue changes uncommitted and wait for
+  human review.
+- After explicit user approval of one issue and its reviewed change set, use
+  `.agents/skills/issue-finalization/SKILL.md` to commit, integrate or use the
+  required PR workflow, clean up that issue's branch/worktree, and close its
+  ticket. Approval applies only to that issue and change set; revisions require
+  a fresh review and approval, and approval never transfers to another issue.
+- Never deploy automatically. Never force push, force delete, reset, discard,
+  or modify unrelated worktrees. If a finalization step fails, stop and
+  preserve the issue branch/worktree for recovery. Respect branch protection
+  and required PR checks; use a PR when repository policy requires it.
 - Do not run destructive database or infrastructure operations without explicit
   user authorization. Read the relevant operations guidance first.
 - Start another issue only after the current changes are integrated or safely

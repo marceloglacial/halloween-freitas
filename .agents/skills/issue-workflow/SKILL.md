@@ -16,11 +16,11 @@ and [AI workflow](../../../docs/ai-workflow.md).
    only an implementation issue whose dependencies are closed. Prefer the
    earliest ready issue in the planned sequence, honoring release and priority
    labels; report why it is ready and why earlier candidates are blocked.
-2. Inspect the current branch, worktree, working tree, and default branch. Start
-   from a clean default-branch base on `issue-<number>-<slug>`. If existing work
-   is dirty or another task must remain open, preserve it and use a separate
-   worktree. Never stash, reset, clean, overwrite, or build on another issue's
-   pending changes.
+2. Inspect the current branch, worktree, working tree, and default branch. Give
+   each issue its own worktree and clean-base `issue-<number>-<slug>` branch. If
+   existing work is dirty or another task must remain open, preserve it and use
+   a separate worktree. Never stash, reset, clean, overwrite, or build on
+   another issue's pending changes.
 3. Load only the skill entrypoints needed for this issue. Use optional
    subagents only for bounded independent work; continue in the primary session
    if delegation is unavailable.
@@ -29,8 +29,11 @@ and [AI workflow](../../../docs/ai-workflow.md).
    contract or contributor rule changes.
 5. Report the issue, selection rationale when applicable, files changed,
    acceptance criteria, checks and results, and remaining risks. Leave changes
-   uncommitted for review. Commit, push, merge, or deploy only after separate
-   explicit user authorization for that action.
+   uncommitted for review and wait for explicit approval of this issue and the
+   reviewed change set. After approval, load
+   [issue-finalization](../issue-finalization/SKILL.md) for commit,
+   integration/PR, cleanup, and ticket closure. Approval does not transfer to
+   another issue or a changed diff. Deployment is never part of finalization.
 
 ## Completion check
 

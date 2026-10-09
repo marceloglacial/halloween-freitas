@@ -91,3 +91,7 @@ body:
         - Ready for human review
     validations:
       required: true
+  - type: markdown
+    attributes:
+      value: |
+        The agent leaves implementation changes uncommitted for review. Only explicit user approval naming this issue and the reviewed change set starts finalization. Issue fields and labels track status; they do not grant approval.
