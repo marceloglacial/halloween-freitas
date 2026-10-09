@@ -66,11 +66,8 @@ server-signed party uploads and private album delivery are not implemented.
 `package.json` retains the active Next.js/React, Clerk, MongoDB, date/timezone,
 Cloudinary image, gesture, Tailwind, toast, and test/lint/build tooling. Source
 imports were found for `date-fns-tz`, `next-cloudinary`, `@use-gesture/react`,
-and `sonner`. No direct import of `date-fns` was found; it is a candidate for
-later manifest cleanup, after confirming it is not needed as an explicit
-dependency elsewhere in the workspace or deployment tooling. `date-fns-tz`
-also depends on date-fns, so removal from the direct manifest must not be
-confused with removal of the transitive package.
+and `sonner`. No direct source import of `date-fns` was found, but the lockfile
+declares it as a peer for `date-fns-tz`; it must remain a direct dependency.
 
 The package still exposes `migrate:events`, `check:indexes`, and
 `create:indexes`. `docs/operations.md` already marks these database scripts as
@@ -100,7 +97,7 @@ recommendation.
 | Preserve                                   | `.env.example`, `lib/auth/`, `lib/db.ts`, `next.config.ts`, current Cloudinary image components                                                                              | These configure or implement required Clerk, MongoDB, and Cloudinary integrations. Reconcile with replacement features before any change; never expose credentials.                                                                              |
 | Actively used by rebuild                   | Current `app/`, `components/`, `hooks/`, `lib/`, `util/`, and `types/` feature flows                                                                                         | They serve current routes and users. Several have legacy data shapes, but removal must wait for completed and tested replacements.                                                                                                               |
 | Actively used by rebuild                   | `docs/product.md`, `docs/lifecycle.md`, `docs/architecture.md`, `docs/data-model.md`, `docs/testing.md`, `docs/operations.md`, `AGENTS.md`, `.agents/skills/`                | These express approved product, safety, and contributor contracts. Source/contract mismatches are implementation work, not stale documentation by default.                                                                                       |
-| Candidate for later removal                | Direct `date-fns` dependency                                                                                                                                                 | No direct source import found; check workspace/deployment usage and lockfile impact before changing the manifest.                                                                                                                                |
+| Preserve                                   | Direct `date-fns` dependency                                                                                                                                                 | Although there is no direct source import, the lockfile records it as a peer dependency of `date-fns-tz`.                                                                                                                                        |
 | Candidate for later removal                | `public/next.svg`, `public/vercel.svg`                                                                                                                                       | No source references found; confirm generated metadata and deployment references before removal.                                                                                                                                                 |
 | Candidate for later removal                | `scripts/migrate-events.mjs` and `migrate:events`                                                                                                                            | Explicitly obsolete for the clean rebuild and mutates data. Remove only after confirming no supported recovery/runbook still depends on it; never execute it against rebuild data.                                                               |
 | Candidate for later removal or replacement | `scripts/database-indexes.mjs`, `scripts/check-database-indexes.mjs`, `scripts/create-database-indexes.mjs`, `scripts/database-indexes.test.mjs`, and their package commands | Current index contract does not match target round-scoped ballots and omits target entities. Retire only with an implemented, reviewed replacement and updated operations guidance. Do not run these against a live database as part of cleanup. |
@@ -131,3 +128,13 @@ worktree state. It did not run the application or connect to external services.
 It cannot establish whether an unused-looking asset is referenced by a
 deployment, whether database records exist, or whether Cloudinary assets are
 still required. Those remain explicit owner/provider checks before cleanup.
+
+## AI-08 cleanup outcome
+
+The AI-08 follow-up removed `public/next.svg`, `public/vercel.svg`, and the
+obsolete `migrate:events` command and `scripts/migrate-events.mjs`. Repository
+references were checked before removal. The current `check:indexes` and
+`create:indexes` scripts remain deferred because the target-schema replacement
+is not implemented. `date-fns` remains installed because `date-fns-tz` declares
+it as a peer dependency. Application routes, homepage assets, database records,
+and Cloudinary assets were not removed or changed.

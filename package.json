@@ -15,8 +15,7 @@
     "check:docs": "node scripts/check-docs.mjs",
     "test": "vitest run",
     "check:indexes": "node scripts/check-database-indexes.mjs",
-    "create:indexes": "node scripts/create-database-indexes.mjs",
-    "migrate:events": "node scripts/migrate-events.mjs"
+    "create:indexes": "node scripts/create-database-indexes.mjs"
   },
   "dependencies": {
     "@clerk/localizations": "4.16.1",
