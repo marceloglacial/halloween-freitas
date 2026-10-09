@@ -4,7 +4,7 @@ import { getDb, getMongoClient } from "@/lib/db";
 import { parseEventCategories } from "@/lib/event-categories";
 import { parseEventInput } from "@/lib/event-schedule";
 import { getEventById, getEvents } from "@/lib/events";
-import { errorResponse, readJsonObject } from "@/lib/http";
+import { errorResponse, readJsonObject, logServerError } from "@/lib/http";
 
 type CategoryDocument = Pick<
   Category,
@@ -16,7 +16,7 @@ export async function GET() {
   try {
     return Response.json(await getEvents());
   } catch (error) {
-    console.error("Admin event listing failed", error);
+    logServerError("Admin event listing failed", error);
     return errorResponse("Não foi possível carregar os eventos", 500);
   }
 }
@@ -121,7 +121,7 @@ export async function POST(request: Request) {
     ) {
       return errorResponse("O evento modelo não possui categorias", 409);
     }
-    console.error("Admin event creation failed", error);
+    logServerError("Admin event creation failed", error);
     return errorResponse("Não foi possível criar o evento", 500);
   } finally {
     await session.endSession();

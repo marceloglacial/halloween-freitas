@@ -1,5 +1,5 @@
 import { getCurrentEvent, getEventPhase } from "@/lib/events";
-import { errorResponse } from "@/lib/http";
+import { errorResponse, logServerError } from "@/lib/http";
 
 export async function GET() {
   try {
@@ -7,7 +7,7 @@ export async function GET() {
     if (!event) return errorResponse("Evento não encontrado", 404);
     return Response.json({ ...event, phase: getEventPhase(event) });
   } catch (error) {
-    console.error("Current event lookup failed", error);
+    logServerError("Current event lookup failed", error);
     return errorResponse("Não foi possível carregar o evento", 500);
   }
 }

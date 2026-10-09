@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import { isAdmin } from "@/lib/auth/admin";
 import { getDb } from "@/lib/db";
 import { getEventById } from "@/lib/events";
-import { errorResponse, readJsonObject } from "@/lib/http";
+import { errorResponse, readJsonObject, logServerError } from "@/lib/http";
 
 const lifecycleActions = [
   "close-contest-entry",
@@ -150,7 +150,7 @@ export async function POST(
 
     return Response.json(await getEventById(id));
   } catch (error) {
-    console.error("Admin event lifecycle update failed", error);
+    logServerError("Admin event lifecycle update failed", error);
     return errorResponse("Não foi possível atualizar o evento", 500);
   }
 }

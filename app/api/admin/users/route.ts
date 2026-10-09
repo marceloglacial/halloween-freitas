@@ -12,6 +12,7 @@ import {
   normalizeName,
   parseObjectId,
   readJsonObject,
+  logServerError,
 } from "@/lib/http";
 import { getAdminUsersForEvent } from "@/lib/users";
 
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
     if (event instanceof Response) return event;
     return Response.json(await getAdminUsersForEvent(event._id));
   } catch (error) {
-    console.error("Admin user listing failed", error);
+    logServerError("Admin user listing failed", error);
     return errorResponse("Não foi possível carregar os usuários", 500);
   }
 }
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
     if (error instanceof MongoServerError && error.code === 11000) {
       return errorResponse("Este email já está inscrito", 409);
     }
-    console.error("Admin user creation failed", error);
+    logServerError("Admin user creation failed", error);
     return errorResponse("Não foi possível criar o usuário", 500);
   }
 }
@@ -158,7 +159,7 @@ export async function PUT(request: Request) {
     if (error instanceof MongoServerError && error.code === 11000) {
       return errorResponse("Este email já está inscrito", 409);
     }
-    console.error("Admin user update failed", error);
+    logServerError("Admin user update failed", error);
     return errorResponse("Não foi possível atualizar o usuário", 500);
   }
 }
@@ -209,7 +210,7 @@ export async function DELETE(request: Request) {
     if (error instanceof ContestEntryClosedError) {
       return errorResponse("As inscrições do concurso estão encerradas", 409);
     }
-    console.error("Admin user deletion failed", error);
+    logServerError("Admin user deletion failed", error);
     return errorResponse("Não foi possível excluir o usuário", 500);
   }
 }
