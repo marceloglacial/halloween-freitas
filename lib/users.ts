@@ -16,6 +16,7 @@ export function serializeUser(user: UserDocument): User {
     fullName: user.fullName,
     email: user.email,
     imageUrl: user.imageUrl,
+    ...(user.contestant !== undefined ? { contestant: user.contestant } : {}),
     group: Boolean(user.group),
     junior: Boolean(user.junior),
     ...(user.status ? { status: user.status } : {}),
@@ -49,7 +50,7 @@ export async function getPublicUsersForEvent(eventId: string) {
 
 export async function getPublicVotingUsersForEvent(eventId: string) {
   return (await getUsersForEvent(eventId))
-    .filter((user) => user.status !== "cancelled")
+    .filter((user) => user.status !== "cancelled" && user.contestant !== false)
     .map(toPublicUser);
 }
 

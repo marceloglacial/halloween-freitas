@@ -1,5 +1,12 @@
 import { useCallback, useState } from "react";
 
+async function responseError(response: Response, fallback: string) {
+  const body = (await response.json().catch(() => null)) as {
+    error?: string;
+  } | null;
+  return body?.error || fallback;
+}
+
 export function useUsers(eventId: string) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [search, setSearch] = useState("");
@@ -45,7 +52,11 @@ export function useUsers(eventId: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...user, eventId }),
       });
-      if (!res.ok) throw new Error("Failed to update user");
+      if (!res.ok) {
+        throw new Error(
+          await responseError(res, "Não foi possível atualizar o usuário."),
+        );
+      }
       const updated = await res.json();
       setUsers((prev: User[]) =>
         prev.map((u: User) =>
@@ -76,7 +87,11 @@ export function useUsers(eventId: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ _id, eventId }),
       });
-      if (!res.ok) throw new Error("Failed to delete user");
+      if (!res.ok) {
+        throw new Error(
+          await responseError(res, "Não foi possível excluir o usuário."),
+        );
+      }
       setUsers((prev: User[]) => prev.filter((u: User) => u._id !== _id));
     } catch (err: unknown) {
       setError(
@@ -160,7 +175,11 @@ export function useUsers(eventId: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...user, eventId }),
       });
-      if (!res.ok) throw new Error("Failed to create user");
+      if (!res.ok) {
+        throw new Error(
+          await responseError(res, "Não foi possível criar o usuário."),
+        );
+      }
       const created = await res.json();
       setUsers((prev: User[]) => [...prev, created]);
       setShowModal(false);

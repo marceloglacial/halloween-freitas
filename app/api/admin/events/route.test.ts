@@ -151,6 +151,7 @@ describe("admin events API", () => {
       year: 2026,
       slug: "halloween-2026",
       status: "archived",
+      contestEntryStatus: "open",
     });
     expect(insertedEvent.registrationStartsAt).toEqual(
       new Date("2026-09-01T04:00:00.000Z"),

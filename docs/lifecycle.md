@@ -29,14 +29,15 @@ link silently, or allows one edition's RSVP to authorize another.
 
 ## Contestant entries
 
-Contestant entry follows an administrator-controlled `open` / `closed` state.
-The scheduled registration start can inform the UI but does not itself open
-contestant entry. Administrators can close and reopen entries before voting
-first opens. While entries are closed, guests cannot add or edit contestant
-entries or photos; eligible candidates are frozen for voting. Only complete,
-consented, photo-valid entries are eligible; incomplete drafts remain private.
-Reopening before the first voting opening permits the administrator-authorized
-entry workflow again.
+Contestant entry opens at `registrationStartsAt` in the edition's IANA timezone,
+unless an administrator closes it. Administrators can close and reopen entries
+before voting first opens. The event stores this administrator-controlled
+override as `contestEntryStatus`; legacy records without the field are treated
+as open until their scheduled start. While entries are closed, guests cannot
+add or edit contestant entries or photos; eligible candidates are frozen for
+voting. Only complete, consented, photo-valid entries are eligible; incomplete
+drafts remain private. Reopening before the first voting opening permits the
+entry workflow again, but does not change RSVP availability.
 
 When voting first opens, contestant membership is permanently frozen for that
 edition. No guest or administrator can add or delete contestant entries after

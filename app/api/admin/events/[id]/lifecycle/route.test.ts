@@ -40,6 +40,7 @@ describe("event lifecycle controls", () => {
       _id: eventId,
       status: "active",
       eventStartsAt: "2026-10-31T23:00:00.000Z",
+      contestEntryStatus: "open",
       votingStatus: "ended",
       resultsPublished: false,
     });
@@ -65,11 +66,80 @@ describe("event lifecycle controls", () => {
       }),
       {
         $set: expect.objectContaining({
+          contestEntryStatus: "closed",
           votingStatus: "open",
           resultsPublished: false,
         }),
       },
     );
+  });
+
+  it("closes contest entry atomically before voting", async () => {
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      status: "active",
+      contestEntryStatus: "open",
+      votingStatus: "not_started",
+    });
+
+    const response = await request("close-contest-entry");
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: expect.anything(),
+        status: "active",
+        votingStatus: "not_started",
+        $or: expect.arrayContaining([
+          { contestEntryStatus: "open" },
+          { contestEntryStatus: { $exists: false } },
+        ]),
+      }),
+      {
+        $set: expect.objectContaining({ contestEntryStatus: "closed" }),
+      },
+    );
+  });
+
+  it("reopens contest entry only before the first voting opening", async () => {
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      status: "active",
+      contestEntryStatus: "closed",
+      votingStatus: "not_started",
+    });
+
+    const response = await request("reopen-contest-entry");
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "active",
+        votingStatus: "not_started",
+        contestEntryStatus: "closed",
+      }),
+      {
+        $set: expect.objectContaining({ contestEntryStatus: "open" }),
+      },
+    );
+  });
+
+  it("does not reopen contest entry after voting begins", async () => {
+    mocks.updateOne.mockResolvedValue({ matchedCount: 0 });
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      status: "active",
+      contestEntryStatus: "closed",
+      votingStatus: "open",
+    });
+
+    const response = await request("reopen-contest-entry");
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error:
+        "As inscrições do concurso foram encerradas com o início da votação",
+    });
   });
 
   it("does not start voting before the event begins", async () => {

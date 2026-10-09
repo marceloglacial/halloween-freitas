@@ -1,6 +1,10 @@
 import { MongoServerError, ObjectId } from "mongodb";
 import { isAdmin } from "@/lib/auth/admin";
-import { getDb } from "@/lib/db";
+import { getDb, getMongoClient } from "@/lib/db";
+import {
+  claimContestEntryWrite,
+  ContestEntryClosedError,
+} from "@/lib/contest-entry-writes";
 import { getEventById } from "@/lib/events";
 import {
   errorResponse,
@@ -45,29 +49,48 @@ export async function POST(request: Request) {
       return errorResponse("Nome ou email inválido", 400);
     }
 
-    const result = await (await getDb()).collection("users").insertOne({
-      eventId: new ObjectId(event._id),
-      fullName,
-      email: normalizedEmail,
-      normalizedEmail,
-      imageUrl: typeof body.imageUrl === "string" ? body.imageUrl : null,
-      group: Boolean(body.group),
-      junior: Boolean(body.junior),
-      createdAt: new Date(),
-    });
-    return Response.json(
-      {
-        _id: result.insertedId.toString(),
-        eventId: event._id,
-        fullName,
-        email: normalizedEmail,
-        imageUrl: typeof body.imageUrl === "string" ? body.imageUrl : null,
-        group: Boolean(body.group),
-        junior: Boolean(body.junior),
-      },
-      { status: 201 },
-    );
+    const eventId = new ObjectId(event._id);
+    const client = await getMongoClient();
+    const db = await getDb();
+    const session = client.startSession();
+    try {
+      const created = await session.withTransaction(async () => {
+        const now = new Date();
+        await claimContestEntryWrite(db, eventId, session, now);
+        const result = await db.collection("users").insertOne(
+          {
+            eventId,
+            fullName,
+            email: normalizedEmail,
+            normalizedEmail,
+            imageUrl: typeof body.imageUrl === "string" ? body.imageUrl : null,
+            contestant: true,
+            group: Boolean(body.group),
+            junior: Boolean(body.junior),
+            createdAt: now,
+          },
+          { session },
+        );
+        return {
+          _id: result.insertedId.toString(),
+          eventId: event._id,
+          fullName,
+          email: normalizedEmail,
+          imageUrl: typeof body.imageUrl === "string" ? body.imageUrl : null,
+          contestant: true,
+          group: Boolean(body.group),
+          junior: Boolean(body.junior),
+        };
+      });
+      if (!created) throw new Error("USER_NOT_CREATED");
+      return Response.json(created, { status: 201 });
+    } finally {
+      await session.endSession();
+    }
   } catch (error) {
+    if (error instanceof ContestEntryClosedError) {
+      return errorResponse("As inscrições do concurso estão encerradas", 409);
+    }
     if (error instanceof MongoServerError && error.code === 11000) {
       return errorResponse("Este email já está inscrito", 409);
     }
@@ -98,18 +121,38 @@ export async function PUT(request: Request) {
       junior: Boolean(body.junior),
       updatedAt: new Date(),
     };
-    const result = await (
-      await getDb()
-    )
-      .collection("users")
-      .updateOne(
-        { _id: userId, eventId: new ObjectId(event._id) },
-        { $set: update },
-      );
+    const eventObjectId = new ObjectId(event._id);
+    const client = await getMongoClient();
+    const db = await getDb();
+    const session = client.startSession();
+    let result;
+    try {
+      result = await session.withTransaction(async () => {
+        await claimContestEntryWrite(
+          db,
+          eventObjectId,
+          session,
+          update.updatedAt,
+        );
+        return db
+          .collection("users")
+          .updateOne(
+            { _id: userId, eventId: eventObjectId },
+            { $set: update },
+            { session },
+          );
+      });
+    } finally {
+      await session.endSession();
+    }
+    if (!result) throw new Error("USER_UPDATE_FAILED");
     if (!result.matchedCount)
       return errorResponse("Usuário não encontrado", 404);
     return Response.json({ _id: body._id, eventId: event._id, ...update });
   } catch (error) {
+    if (error instanceof ContestEntryClosedError) {
+      return errorResponse("As inscrições do concurso estão encerradas", 409);
+    }
     if (error instanceof MongoServerError && error.code === 11000) {
       return errorResponse("Este email já está inscrito", 409);
     }
@@ -127,22 +170,43 @@ export async function DELETE(request: Request) {
     const userId = parseObjectId(body._id);
     if (!userId) return errorResponse("Usuário inválido", 400);
 
+    const eventObjectId = new ObjectId(event._id);
+    const client = await getMongoClient();
     const db = await getDb();
-    const hasVotes = await db.collection("votes").findOne({
-      eventId: new ObjectId(event._id),
-      $or: [{ voterId: userId }, { voteForId: userId }],
-    });
-    if (hasVotes) {
+    const session = client.startSession();
+    let outcome;
+    try {
+      outcome = await session.withTransaction(async () => {
+        await claimContestEntryWrite(db, eventObjectId, session, new Date());
+        const votes = await db.collection("votes").findOne(
+          {
+            eventId: eventObjectId,
+            $or: [{ voterId: userId }, { voteForId: userId }],
+          },
+          { session },
+        );
+        if (votes) return { hasVotes: true as const };
+        return {
+          hasVotes: false as const,
+          result: await db
+            .collection("users")
+            .deleteOne({ _id: userId, eventId: eventObjectId }, { session }),
+        };
+      });
+    } finally {
+      await session.endSession();
+    }
+    if (!outcome) throw new Error("USER_DELETE_FAILED");
+    if (outcome.hasVotes) {
       return errorResponse("Usuários com votos não podem ser excluídos", 409);
     }
-    const result = await db.collection("users").deleteOne({
-      _id: userId,
-      eventId: new ObjectId(event._id),
-    });
-    if (!result.deletedCount)
+    if (!outcome.result.deletedCount)
       return errorResponse("Usuário não encontrado", 404);
     return new Response(null, { status: 204 });
   } catch (error) {
+    if (error instanceof ContestEntryClosedError) {
+      return errorResponse("As inscrições do concurso estão encerradas", 409);
+    }
     console.error("Admin user deletion failed", error);
     return errorResponse("Não foi possível excluir o usuário", 500);
   }

@@ -1,6 +1,8 @@
 type EventStatus = "active" | "archived";
 type VotingStatus = "not_started" | "open" | "ended";
+type ContestEntryStatus = "open" | "closed";
 type RegistrationState = "upcoming" | "open" | "closed";
+type ContestEntryState = "upcoming" | "open" | "closed";
 type EventPhase =
   | "upcoming"
   | "registration"
@@ -17,6 +19,7 @@ type HalloweenEvent = {
   timezone: string;
   registrationStartsAt: string;
   eventStartsAt: string;
+  contestEntryStatus?: ContestEntryStatus;
   votingStatus: VotingStatus;
   resultsPublished: boolean;
   status: EventStatus;

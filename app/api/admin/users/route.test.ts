@@ -4,24 +4,68 @@ const mocks = vi.hoisted(() => ({
   isAdmin: vi.fn(),
   getEventById: vi.fn(),
   getAdminUsersForEvent: vi.fn(),
+  getMongoClient: vi.fn(),
   updateOne: vi.fn(),
+  eventUpdateOne: vi.fn(),
+  insertOne: vi.fn(),
+  deleteOne: vi.fn(),
+  findOne: vi.fn(),
+  withTransaction: vi.fn(),
+  endSession: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/admin", () => ({ isAdmin: mocks.isAdmin }));
 vi.mock("@/lib/events", () => ({ getEventById: mocks.getEventById }));
 vi.mock("@/lib/db", () => ({
-  getDb: async () => ({ collection: () => ({ updateOne: mocks.updateOne }) }),
+  getDb: vi.fn(async () => ({
+    collection: (name: string) =>
+      name === "events"
+        ? { updateOne: mocks.eventUpdateOne }
+        : name === "votes"
+          ? { findOne: mocks.findOne }
+          : {
+              insertOne: mocks.insertOne,
+              updateOne: mocks.updateOne,
+              deleteOne: mocks.deleteOne,
+            },
+  })),
+  getMongoClient: mocks.getMongoClient,
 }));
 vi.mock("@/lib/users", () => ({
   getAdminUsersForEvent: mocks.getAdminUsersForEvent,
 }));
 
-import { GET, PUT } from "@/app/api/admin/users/route";
+import { DELETE, GET, POST, PUT } from "@/app/api/admin/users/route";
 
 const eventId = "507f1f77bcf86cd799439011";
 
 describe("admin users API", () => {
-  beforeEach(() => vi.resetAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.eventUpdateOne.mockResolvedValue({ matchedCount: 1 });
+    mocks.insertOne.mockResolvedValue({
+      insertedId: { toString: () => "new-user" },
+    });
+    mocks.updateOne.mockResolvedValue({ matchedCount: 1 });
+    mocks.deleteOne.mockResolvedValue({ deletedCount: 1 });
+    mocks.findOne.mockResolvedValue(null);
+    mocks.withTransaction.mockImplementation(
+      async (operation: () => Promise<unknown>) => operation(),
+    );
+    mocks.getMongoClient.mockResolvedValue({
+      startSession: () => ({
+        withTransaction: mocks.withTransaction,
+        endSession: mocks.endSession,
+      }),
+    });
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      status: "active",
+      votingStatus: "not_started",
+      registrationStartsAt: "2026-09-01T04:00:00.000Z",
+      contestEntryStatus: "open",
+    });
+  });
 
   it("rejects non-admin requests", async () => {
     mocks.isAdmin.mockResolvedValue(false);
@@ -74,5 +118,136 @@ describe("admin users API", () => {
     });
     expect(update.$set).not.toHaveProperty("clerkUserId");
     expect(update).not.toHaveProperty("$unset");
+    expect(mocks.eventUpdateOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: expect.anything(),
+        status: "active",
+        votingStatus: "not_started",
+        $and: expect.arrayContaining([
+          expect.objectContaining({
+            $or: expect.arrayContaining([
+              { contestEntryStatus: "open" },
+              { contestEntryStatus: { $exists: false } },
+            ]),
+          }),
+        ]),
+      }),
+      expect.objectContaining({ $inc: { contestEntryMutationVersion: 1 } }),
+      { session: expect.any(Object) },
+    );
+  });
+
+  it("creates contestant records only while scheduled entry is open", async () => {
+    mocks.isAdmin.mockResolvedValue(true);
+    mocks.getEventById.mockResolvedValue({ _id: eventId });
+    const response = await POST(
+      new Request("http://localhost/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId,
+          fullName: "Guest User",
+          email: "guest@example.com",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.insertOne).toHaveBeenCalledWith(
+      expect.objectContaining({ contestant: true, eventId: expect.anything() }),
+      { session: expect.any(Object) },
+    );
+    expect(mocks.withTransaction).toHaveBeenCalledOnce();
+    expect(mocks.endSession).toHaveBeenCalledOnce();
+  });
+
+  it("rejects a contestant write if the atomic event guard observes a closed entry", async () => {
+    mocks.isAdmin.mockResolvedValue(true);
+    mocks.getEventById.mockResolvedValue({ _id: eventId });
+    mocks.eventUpdateOne.mockResolvedValue({ matchedCount: 0 });
+    const response = await POST(
+      new Request("http://localhost/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId,
+          fullName: "Guest User",
+          email: "guest@example.com",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "As inscrições do concurso estão encerradas",
+    });
+    expect(mocks.insertOne).not.toHaveBeenCalled();
+    expect(mocks.withTransaction).toHaveBeenCalledOnce();
+  });
+
+  it("rejects contestant edits if the entry closes before their transaction guard", async () => {
+    mocks.isAdmin.mockResolvedValue(true);
+    mocks.getEventById.mockResolvedValue({ _id: eventId });
+    mocks.eventUpdateOne.mockResolvedValue({ matchedCount: 0 });
+    const response = await PUT(
+      new Request("http://localhost/api/admin/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId,
+          _id: "507f1f77bcf86cd799439012",
+          fullName: "Nome alterado",
+          email: "guest@example.com",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    expect(mocks.updateOne).not.toHaveBeenCalled();
+  });
+
+  it("keeps deletion inside the event-entry transaction and vote check", async () => {
+    mocks.isAdmin.mockResolvedValue(true);
+    mocks.getEventById.mockResolvedValue({ _id: eventId });
+    const response = await DELETE(
+      new Request("http://localhost/api/admin/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId,
+          _id: "507f1f77bcf86cd799439012",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(204);
+    expect(mocks.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: expect.anything() }),
+      { session: expect.any(Object) },
+    );
+    expect(mocks.deleteOne).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: expect.anything() }),
+      { session: expect.any(Object) },
+    );
+  });
+
+  it("does not delete a contestant if voting or entry closure wins the race", async () => {
+    mocks.isAdmin.mockResolvedValue(true);
+    mocks.getEventById.mockResolvedValue({ _id: eventId });
+    mocks.eventUpdateOne.mockResolvedValue({ matchedCount: 0 });
+    const response = await DELETE(
+      new Request("http://localhost/api/admin/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId,
+          _id: "507f1f77bcf86cd799439012",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    expect(mocks.findOne).not.toHaveBeenCalled();
+    expect(mocks.deleteOne).not.toHaveBeenCalled();
   });
 });

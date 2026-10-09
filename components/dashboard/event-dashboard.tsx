@@ -17,6 +17,7 @@ import {
   shiftEventSchedule,
 } from "@/lib/event-schedule";
 import type { EventCategoryInput } from "@/lib/event-categories";
+import { getContestEntryState } from "@/util/contest-entry-state";
 import UserList from "./user-list";
 import LogoutButton from "@/components/logout-button";
 
@@ -207,6 +208,9 @@ export default function EventDashboard({
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(initialEvents.length === 0);
   const selected = events.find((event) => event.year === year) ?? events[0];
+  const contestEntryState = selected
+    ? getContestEntryState(selected, new Date(initialNow))
+    : "closed";
   const eventHasStarted = selected
     ? new Date(selected.eventStartsAt).getTime() <=
       new Date(initialNow).getTime()
@@ -401,10 +405,18 @@ export default function EventDashboard({
 
   async function changeLifecycle(
     action:
-      "start-voting" | "end-voting" | "publish-results" | "unpublish-results",
+      | "close-contest-entry"
+      | "reopen-contest-entry"
+      | "start-voting"
+      | "end-voting"
+      | "publish-results"
+      | "unpublish-results",
   ) {
     if (!selected) return;
     const messages = {
+      "close-contest-entry":
+        "Fechar as inscrições do concurso? As confirmações de presença continuam disponíveis.",
+      "reopen-contest-entry": "Reabrir as inscrições do concurso?",
       "start-voting":
         selected.votingStatus === "ended"
           ? "Reabrir a votação? Os resultados serão ocultados automaticamente."
@@ -429,6 +441,8 @@ export default function EventDashboard({
       const changed = (await response.json()) as HalloweenEvent;
       replaceEvent(changed);
       const successMessages = {
+        "close-contest-entry": "Inscrições do concurso fechadas",
+        "reopen-contest-entry": "Inscrições do concurso reabertas",
         "start-voting": "Votação aberta",
         "end-voting": "Votação encerrada",
         "publish-results": "Resultados publicados",
@@ -917,6 +931,46 @@ export default function EventDashboard({
                   </div>
                 )}
               </>
+            )}
+          </section>
+          <section className="space-y-3 rounded-xl border border-white/20 p-4">
+            <div>
+              <h2 className="text-xl font-semibold">Inscrições do concurso</h2>
+              <p className="text-sm text-gray-300">
+                {contestEntryState === "upcoming"
+                  ? "As inscrições abrem no horário programado para esta edição."
+                  : contestEntryState === "open"
+                    ? "As inscrições do concurso estão abertas."
+                    : "As inscrições do concurso estão fechadas."}
+              </p>
+              <p className="text-sm text-gray-300">
+                Fechar as inscrições não impede novas confirmações de presença.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={
+                busy ||
+                selected.status !== "active" ||
+                selected.votingStatus !== "not_started"
+              }
+              onClick={() =>
+                changeLifecycle(
+                  selected.contestEntryStatus === "closed"
+                    ? "reopen-contest-entry"
+                    : "close-contest-entry",
+                )
+              }
+              className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black disabled:opacity-50"
+            >
+              {selected.contestEntryStatus === "closed"
+                ? "Reabrir inscrições"
+                : "Fechar inscrições"}
+            </button>
+            {selected.votingStatus !== "not_started" && (
+              <p className="text-xs text-gray-300">
+                As inscrições não podem ser alteradas após o início da votação.
+              </p>
             )}
           </section>
           <section className="grid gap-4 rounded-xl border border-white/20 p-4 md:grid-cols-2">

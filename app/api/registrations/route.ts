@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       email: normalizedEmail,
       normalizedEmail,
       imageUrl: null,
+      contestant: false,
       group: false,
       junior: false,
       createdAt: new Date(),

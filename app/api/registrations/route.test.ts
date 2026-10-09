@@ -59,6 +59,7 @@ describe("registration API window", () => {
   it("normalizes registration emails before inserting", async () => {
     mocks.getCurrentEvent.mockResolvedValue({
       _id: "507f1f77bcf86cd799439011",
+      contestEntryStatus: "closed",
     });
     mocks.getRegistrationState.mockReturnValue("open");
     mocks.insertOne.mockResolvedValue({
@@ -80,7 +81,26 @@ describe("registration API window", () => {
       expect.objectContaining({
         email: "guest@example.com",
         normalizedEmail: "guest@example.com",
+        contestant: false,
       }),
+    );
+  });
+
+  it("accepts a late RSVP while contest entry is closed without creating a contestant", async () => {
+    mocks.getCurrentEvent.mockResolvedValue({
+      _id: "507f1f77bcf86cd799439011",
+      contestEntryStatus: "closed",
+    });
+    mocks.getRegistrationState.mockReturnValue("open");
+    mocks.insertOne.mockResolvedValue({
+      insertedId: { toString: () => "registration-id" },
+    });
+
+    const response = await POST(registrationRequest());
+
+    expect(response.status).toBe(201);
+    expect(mocks.insertOne).toHaveBeenCalledWith(
+      expect.objectContaining({ contestant: false }),
     );
   });
 
