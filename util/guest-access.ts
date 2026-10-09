@@ -5,7 +5,8 @@ export function guestReturnPath(value: unknown, eventId: string) {
   if (
     typeof value === "string" &&
     (/^\/votacao\/categories(?:\/[a-f\d]{24})?(?:\?[^#\\]*)?$/i.test(value) ||
-      /^\/perfil(?:\?[^#\\]*)?$/i.test(value))
+      /^\/perfil(?:\?[^#\\]*)?$/i.test(value) ||
+      /^\/meu-halloween(?:\?[^#\\]*)?$/i.test(value))
   ) {
     pathname = value.split("?")[0];
   }

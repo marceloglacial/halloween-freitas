@@ -69,10 +69,10 @@ export default async function VotingCategoriesPage({
         Você pode votar na mesma pessoa em mais de uma categoria.
       </p>
       <Link
-        href={`/perfil?${new URLSearchParams({ eventId: event._id })}`}
+        href={`/meu-halloween?${new URLSearchParams({ eventId: event._id })}`}
         className="text-orange-300 underline focus-visible:outline-2"
       >
-        Consultar ou atualizar meu perfil
+        Meu Halloween
       </Link>
       {categories.length ? (
         <CategoryList
