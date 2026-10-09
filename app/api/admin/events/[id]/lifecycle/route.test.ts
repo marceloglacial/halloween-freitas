@@ -1,16 +1,36 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ObjectId } from "mongodb";
 
 const mocks = vi.hoisted(() => ({
   isAdmin: vi.fn(),
   getEventById: vi.fn(),
   updateOne: vi.fn(),
+  updateMany: vi.fn(),
+  categoryToArray: vi.fn(),
+  contestantToArray: vi.fn(),
+  withTransaction: vi.fn(),
+  endSession: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/admin", () => ({ isAdmin: mocks.isAdmin }));
 vi.mock("@/lib/events", () => ({ getEventById: mocks.getEventById }));
 vi.mock("@/lib/db", () => ({
   getDb: vi.fn().mockResolvedValue({
-    collection: () => ({ updateOne: mocks.updateOne }),
+    collection: (name: string) =>
+      name === "events"
+        ? { updateOne: mocks.updateOne }
+        : name === "categories"
+          ? { find: () => ({ toArray: mocks.categoryToArray }) }
+          : {
+              find: () => ({ toArray: mocks.contestantToArray }),
+              updateMany: mocks.updateMany,
+            },
+  }),
+  getMongoClient: vi.fn().mockResolvedValue({
+    startSession: () => ({
+      withTransaction: mocks.withTransaction,
+      endSession: mocks.endSession,
+    }),
   }),
 }));
 
@@ -36,6 +56,10 @@ describe("event lifecycle controls", () => {
     vi.clearAllMocks();
     mocks.isAdmin.mockResolvedValue(true);
     mocks.updateOne.mockResolvedValue({ matchedCount: 1 });
+    mocks.updateMany.mockResolvedValue({ modifiedCount: 0 });
+    mocks.categoryToArray.mockResolvedValue([]);
+    mocks.contestantToArray.mockResolvedValue([]);
+    mocks.withTransaction.mockImplementation(async (callback) => callback());
     mocks.getEventById.mockResolvedValue({
       _id: eventId,
       status: "active",
@@ -60,17 +84,19 @@ describe("event lifecycle controls", () => {
     expect(response.status).toBe(200);
     expect(mocks.updateOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        _id: expect.anything(),
+        _id: expect.any(ObjectId),
         status: "active",
         eventStartsAt: { $lte: new Date("2026-11-01T00:00:00.000Z") },
       }),
-      {
+      expect.objectContaining({
         $set: expect.objectContaining({
           contestEntryStatus: "closed",
           votingStatus: "open",
           resultsPublished: false,
         }),
-      },
+        $inc: { contestEntryMutationVersion: 1 },
+      }),
+      { session: expect.anything() },
     );
   });
 
@@ -97,7 +123,68 @@ describe("event lifecycle controls", () => {
       }),
       {
         $set: expect.objectContaining({ contestEntryStatus: "closed" }),
+        $inc: { contestEntryMutationVersion: 1 },
       },
+      { session: expect.anything() },
+    );
+    expect(mocks.withTransaction).toHaveBeenCalledOnce();
+  });
+
+  it("freezes photo-complete entries while leaving incomplete drafts private", async () => {
+    const eventObjectId = new ObjectId(eventId);
+    const categoryId = new ObjectId("507f1f77bcf86cd799439012");
+    const rsvpId = new ObjectId("507f1f77bcf86cd799439013");
+    const completeId = new ObjectId("507f1f77bcf86cd799439014");
+    const draftId = new ObjectId("507f1f77bcf86cd799439015");
+    const now = new Date("2026-11-01T00:00:00.000Z");
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      status: "active",
+      contestEntryStatus: "open",
+      votingStatus: "not_started",
+    });
+    mocks.categoryToArray.mockResolvedValue([
+      { _id: categoryId, eligibility: "all" },
+    ]);
+    mocks.contestantToArray.mockResolvedValue([
+      {
+        _id: completeId,
+        eventId: eventObjectId,
+        categoryId,
+        entryType: "individual",
+        displayName: "Ana",
+        status: "draft",
+        ownerRsvpId: rsvpId,
+        contestPhoto: {
+          assetId: "asset",
+          publicId: `contest-photos/${eventObjectId.toString()}/asset`,
+          consentAt: now,
+          consentByRsvpId: rsvpId.toString(),
+        },
+      },
+      {
+        _id: draftId,
+        eventId: eventObjectId,
+        categoryId,
+        entryType: "individual",
+        displayName: "Bia",
+        status: "draft",
+        ownerRsvpId: rsvpId,
+      },
+    ]);
+
+    const response = await request("close-contest-entry");
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateMany).toHaveBeenCalledOnce();
+    expect(mocks.updateMany).toHaveBeenCalledWith(
+      {
+        eventId: eventObjectId,
+        _id: { $in: [completeId] },
+        status: { $in: ["draft", "ready"] },
+      },
+      { $set: { status: "locked", updatedAt: now } },
+      { session: expect.anything() },
     );
   });
 
@@ -120,7 +207,19 @@ describe("event lifecycle controls", () => {
       }),
       {
         $set: expect.objectContaining({ contestEntryStatus: "open" }),
+        $inc: { contestEntryMutationVersion: 1 },
       },
+      { session: expect.anything() },
+    );
+    expect(mocks.updateMany).toHaveBeenCalledWith(
+      { eventId: expect.anything(), status: "locked" },
+      {
+        $set: {
+          status: "ready",
+          updatedAt: new Date("2026-11-01T00:00:00.000Z"),
+        },
+      },
+      { session: expect.anything() },
     );
   });
 

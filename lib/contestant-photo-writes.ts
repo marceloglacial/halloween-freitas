@@ -76,7 +76,13 @@ export async function saveContestPhotoForGuest(
         : { ...ownership, contestPhoto: { $exists: false } };
       const update = await collection.updateOne(
         filter,
-        { $set: { contestPhoto: input.photo, updatedAt: input.now } },
+        {
+          $set: {
+            contestPhoto: input.photo,
+            status: "ready",
+            updatedAt: input.now,
+          },
+        },
         { session },
       );
       if (!update.matchedCount) {

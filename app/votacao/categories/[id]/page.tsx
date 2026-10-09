@@ -8,9 +8,8 @@ import {
 } from "@/lib/auth/guest-registration";
 import { guestAccessUrl, validGuestEventId } from "@/util/guest-access";
 import { getCurrentEvent, isVotingOpen } from "@/lib/events";
-import { getPublicVotingUsersForEvent } from "@/lib/users";
+import { getVotingCandidatesForCategory } from "@/lib/contestant-entries";
 import { getCategoryById } from "@/util/get-categories";
-import { isEligibleCandidate } from "@/lib/voting";
 
 export const dynamic = "force-dynamic";
 
@@ -49,8 +48,10 @@ export default async function CategoryPage({
   const category = await getCategoryById((await params).id);
   if (!category || category.eventId !== session.eventId) notFound();
 
-  const users = (await getPublicVotingUsersForEvent(session.eventId)).filter(
-    (user) => isEligibleCandidate(category, user, session.userId),
+  const users = await getVotingCandidatesForCategory(
+    session.eventId,
+    category,
+    session.userId,
   );
 
   return (

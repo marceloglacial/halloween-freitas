@@ -946,6 +946,11 @@ export default function EventDashboard({
               <p className="text-sm text-gray-300">
                 Fechar as inscrições não impede novas confirmações de presença.
               </p>
+              <p className="text-sm text-gray-300">
+                Inscrições completas com foto autorizada são congeladas. Os
+                rascunhos incompletos continuam privados; antes da votação, é
+                possível reabrir as inscrições.
+              </p>
             </div>
             <button
               type="button"

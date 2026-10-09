@@ -1,7 +1,7 @@
 type Vote = { categoryId: string };
 
 interface VoteGridProps {
-  users: PublicUser[];
+  users: VotingCandidate[];
   categoryId: string;
   eventId: string;
 }

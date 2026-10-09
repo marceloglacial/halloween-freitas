@@ -105,7 +105,7 @@ describe("contestant photo ownership and persistence", () => {
         $or: [{ ownerRsvpId: rsvpId }, { guardianRsvpId: rsvpId }],
         "contestPhoto.assetId": "old-asset",
       }),
-      { $set: { contestPhoto: photo, updatedAt: now } },
+      { $set: { contestPhoto: photo, status: "ready", updatedAt: now } },
       { session },
     );
     expect(cleanupUpdate).toHaveBeenCalledWith(
