@@ -20,9 +20,31 @@ vi.mock("@/lib/auth/voting-guest", () => ({
 }));
 vi.mock("@/lib/voting-rounds", () => ({
   getOpenVotingRound: mocks.getOpenVotingRound,
-  roundIncludesCategory: (round: { eventId: ObjectId; categoryIds: ObjectId[] }, eventId: string, categoryId: string) =>
+  roundIncludesCategory: (
+    round: { eventId: ObjectId; categoryIds: ObjectId[] },
+    eventId: string,
+    categoryId: string,
+  ) =>
     round.eventId.toString() === eventId &&
     round.categoryIds.some((id) => id.toString() === categoryId),
+  roundAllowsCandidate: (
+    round: {
+      type?: string;
+      candidateIdsByCategory?: {
+        categoryId: ObjectId;
+        candidateIds: ObjectId[];
+      }[];
+    },
+    _eventId: string,
+    categoryId: string,
+    candidateId: string,
+  ) =>
+    round.type !== "runoff" ||
+    Boolean(
+      round.candidateIdsByCategory
+        ?.find((scope) => scope.categoryId.toString() === categoryId)
+        ?.candidateIds.some((id) => id.toString() === candidateId),
+    ),
 }));
 vi.mock("@/lib/db", async (original) => ({
   ...(await original<object>()),
@@ -181,6 +203,24 @@ describe("round-scoped vote API", () => {
     expect((await POST(request())).status).toBe(400);
   });
 
+  it("rejects candidates outside a runoff category's allowed set", async () => {
+    mocks.getOpenVotingRound.mockResolvedValue({
+      _id: new ObjectId(roundId),
+      eventId: new ObjectId(eventId),
+      type: "runoff",
+      status: "open",
+      categoryIds: [new ObjectId(categoryId)],
+      candidateIdsByCategory: [
+        {
+          categoryId: new ObjectId(categoryId),
+          candidateIds: [new ObjectId("507f1f77bcf86cd799439019")],
+        },
+      ],
+    });
+    expect((await POST(request())).status).toBe(400);
+    expect(mocks.getContestantEntryForVote).not.toHaveBeenCalled();
+  });
+
   it("serializes vote submission against a concurrent round close", async () => {
     mocks.roundGuardUpdate.mockResolvedValue({ matchedCount: 0 });
     expect((await POST(request())).status).toBe(409);
@@ -195,9 +235,9 @@ describe("round-scoped vote API", () => {
   });
 
   it("returns only category IDs already cast in the open round", async () => {
-    const toArray = vi.fn().mockResolvedValue([
-      { categoryId: new ObjectId(categoryId) },
-    ]);
+    const toArray = vi
+      .fn()
+      .mockResolvedValue([{ categoryId: new ObjectId(categoryId) }]);
     mocks.find.mockReturnValue({ toArray });
     const response = await GET();
     expect(response.status).toBe(200);

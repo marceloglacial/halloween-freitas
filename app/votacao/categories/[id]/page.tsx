@@ -11,6 +11,7 @@ import { getCurrentEvent, isVotingOpen } from "@/lib/events";
 import { getVotingCandidatesForCategory } from "@/lib/contestant-entries";
 import { getCategoryById } from "@/util/get-categories";
 import {
+  getRoundCandidateIds,
   getOpenVotingRound,
   hasVotedInRoundCategory,
   roundIncludesCategory,
@@ -81,6 +82,7 @@ export default async function CategoryPage({
     session.eventId,
     category,
     session.userId,
+    getRoundCandidateIds(round, category._id),
   );
 
   return (

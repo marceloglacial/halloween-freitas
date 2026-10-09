@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getCategoryById: vi.fn(),
   getVotingCandidatesForCategory: vi.fn(),
   isVotingOpen: vi.fn(),
+  getOpenVotingRound: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/guest-registration", async (original) => ({
@@ -15,6 +16,11 @@ vi.mock("@/lib/auth/guest-registration", async (original) => ({
 vi.mock("@/lib/events", () => ({
   getCurrentEvent: mocks.getCurrentEvent,
   isVotingOpen: mocks.isVotingOpen,
+}));
+vi.mock("@/lib/voting-rounds", () => ({
+  getOpenVotingRound: mocks.getOpenVotingRound,
+  roundIncludesCategory: () => true,
+  getRoundCandidateIds: () => undefined,
 }));
 vi.mock("@/util/get-categories", () => ({
   getCategoryById: mocks.getCategoryById,
@@ -67,6 +73,10 @@ describe("candidate API voting lock", () => {
       status: "active",
     });
     mocks.isVotingOpen.mockReturnValue(true);
+    mocks.getOpenVotingRound.mockResolvedValue({
+      categoryIds: [{ toString: () => "507f1f77bcf86cd799439013" }],
+      type: "primary",
+    });
     mocks.getCategoryById.mockResolvedValue({
       _id: categoryId,
       eventId,
@@ -102,6 +112,7 @@ describe("candidate API voting lock", () => {
       eventId,
       expect.objectContaining({ _id: categoryId }),
       "507f1f77bcf86cd799439012",
+      undefined,
     );
   });
 });

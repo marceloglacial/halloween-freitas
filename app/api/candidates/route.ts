@@ -3,6 +3,11 @@ import { getVotingGuest } from "@/lib/auth/voting-guest";
 import { getCategoryById } from "@/util/get-categories";
 import { errorResponse, logServerError } from "@/lib/http";
 import { getVotingCandidatesForCategory } from "@/lib/contestant-entries";
+import {
+  getOpenVotingRound,
+  getRoundCandidateIds,
+  roundIncludesCategory,
+} from "@/lib/voting-rounds";
 
 export async function GET(request: Request) {
   try {
@@ -15,11 +20,19 @@ export async function GET(request: Request) {
     if (!category || category.eventId !== session.eventId) {
       return errorResponse("Categoria não encontrada", 404);
     }
+    const round = await getOpenVotingRound(session.eventId);
+    if (
+      !round ||
+      !roundIncludesCategory(round, session.eventId, category._id)
+    ) {
+      return errorResponse("Categoria indisponível nesta rodada", 409);
+    }
 
     const candidates = await getVotingCandidatesForCategory(
       session.eventId,
       category,
       session.userId,
+      getRoundCandidateIds(round, category._id),
     );
     return Response.json(candidates, {
       headers: { "Cache-Control": "no-store" },

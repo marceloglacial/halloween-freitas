@@ -421,7 +421,8 @@ export default function EventDashboard({
         selected.votingStatus === "ended"
           ? "Reabrir a rodada atual? Os resultados serão ocultados automaticamente. Inscrições e votos já registrados serão preservados; cada convidado poderá votar apenas nas categorias pendentes."
           : "Iniciar a votação agora? Novas confirmações de presença e inclusões ou exclusões de participantes serão encerradas permanentemente.",
-      "end-voting": "Encerrar a votação agora?",
+      "end-voting":
+        "Encerrar a rodada atual? Se houver empate no primeiro lugar em alguma categoria, uma rodada de desempate será aberta automaticamente.",
       "publish-results": "Publicar os resultados agora?",
       "unpublish-results": "Ocultar os resultados agora?",
     };
@@ -448,7 +449,12 @@ export default function EventDashboard({
         "publish-results": "Resultados publicados",
         "unpublish-results": "Resultados ocultados",
       };
-      toast.success(successMessages[action]);
+      toast.success(
+        action === "end-voting" &&
+          response.headers.get("X-Runoff-Opened") === "true"
+          ? "Empate no primeiro lugar; rodada de desempate iniciada"
+          : successMessages[action],
+      );
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro inesperado");

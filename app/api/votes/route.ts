@@ -5,6 +5,7 @@ import { getDb, getMongoClient } from "@/lib/db";
 import { getContestantEntryForVote } from "@/lib/contestant-entries";
 import {
   getOpenVotingRound,
+  roundAllowsCandidate,
   roundIncludesCategory,
 } from "@/lib/voting-rounds";
 import {
@@ -24,7 +25,8 @@ export async function GET(request?: Request) {
       : undefined;
     const session = await getVotingGuest(requestedEventId);
     const round = await getOpenVotingRound(session.eventId);
-    if (!round) return errorResponse("A rodada de votação não está aberta", 409);
+    if (!round)
+      return errorResponse("A rodada de votação não está aberta", 409);
 
     const votes = await (
       await getDb()
@@ -68,6 +70,16 @@ export async function POST(request: Request) {
     if (!roundIncludesCategory(round, session.eventId, categoryId.toString())) {
       return errorResponse("Categoria indisponível nesta rodada", 400);
     }
+    if (
+      !roundAllowsCandidate(
+        round,
+        session.eventId,
+        categoryId.toString(),
+        candidateId.toString(),
+      )
+    ) {
+      return errorResponse("Candidato indisponível nesta rodada", 400);
+    }
     const category = await getCategoryById(categoryId.toString());
     if (!category || category.eventId !== session.eventId) {
       return errorResponse("Categoria não encontrada", 404);
@@ -86,18 +98,16 @@ export async function POST(request: Request) {
     const mongoSession = (await getMongoClient()).startSession();
     try {
       await mongoSession.withTransaction(async () => {
-        const currentRound = await db
-          .collection("votingRounds")
-          .updateOne(
-            {
-              _id: round._id,
-              eventId: new ObjectId(session.eventId),
-              status: "open",
-              categoryIds: categoryId,
-            },
-            { $inc: { ballotMutationVersion: 1 } },
-            { session: mongoSession },
-          );
+        const currentRound = await db.collection("votingRounds").updateOne(
+          {
+            _id: round._id,
+            eventId: new ObjectId(session.eventId),
+            status: "open",
+            categoryIds: categoryId,
+          },
+          { $inc: { ballotMutationVersion: 1 } },
+          { session: mongoSession },
+        );
         if (!currentRound.matchedCount) throw new VotingRoundClosedError();
         await db.collection("votes").insertOne(
           {
