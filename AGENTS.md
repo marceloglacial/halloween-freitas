@@ -11,14 +11,22 @@ configuration, and command output as the source of truth for repository state.
 The primary agent owns the task, routes it to the relevant project skill, and
 reports the result. Read only skills that apply to the requested work.
 
-| Work                                                                    | Read before acting                                      |
-| ----------------------------------------------------------------------- | ------------------------------------------------------- |
-| Pages, components, client hooks, responsive UI                          | `.agents/skills/halloween-frontend/SKILL.md`            |
-| API handlers, server queries, request validation, response contracts    | `.agents/skills/halloween-backend/SKILL.md`             |
-| Event schedules, registration, guest voting, authorization, results     | `.agents/skills/halloween-event-workflows/SKILL.md`     |
-| Database indexes or event migrations                                    | `.agents/skills/halloween-database-operations/SKILL.md` |
-| Requested Next.js runtime verification                                  | `.agents/skills/next-dev-loop/SKILL.md`                 |
-| Requested Next.js bundle or Cache Components / Partial Prefetching work | The matching `next-*` skill under `.agents/skills/`     |
+| Work                                                                                  | Read before acting                                      |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Selecting or executing one GitHub issue                                               | `.agents/skills/issue-workflow/SKILL.md`                |
+| Pages, components, client hooks, responsive UI, or design alignment                   | `.agents/skills/frontend-design/SKILL.md`               |
+| API handlers, server queries, request validation, or response contracts               | `.agents/skills/backend-data/SKILL.md`                  |
+| Annual editions, schedules, RSVP, contestant-entry windows, or enrollment cutoffs     | `.agents/skills/event-lifecycle/SKILL.md`               |
+| Contest eligibility, ballots, voting rounds, runoff, tally, or results publication    | `.agents/skills/contest-voting/SKILL.md`                |
+| Choosing/running checks or release QA                                                 | `.agents/skills/qa-validation/SKILL.md`                 |
+| Updating product, architecture, lifecycle, data, testing, design, or contributor docs | `.agents/skills/documentation-sync/SKILL.md`            |
+| Database indexes or live event migrations                                             | `.agents/skills/halloween-database-operations/SKILL.md` |
+| Requested Next.js runtime verification                                                | `.agents/skills/next-dev-loop/SKILL.md`                 |
+| Requested Next.js bundle or Cache Components / Partial Prefetching work               | The matching `next-*` skill under `.agents/skills/`     |
+
+Load only the skill entrypoints whose triggers match the task. Do not read every
+skill or domain document speculatively; follow a selected skill's pointers when
+its procedure reaches that branch.
 
 For event, voting, authorization, or data-ownership changes, read
 `docs/product.md`, `docs/lifecycle.md`, `docs/architecture.md`, and
