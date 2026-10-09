@@ -4,6 +4,7 @@ import {
   contestantEntriesForRsvpQuery,
   contestantOwnership,
   createContestantEntry,
+  getContestantEntriesForRsvp,
   isContestantEntryType,
   requireContestantRsvpInEvent,
   serializePublicContestantEntry,
@@ -12,6 +13,17 @@ import {
 const eventId = new ObjectId("507f1f77bcf86cd799439011");
 const categoryId = new ObjectId("507f1f77bcf86cd799439012");
 const rsvpId = new ObjectId("507f1f77bcf86cd799439013");
+const dbMocks = vi.hoisted(() => ({
+  find: vi.fn(),
+  sort: vi.fn(),
+  toArray: vi.fn(),
+}));
+
+vi.mock("@/lib/db", () => ({
+  getDb: vi.fn(async () => ({
+    collection: () => ({ find: dbMocks.find }),
+  })),
+}));
 
 describe("contestant entry schema and ownership", () => {
   it("accepts only the canonical contestant entry types", () => {
@@ -120,6 +132,52 @@ describe("contestant entry schema and ownership", () => {
     await expect(
       requireContestantRsvpInEvent(db, eventId.toString(), rsvpId.toString()),
     ).rejects.toThrow("CONTESTANT_RSVP_NOT_FOUND_FOR_EVENT");
+  });
+
+  it("loads only the selected guest's event entries and omits ownership fields", async () => {
+    dbMocks.find.mockReturnValue({ sort: dbMocks.sort });
+    dbMocks.sort.mockReturnValue({ toArray: dbMocks.toArray });
+    dbMocks.toArray.mockResolvedValue([
+      {
+        _id: new ObjectId("507f1f77bcf86cd799439014"),
+        eventId,
+        categoryId,
+        entryType: "individual",
+        displayName: "Ana",
+        status: "ready",
+        ownerRsvpId: rsvpId,
+        guardianRsvpId: undefined,
+        privateField: "must not be serialized",
+      },
+    ]);
+
+    await expect(
+      getContestantEntriesForRsvp(eventId.toString(), rsvpId.toString()),
+    ).resolves.toEqual([
+      {
+        _id: "507f1f77bcf86cd799439014",
+        categoryId: categoryId.toString(),
+        entryType: "individual",
+        displayName: "Ana",
+        status: "ready",
+      },
+    ]);
+    expect(dbMocks.find).toHaveBeenCalledWith(
+      {
+        eventId,
+        $or: [{ ownerRsvpId: rsvpId }, { guardianRsvpId: rsvpId }],
+      },
+      {
+        projection: {
+          _id: 1,
+          categoryId: 1,
+          entryType: 1,
+          displayName: 1,
+          status: 1,
+        },
+      },
+    );
+    expect(dbMocks.sort).toHaveBeenCalledWith({ createdAt: 1, _id: 1 });
   });
 
   it("keeps drafts and withdrawn entries out of public candidate output", () => {

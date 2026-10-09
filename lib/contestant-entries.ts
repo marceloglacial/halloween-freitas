@@ -1,4 +1,5 @@
 import { ObjectId, type ClientSession, type Db } from "mongodb";
+import { getDb } from "@/lib/db";
 import { normalizeName, parseObjectId } from "@/lib/http";
 
 type ContestantOwnership =
@@ -16,6 +17,14 @@ export type ContestantEntryDocument = {
   guardianRsvpId?: ObjectId;
   createdAt: Date;
   updatedAt: Date;
+};
+
+export type OwnedContestantEntry = {
+  _id: string;
+  categoryId: string;
+  entryType: ContestantEntryType;
+  displayName: string;
+  status: ContestantEntryStatus;
 };
 
 export function isContestantEntryType(
@@ -87,6 +96,34 @@ export function contestantEntriesForRsvpQuery(
     eventId: eventObjectId,
     $or: [{ ownerRsvpId: rsvpObjectId }, { guardianRsvpId: rsvpObjectId }],
   };
+}
+
+export async function getContestantEntriesForRsvp(
+  eventId: string,
+  rsvpId: string,
+): Promise<OwnedContestantEntry[]> {
+  const db = await getDb();
+  const entries = await db
+    .collection<ContestantEntryDocument>("contestants")
+    .find(contestantEntriesForRsvpQuery(eventId, rsvpId), {
+      projection: {
+        _id: 1,
+        categoryId: 1,
+        entryType: 1,
+        displayName: 1,
+        status: 1,
+      },
+    })
+    .sort({ createdAt: 1, _id: 1 })
+    .toArray();
+
+  return entries.map((entry) => ({
+    _id: entry._id.toString(),
+    categoryId: entry.categoryId.toString(),
+    entryType: entry.entryType,
+    displayName: entry.displayName,
+    status: entry.status,
+  }));
 }
 
 export async function requireContestantRsvpInEvent(

@@ -58,10 +58,10 @@ const SignUp: FC<{
             </div>
           )}
           <Link
-            href={`/perfil?${new URLSearchParams({ eventId: event._id })}`}
+            href={`/meu-halloween?${new URLSearchParams({ eventId: event._id })}`}
             className="text-orange-300 underline focus-visible:outline-2"
           >
-            Já confirmou presença? Consulte ou atualize seu perfil
+            Já confirmou presença? Acesse Meu Halloween
           </Link>
         </div>
       </div>
