@@ -22,6 +22,23 @@ export async function POST(
         .collection("events")
         .findOne({ _id: eventId }, { session });
       if (!event) throw new Error("EVENT_NOT_FOUND");
+      const activeEvents = await db
+        .collection("events")
+        .find(
+          { status: "active", _id: { $ne: eventId } },
+          { projection: { _id: 1 }, session },
+        )
+        .toArray();
+      const activeEventIds = activeEvents.map((item) => item._id);
+      if (activeEventIds.length > 0) {
+        await db
+          .collection("votingRounds")
+          .updateMany(
+            { eventId: { $in: activeEventIds }, status: "open" },
+            { $set: { status: "ended", endedAt: new Date() } },
+            { session },
+          );
+      }
       await db.collection("events").updateMany(
         {
           status: "active",
