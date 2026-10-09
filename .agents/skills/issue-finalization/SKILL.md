@@ -71,6 +71,14 @@ PR-writing skill when available.
    preserve local secrets and user data. Remove it without force only when
    remaining ignored files are known disposable caches/build output. If Git
    refuses or any file's value is unclear, stop and preserve the worktree.
+   If the issue worktree has an `.env.local` symlink, verify it points to the
+   main worktree's development-only `.env.local` source. Discover the main
+   worktree from the first entry of `git worktree list --porcelain` and resolve
+   it to an absolute path, following the provisioning rules in
+   [issue-workflow](../issue-workflow/SKILL.md). Normal worktree removal
+   removes the issue-side symlink; leave the source file untouched.
+   If `.env.local` is a regular file or points elsewhere, stop and preserve
+   the worktree for review.
 8. **Delete the local issue branch safely.** Use the normal merged-branch
    deletion operation only after confirming its commit is reachable from
    `main`. Never force-delete. Remote branch deletion is optional and skipped

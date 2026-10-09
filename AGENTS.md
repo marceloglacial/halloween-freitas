@@ -59,6 +59,10 @@ continue without delegation.
 - Before changing files, inspect the current branch, working tree, and
   worktrees. Start each issue in its own worktree on a clean, dedicated
   `issue-<number>-<slug>` branch based on the default branch.
+- When creating an issue worktree, follow the environment-linking procedure in
+  `.agents/skills/issue-workflow/SKILL.md` and the development-only credential
+  rules in `docs/operations.md`. Report when the main worktree has no
+  `.env.local` file.
 - If the tree contains uncommitted work or the target branch/worktree is already
   in use, preserve it. Do not stash, reset, clean, overwrite, or mix that work;
   stop and ask the user to resolve the conflict or choose an isolated worktree.

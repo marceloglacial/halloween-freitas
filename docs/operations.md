@@ -8,17 +8,20 @@ review practices.
 ## Prerequisites and local development
 
 Use the Node.js version declared in `package.json` and the repository's pnpm
-version from `package.json`. Install dependencies and create a local environment
-file from the example:
+version from `package.json`. Install dependencies and create the local
+development environment file in the main worktree from the example:
 
 ```bash
 pnpm install
-cp .env.example .env.local
+cp -n .env.example .env.local
 ```
 
-Configure credentials, then run `pnpm dev` and open `http://localhost:3000`.
-Use a non-production MongoDB database for development and tests. Do not print
-credentials or connection strings in logs, command output, or issue comments.
+Configure development credentials, then run `pnpm dev` and open
+`http://localhost:3000`. Use a non-production MongoDB database for development
+and tests. Keep production credentials outside the development agent's
+filesystem and credential context. Do not print, log, copy into tracked files,
+commit, or expose environment values in agent responses, command output, or
+issue comments.
 
 ## Environment and secrets
 
@@ -36,6 +39,24 @@ Keep server credentials in ignored local files or the deployment secret store.
 Any Cloudinary signing or upload credentials must remain server-only. Confirm
 the implemented environment schema before adding or changing variable names;
 do not expose secrets through `NEXT_PUBLIC_` variables.
+
+### Issue worktrees
+
+Keep the development-only `.env.local` in the main worktree. When creating an
+issue worktree, follow the environment provisioning procedure in the
+[issue-workflow skill](../.agents/skills/issue-workflow/SKILL.md): discover the
+main worktree using `git worktree list --porcelain`, resolve its absolute path,
+and link the issue worktree's `.env.local` to the main worktree file when it
+exists. The workflow verifies the file is untracked and ignored by Git and
+that the link resolves.
+An existing target is preserved; missing source configuration is reported
+without copying or creating secrets. Set up the main worktree file using
+development-only credentials before application development. Never link
+production credentials into an agent worktree.
+
+Approved issue finalization removes the issue worktree normally, which removes
+its symlink. It preserves the main worktree's source file. Never delete or
+modify that source as part of worktree cleanup.
 
 ## Database lifecycle
 

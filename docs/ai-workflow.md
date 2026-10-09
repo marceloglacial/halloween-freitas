@@ -98,7 +98,10 @@ primary session and continue; delegation is never a prerequisite for a task.
    branch/worktree is already in use, preserve it and create a separate
    worktree from the clean default branch; otherwise stop and report the
    blocker. Never stash, reset, clean, overwrite, or start on top of pending
-   changes from another issue.
+   changes from another issue. Provision `.env.local` as an absolute symlink
+   from the main worktree only by following the
+   [issue-workflow skill](../.agents/skills/issue-workflow/SKILL.md) and
+   [development environment rules](operations.md#issue-worktrees).
 3. Trace the existing route, domain helper, data shape, and consumer before
    implementation. Rebuild from scratch where legacy behavior conflicts with
    the approved contract.
