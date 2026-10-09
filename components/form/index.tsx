@@ -14,8 +14,7 @@ const Form: FC = (): JSX.Element => {
       >
         <p className="text-xl text-orange-300">Presença confirmada! 🎃</p>
         <p>
-          Você já está inscrito. Não precisa entrar nem verificar seu email para
-          confirmar presença.
+          Não precisa entrar nem verificar seu email para confirmar presença.
         </p>
         <Link href="/votacao" className="text-orange-300 underline">
           Acessar votação quando estiver aberta

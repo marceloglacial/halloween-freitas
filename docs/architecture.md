@@ -74,11 +74,11 @@ follow [lifecycle.md](lifecycle.md).
 
 The first successful voting opening must atomically verify that the edition has
 started and contestant eligibility is frozen, then record the permanent RSVP
-and contestant add/delete cutoff before accepting ballots. Contestant writes
-and entry-state changes serialize through an event-scoped transactional guard
-against that cutoff. RSVP writes remain independent of contest-entry closure
-until the voting cutoff. Closing or reopening a round preserves the cutoff and
-prior ballots.
+and contestant add/delete cutoff before accepting ballots. RSVP writes,
+contestant writes, and entry-state changes serialize through an event-scoped
+transactional guard against that cutoff. RSVP writes remain independent of
+contest-entry closure until voting first opens. Closing or reopening a round
+preserves the cutoff and prior ballots.
 
 Category configuration is event-scoped and editable only before the first
 voting opening. Serialize category saves with the event's voting transition,

@@ -20,16 +20,17 @@ export function useForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fullName, email }),
       });
-      const data = await res.json();
-      if (res.ok && data._id) {
+      const data: unknown = await res.json().catch(() => null);
+      if (res.ok) {
         toast.success("Inscrição realizada com sucesso!");
         setConfirmed(true);
         form.reset();
-      } else if (res.status === 409) {
-        toast.error("Este email já está inscrito.");
       } else {
         toast.error(
-          typeof data?.error === "string"
+          data !== null &&
+            typeof data === "object" &&
+            "error" in data &&
+            typeof data.error === "string"
             ? data.error
             : "Ocorreu um erro. Tente novamente.",
         );
