@@ -4,11 +4,13 @@ import { ObjectId } from "mongodb";
 const mocks = vi.hoisted(() => ({
   isAdmin: vi.fn(),
   getEventById: vi.fn(),
+  eventFindOne: vi.fn(),
   updateOne: vi.fn(),
   updateMany: vi.fn(),
   categoryToArray: vi.fn(),
   contestantToArray: vi.fn(),
   roundFindOne: vi.fn(),
+  roundFindMany: vi.fn(),
   roundInsertOne: vi.fn(),
   roundUpdateOne: vi.fn(),
   withTransaction: vi.fn(),
@@ -21,12 +23,17 @@ vi.mock("@/lib/db", () => ({
   getDb: vi.fn().mockResolvedValue({
     collection: (name: string) =>
       name === "events"
-        ? { updateOne: mocks.updateOne }
+        ? { findOne: mocks.eventFindOne, updateOne: mocks.updateOne }
         : name === "categories"
           ? { find: () => ({ toArray: mocks.categoryToArray }) }
           : name === "votingRounds"
             ? {
                 findOne: mocks.roundFindOne,
+                find: () => ({
+                  sort: () => ({
+                    limit: () => ({ toArray: mocks.roundFindMany }),
+                  }),
+                }),
                 insertOne: mocks.roundInsertOne,
                 updateOne: mocks.roundUpdateOne,
               }
@@ -70,13 +77,22 @@ describe("event lifecycle controls", () => {
     mocks.contestantToArray.mockResolvedValue([]);
     mocks.roundFindOne.mockResolvedValue({
       _id: new ObjectId("507f1f77bcf86cd799439016"),
-      status: "ended",
+      status: "open",
       type: "primary",
       categoryIds: [],
     });
+    mocks.roundFindMany.mockResolvedValue([
+      {
+        _id: new ObjectId("507f1f77bcf86cd799439016"),
+        status: "ended",
+        type: "primary",
+        categoryIds: [],
+      },
+    ]);
     mocks.roundInsertOne.mockResolvedValue({ insertedId: new ObjectId() });
     mocks.roundUpdateOne.mockResolvedValue({ matchedCount: 1 });
     mocks.withTransaction.mockImplementation(async (callback) => callback());
+    mocks.eventFindOne.mockResolvedValue({ votingStatus: "ended" });
     mocks.getEventById.mockResolvedValue({
       _id: eventId,
       status: "active",
@@ -118,7 +134,39 @@ describe("event lifecycle controls", () => {
       { session: expect.anything() },
     );
     expect(mocks.roundUpdateOne).toHaveBeenCalledWith(
-      { _id: expect.any(ObjectId), status: "ended" },
+      {
+        _id: expect.any(ObjectId),
+        eventId: new ObjectId(eventId),
+        status: "ended",
+      },
+      {
+        $set: {
+          status: "open",
+          reopenedAt: new Date("2026-11-01T00:00:00.000Z"),
+        },
+      },
+      { session: expect.anything() },
+    );
+    expect(mocks.roundUpdateOne.mock.calls[0][1]).toEqual({
+      $set: {
+        status: "open",
+        reopenedAt: new Date("2026-11-01T00:00:00.000Z"),
+      },
+    });
+  });
+
+  it("reopens the current runoff without reopening the earlier primary round", async () => {
+    const runoffId = new ObjectId("507f1f77bcf86cd799439019");
+    mocks.roundFindMany.mockResolvedValue([
+      { _id: runoffId, status: "ended", type: "runoff", categoryIds: [] },
+    ]);
+
+    const response = await request("start-voting");
+
+    expect(response.status).toBe(200);
+    expect(mocks.roundUpdateOne).toHaveBeenCalledOnce();
+    expect(mocks.roundUpdateOne).toHaveBeenCalledWith(
+      { _id: runoffId, eventId: new ObjectId(eventId), status: "ended" },
       {
         $set: {
           status: "open",
@@ -131,7 +179,8 @@ describe("event lifecycle controls", () => {
 
   it("creates the primary round in the voting-opening transaction", async () => {
     const firstCategoryId = new ObjectId("507f1f77bcf86cd799439018");
-    mocks.roundFindOne.mockResolvedValue(null);
+    mocks.eventFindOne.mockResolvedValue({ votingStatus: "not_started" });
+    mocks.roundFindMany.mockResolvedValue([]);
     mocks.categoryToArray.mockResolvedValue([{ _id: firstCategoryId }]);
 
     expect((await request("start-voting")).status).toBe(200);
@@ -147,12 +196,18 @@ describe("event lifecycle controls", () => {
     );
   });
 
-  it("ends the open primary round in the same transaction as voting", async () => {
+  it("ends the currently open round in the same transaction as voting", async () => {
+    const runoffId = new ObjectId("507f1f77bcf86cd799439019");
+    mocks.roundFindOne.mockResolvedValue({
+      _id: runoffId,
+      status: "open",
+      type: "runoff",
+    });
     expect((await request("end-voting")).status).toBe(200);
     expect(mocks.roundUpdateOne).toHaveBeenCalledWith(
       {
+        _id: runoffId,
         eventId: new ObjectId(eventId),
-        type: "primary",
         status: "open",
       },
       {

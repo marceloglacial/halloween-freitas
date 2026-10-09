@@ -32,9 +32,9 @@ export async function getOpenVotingRound(
 ): Promise<VotingRoundDocument | null> {
   const eventObjectId = parseObjectId(eventId);
   if (!eventObjectId) return null;
-  return (await (db ?? (await getDb()))
+  return await (db ?? (await getDb()))
     .collection<VotingRoundDocument>("votingRounds")
-    .findOne({ eventId: eventObjectId, status: "open" }));
+    .findOne({ eventId: eventObjectId, status: "open" });
 }
 
 export async function getFinalVotingRound(
@@ -51,6 +51,30 @@ export async function getFinalVotingRound(
     .limit(1)
     .toArray();
   return rounds[0] ?? null;
+}
+
+export async function hasVotedInRoundCategory(
+  eventId: string,
+  roundId: ObjectId,
+  voterRsvpId: string,
+  categoryId: string,
+  db?: Db,
+): Promise<boolean> {
+  const eventObjectId = parseObjectId(eventId);
+  const voterObjectId = parseObjectId(voterRsvpId);
+  const categoryObjectId = parseObjectId(categoryId);
+  if (!eventObjectId || !voterObjectId || !categoryObjectId) return false;
+  return Boolean(
+    await (db ?? (await getDb())).collection("votes").findOne(
+      {
+        eventId: eventObjectId,
+        roundId,
+        voterRsvpId: voterObjectId,
+        categoryId: categoryObjectId,
+      },
+      { projection: { _id: 1 } },
+    ),
+  );
 }
 
 export function roundIncludesCategory(

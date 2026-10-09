@@ -10,7 +10,11 @@ import { guestAccessUrl, validGuestEventId } from "@/util/guest-access";
 import { getCurrentEvent, isVotingOpen } from "@/lib/events";
 import { getVotingCandidatesForCategory } from "@/lib/contestant-entries";
 import { getCategoryById } from "@/util/get-categories";
-import { getOpenVotingRound, roundIncludesCategory } from "@/lib/voting-rounds";
+import {
+  getOpenVotingRound,
+  hasVotedInRoundCategory,
+  roundIncludesCategory,
+} from "@/lib/voting-rounds";
 
 export const dynamic = "force-dynamic";
 
@@ -49,14 +53,26 @@ export default async function CategoryPage({
   const category = await getCategoryById((await params).id);
   if (!category || category.eventId !== session.eventId) notFound();
   const round = await getOpenVotingRound(session.eventId);
-  if (
-    !round ||
-    !roundIncludesCategory(round, session.eventId, category._id)
-  ) {
+  if (!round || !roundIncludesCategory(round, session.eventId, category._id)) {
     return (
       <FeatureUnavailable
         title="Categoria indisponível"
         message="Esta categoria não faz parte da rodada aberta."
+      />
+    );
+  }
+  if (
+    await hasVotedInRoundCategory(
+      session.eventId,
+      round._id,
+      session.userId,
+      category._id,
+    )
+  ) {
+    return (
+      <FeatureUnavailable
+        title="Categoria concluída"
+        message="Você já registrou seu voto nesta categoria."
       />
     );
   }
