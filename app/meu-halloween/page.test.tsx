@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getContestantEntriesForRsvp: vi.fn(),
   contestPhotoPreviewUrl: vi.fn(),
   getCategories: vi.fn(),
+  getOpenVotingRound: vi.fn(),
   getDb: vi.fn(),
   redirect: vi.fn(),
 }));
@@ -37,6 +38,9 @@ vi.mock("@/lib/contestant-photos", () => ({
   contestPhotoPreviewUrl: mocks.contestPhotoPreviewUrl,
 }));
 vi.mock("@/lib/db", () => ({ getDb: mocks.getDb }));
+vi.mock("@/lib/voting-rounds", () => ({
+  getOpenVotingRound: mocks.getOpenVotingRound,
+}));
 vi.mock("@/util/get-categories", () => ({
   getCategories: mocks.getCategories,
 }));
@@ -81,6 +85,7 @@ const category: Category = {
   order: 0,
   eligibility: "all",
 };
+const roundId = "507f1f77bcf86cd799439014";
 
 describe("Meu Halloween route", () => {
   beforeEach(() => {
@@ -95,6 +100,13 @@ describe("Meu Halloween route", () => {
     mocks.getContestantEntriesForRsvp.mockResolvedValue([]);
     mocks.contestPhotoPreviewUrl.mockReturnValue("temporary-photo-preview");
     mocks.getCategories.mockResolvedValue([category]);
+    mocks.getOpenVotingRound.mockResolvedValue({
+      _id: { toString: () => roundId },
+      eventId: event._id,
+      categoryIds: [category._id],
+      status: "open",
+      type: "primary",
+    });
     mocks.getDb.mockResolvedValue({
       collection: () => ({
         find: () => ({
@@ -167,6 +179,7 @@ describe("Meu Halloween route", () => {
       "507f1f77bcf86cd799439013",
     );
     expect(mocks.getCategories).toHaveBeenCalledWith(event._id);
+    expect(mocks.getOpenVotingRound).toHaveBeenCalledWith(event._id);
   });
 
   it("does not read votes or cross-edition data when voting is closed", async () => {
@@ -185,6 +198,7 @@ describe("Meu Halloween route", () => {
       "507f1f77bcf86cd799439013",
     );
     expect(mocks.getDb).not.toHaveBeenCalled();
+    expect(mocks.getOpenVotingRound).not.toHaveBeenCalled();
   });
 
   it("sends only a temporary photo URL to the guest portal", async () => {

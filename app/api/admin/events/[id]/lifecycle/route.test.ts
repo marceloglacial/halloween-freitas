@@ -8,6 +8,9 @@ const mocks = vi.hoisted(() => ({
   updateMany: vi.fn(),
   categoryToArray: vi.fn(),
   contestantToArray: vi.fn(),
+  roundFindOne: vi.fn(),
+  roundInsertOne: vi.fn(),
+  roundUpdateOne: vi.fn(),
   withTransaction: vi.fn(),
   endSession: vi.fn(),
 }));
@@ -21,6 +24,12 @@ vi.mock("@/lib/db", () => ({
         ? { updateOne: mocks.updateOne }
         : name === "categories"
           ? { find: () => ({ toArray: mocks.categoryToArray }) }
+          : name === "votingRounds"
+            ? {
+                findOne: mocks.roundFindOne,
+                insertOne: mocks.roundInsertOne,
+                updateOne: mocks.roundUpdateOne,
+              }
           : {
               find: () => ({ toArray: mocks.contestantToArray }),
               updateMany: mocks.updateMany,
@@ -59,6 +68,14 @@ describe("event lifecycle controls", () => {
     mocks.updateMany.mockResolvedValue({ modifiedCount: 0 });
     mocks.categoryToArray.mockResolvedValue([]);
     mocks.contestantToArray.mockResolvedValue([]);
+    mocks.roundFindOne.mockResolvedValue({
+      _id: new ObjectId("507f1f77bcf86cd799439016"),
+      status: "ended",
+      type: "primary",
+      categoryIds: [],
+    });
+    mocks.roundInsertOne.mockResolvedValue({ insertedId: new ObjectId() });
+    mocks.roundUpdateOne.mockResolvedValue({ matchedCount: 1 });
     mocks.withTransaction.mockImplementation(async (callback) => callback());
     mocks.getEventById.mockResolvedValue({
       _id: eventId,
@@ -86,6 +103,7 @@ describe("event lifecycle controls", () => {
       expect.objectContaining({
         _id: expect.any(ObjectId),
         status: "active",
+        votingStatus: { $in: ["not_started", "ended"] },
         eventStartsAt: { $lte: new Date("2026-11-01T00:00:00.000Z") },
       }),
       expect.objectContaining({
@@ -98,6 +116,43 @@ describe("event lifecycle controls", () => {
       }),
       { session: expect.anything() },
     );
+    expect(mocks.roundUpdateOne).toHaveBeenCalledWith(
+      { _id: expect.any(ObjectId), status: "ended" },
+      { $set: { status: "open", reopenedAt: new Date("2026-11-01T00:00:00.000Z") } },
+      { session: expect.anything() },
+    );
+  });
+
+  it("creates the primary round in the voting-opening transaction", async () => {
+    const firstCategoryId = new ObjectId("507f1f77bcf86cd799439018");
+    mocks.roundFindOne.mockResolvedValue(null);
+    mocks.categoryToArray.mockResolvedValue([{ _id: firstCategoryId }]);
+
+    expect((await request("start-voting")).status).toBe(200);
+    expect(mocks.roundInsertOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventId: new ObjectId(eventId),
+        type: "primary",
+        status: "open",
+        categoryIds: [firstCategoryId],
+        openedAt: new Date("2026-11-01T00:00:00.000Z"),
+      }),
+      { session: expect.anything() },
+    );
+  });
+
+  it("ends the open primary round in the same transaction as voting", async () => {
+    expect((await request("end-voting")).status).toBe(200);
+    expect(mocks.roundUpdateOne).toHaveBeenCalledWith(
+      {
+        eventId: new ObjectId(eventId),
+        type: "primary",
+        status: "open",
+      },
+      { $set: { status: "ended", endedAt: new Date("2026-11-01T00:00:00.000Z") } },
+      { session: expect.anything() },
+    );
+    expect(mocks.withTransaction).toHaveBeenCalledOnce();
   });
 
   it("closes contest entry atomically before voting", async () => {

@@ -7,6 +7,7 @@ import {
   reopenContestantEntries,
 } from "@/lib/contestant-entry-freeze";
 import { errorResponse, readJsonObject, logServerError } from "@/lib/http";
+import type { VotingRoundDocument } from "@/lib/voting-rounds";
 
 const lifecycleActions = [
   "close-contest-entry",
@@ -61,6 +62,7 @@ export async function POST(
       "start-voting": {
         _id: eventId,
         status: "active",
+        votingStatus: { $in: ["not_started", "ended"] },
         eventStartsAt: { $lte: now },
       },
       "end-voting": {
@@ -113,6 +115,66 @@ export async function POST(
             await reopenContestantEntries(db, eventId, session, now);
           } else {
             await freezeContestantEntries(db, eventId, session, now);
+            if (action === "start-voting") {
+              const rounds = db.collection<VotingRoundDocument>("votingRounds");
+              const primaryRound = await rounds.findOne(
+                { eventId, type: "primary" },
+                { session },
+              );
+              if (primaryRound) {
+                if (primaryRound.status !== "ended") {
+                  throw new Error("PRIMARY_ROUND_STATE_INVALID");
+                }
+                const reopened = await rounds.updateOne(
+                  { _id: primaryRound._id, status: "ended" },
+                  { $set: { status: "open", reopenedAt: now } },
+                  { session },
+                );
+                if (!reopened.matchedCount) {
+                  throw new Error("PRIMARY_ROUND_REOPEN_FAILED");
+                }
+              } else {
+                const categories = await db
+                  .collection("categories")
+                  .find({ eventId }, { projection: { _id: 1 }, session })
+                  .toArray();
+                await rounds.insertOne(
+                  {
+                    _id: new ObjectId(),
+                    eventId,
+                    type: "primary",
+                    status: "open",
+                    categoryIds: categories.map(({ _id }) => _id as ObjectId),
+                    openedAt: now,
+                  },
+                  { session },
+                );
+              }
+            }
+          }
+        });
+      } finally {
+        await session.endSession();
+      }
+    } else if (action === "end-voting") {
+      const session = (await getMongoClient()).startSession();
+      try {
+        await session.withTransaction(async () => {
+          result = await db.collection("events").updateOne(
+            filters[action],
+            { $set: updates[action] },
+            { session },
+          );
+          if (!result.matchedCount) return;
+          const endedRound = await db
+            .collection<VotingRoundDocument>("votingRounds")
+            .updateOne(
+              { eventId, type: "primary", status: "open" },
+              { $set: { status: "ended", endedAt: now } },
+              { session },
+            );
+          if (!endedRound.matchedCount) {
+            throw new Error("OPEN_PRIMARY_ROUND_NOT_FOUND");
           }
         });
       } finally {

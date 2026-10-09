@@ -184,7 +184,7 @@ export async function DELETE(request: Request) {
         const votes = await db.collection("votes").findOne(
           {
             eventId: eventObjectId,
-            $or: [{ voterId: userId }, { voteForId: userId }],
+            $or: [{ voterRsvpId: userId }, { candidateId: userId }],
           },
           { session },
         );

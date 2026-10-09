@@ -10,6 +10,7 @@ import { guestAccessUrl, validGuestEventId } from "@/util/guest-access";
 import { getCurrentEvent, isVotingOpen } from "@/lib/events";
 import { getVotingCandidatesForCategory } from "@/lib/contestant-entries";
 import { getCategoryById } from "@/util/get-categories";
+import { getOpenVotingRound, roundIncludesCategory } from "@/lib/voting-rounds";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,18 @@ export default async function CategoryPage({
 
   const category = await getCategoryById((await params).id);
   if (!category || category.eventId !== session.eventId) notFound();
+  const round = await getOpenVotingRound(session.eventId);
+  if (
+    !round ||
+    !roundIncludesCategory(round, session.eventId, category._id)
+  ) {
+    return (
+      <FeatureUnavailable
+        title="Categoria indisponível"
+        message="Esta categoria não faz parte da rodada aberta."
+      />
+    );
+  }
 
   const users = await getVotingCandidatesForCategory(
     session.eventId,
@@ -60,7 +73,12 @@ export default async function CategoryPage({
       <h1 className="mt-8 mb-8 text-4xl lg:text-6xl">
         {category.icon} {category.title}
       </h1>
-      <VoteGrid users={users} categoryId={category._id} eventId={event._id} />
+      <VoteGrid
+        users={users}
+        categoryId={category._id}
+        roundId={round._id.toString()}
+        eventId={event._id}
+      />
     </section>
   );
 }

@@ -63,10 +63,31 @@ export const requiredIndexes = [
     options: {},
   },
   {
+    collection: "votingRounds",
+    label: "round type per event",
+    key: { eventId: 1, type: 1 },
+    options: { unique: true },
+  },
+  {
+    collection: "votingRounds",
+    label: "one open round per event",
+    key: { eventId: 1 },
+    options: {
+      unique: true,
+      partialFilterExpression: { status: "open" },
+    },
+  },
+  {
     collection: "votes",
     label: "vote",
-    key: { eventId: 1, voterId: 1, categoryId: 1 },
-    options: { unique: true },
+    key: { eventId: 1, roundId: 1, categoryId: 1, voterRsvpId: 1 },
+    options: {
+      unique: true,
+      partialFilterExpression: {
+        roundId: { $type: "objectId" },
+        voterRsvpId: { $type: "objectId" },
+      },
+    },
   },
 ];
 
@@ -155,15 +176,44 @@ const duplicateChecks = [
     ],
   },
   {
+    collection: "votingRounds",
+    label: "round type per event",
+    pipeline: [
+      {
+        $group: {
+          _id: { eventId: "$eventId", type: "$type" },
+          count: { $sum: 1 },
+        },
+      },
+      { $match: { count: { $gt: 1 } } },
+    ],
+  },
+  {
+    collection: "votingRounds",
+    label: "one open round per event",
+    pipeline: [
+      { $match: { status: "open" } },
+      { $group: { _id: "$eventId", count: { $sum: 1 } } },
+      { $match: { count: { $gt: 1 } } },
+    ],
+  },
+  {
     collection: "votes",
     label: "vote",
     pipeline: [
       {
+        $match: {
+          roundId: { $type: "objectId" },
+          voterRsvpId: { $type: "objectId" },
+        },
+      },
+      {
         $group: {
           _id: {
             eventId: "$eventId",
-            voterId: "$voterId",
+            roundId: "$roundId",
             categoryId: "$categoryId",
+            voterRsvpId: "$voterRsvpId",
           },
           count: { $sum: 1 },
         },

@@ -60,20 +60,22 @@ and contestant membership to be frozen. Only the active edition can open a
 round. The first opening permanently closes new RSVP and contestant add/delete
 operations. Existing RSVP guests can still authenticate and vote afterward.
 
-An edition has a primary round and may have one runoff round. Each round can be
-`not_started`, `open`, or `ended`. Only one round is open at a time. Closing a
-round preserves its ballots. Reopening the same round accepts only missing
-ballots and does not reopen enrollment or restore contestant editing. The runoff
-contains only candidates tied for first place in the primary round; if the
-runoff also ties, the tied candidates share first place. A category with no
-ballots has no winner.
+An edition has one primary round and may have one runoff round. A round has a
+stable ID, a type (`primary` or `runoff`), an `open` or `ended` state, and a
+frozen category scope. The first opening of voting creates the primary round in
+the same transaction as the permanent enrollment cutoff. Only one round is
+open at a time. Closing a round preserves its ballots. Reopening the same round
+accepts only missing ballots and does not reopen enrollment or restore
+contestant editing. The runoff contains only candidates tied for first place in
+the primary round; if the runoff also ties, the tied candidates share first
+place. A category with no ballots has no winner.
 
 Each ballot is scoped by event, round, category, and verified RSVP identity, and
-has a stable ID. Enforce one ballot per eligible voter/category/round under
-concurrency. Guests cannot vote for their own individual entry; a guardian may
-vote for a child's entry, and a group creator may vote for their group. Candidate
-eligibility is determined from the frozen set, not current RSVP or profile
-fields.
+has a stable ID referencing the contestant entry ID. A unique database index
+enforces one ballot per eligible RSVP/category/round under concurrency. Guests
+cannot vote for their own individual entry; a guardian may vote for a child's
+entry, and a group creator may vote for their group. Candidate eligibility is
+determined from the frozen set, not current RSVP or profile fields.
 
 ## Results publication
 

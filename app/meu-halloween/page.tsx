@@ -12,6 +12,7 @@ import { getDb } from "@/lib/db";
 import { getCurrentEvent, getEventById, isVotingOpen } from "@/lib/events";
 import { guestAccessUrl, validGuestEventId } from "@/util/guest-access";
 import { getCategories } from "@/util/get-categories";
+import { getOpenVotingRound } from "@/lib/voting-rounds";
 
 export const dynamic = "force-dynamic";
 
@@ -62,16 +63,18 @@ export default async function MeuHalloweenPage({
   const votingOpen =
     isVotingOpen(event) &&
     now.getTime() >= new Date(event.eventStartsAt).getTime();
+  const openRound = votingOpen ? await getOpenVotingRound(event._id) : null;
   const [entries, categories, votes] = await Promise.all([
     getContestantEntriesForRsvp(event._id, guest.userId),
     getCategories(event._id),
-    votingOpen
+    openRound
       ? (await getDb())
           .collection<VoteDocument>("votes")
           .find(
             {
               eventId: new ObjectId(event._id),
-              voterId: new ObjectId(guest.userId),
+              roundId: openRound._id,
+              voterRsvpId: new ObjectId(guest.userId),
             },
             { projection: { categoryId: 1 } },
           )
