@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   isAdmin: vi.fn(),
+  auth: vi.fn(),
   getEventById: vi.fn(),
   getAdminUsersForEvent: vi.fn(),
   getMongoClient: vi.fn(),
@@ -10,11 +11,14 @@ const mocks = vi.hoisted(() => ({
   insertOne: vi.fn(),
   deleteOne: vi.fn(),
   findOne: vi.fn(),
+  userFindOne: vi.fn(),
+  auditInsertOne: vi.fn(),
   withTransaction: vi.fn(),
   endSession: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/admin", () => ({ isAdmin: mocks.isAdmin }));
+vi.mock("@clerk/nextjs/server", () => ({ auth: mocks.auth }));
 vi.mock("@/lib/events", () => ({ getEventById: mocks.getEventById }));
 vi.mock("@/lib/db", () => ({
   getDb: vi.fn(async () => ({
@@ -23,11 +27,14 @@ vi.mock("@/lib/db", () => ({
         ? { updateOne: mocks.eventUpdateOne }
         : name === "votes"
           ? { findOne: mocks.findOne }
-          : {
-              insertOne: mocks.insertOne,
-              updateOne: mocks.updateOne,
-              deleteOne: mocks.deleteOne,
-            },
+          : name === "adminAudits"
+            ? { insertOne: mocks.auditInsertOne }
+            : {
+                insertOne: mocks.insertOne,
+                updateOne: mocks.updateOne,
+                deleteOne: mocks.deleteOne,
+                findOne: mocks.userFindOne,
+              },
   })),
   getMongoClient: mocks.getMongoClient,
 }));
@@ -65,6 +72,19 @@ describe("admin users API", () => {
       registrationStartsAt: "2026-09-01T04:00:00.000Z",
       contestEntryStatus: "open",
     });
+    mocks.auth.mockResolvedValue({ userId: "admin_user" });
+    mocks.userFindOne.mockResolvedValue({
+      _id: "507f1f77bcf86cd799439012",
+      eventId,
+      fullName: "Nome anterior",
+      email: "old@example.com",
+      normalizedEmail: "old@example.com",
+      contestantName: "Nome anterior",
+      contestant: true,
+      group: false,
+      junior: false,
+      clerkUserId: "linked_owner",
+    });
   });
 
   it("rejects non-admin requests", async () => {
@@ -94,9 +114,14 @@ describe("admin users API", () => {
     expect(mocks.getAdminUsersForEvent).toHaveBeenCalledWith(eventId);
   });
 
-  it("preserves Clerk ownership during authorized name/email edits and ignores forged links", async () => {
+  it("audits existing RSVP corrections after cutoff without changing stable ownership", async () => {
     mocks.isAdmin.mockResolvedValue(true);
-    mocks.getEventById.mockResolvedValue({ _id: eventId });
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      status: "archived",
+      votingStatus: "ended",
+      contestEntryStatus: "closed",
+    });
     mocks.updateOne.mockResolvedValue({ matchedCount: 1 });
     const response = await PUT(
       new Request("http://localhost/api/admin/users", {
@@ -118,21 +143,16 @@ describe("admin users API", () => {
     });
     expect(update.$set).not.toHaveProperty("clerkUserId");
     expect(update).not.toHaveProperty("$unset");
-    expect(mocks.eventUpdateOne).toHaveBeenCalledWith(
+    expect(mocks.eventUpdateOne).not.toHaveBeenCalled();
+    expect(mocks.auditInsertOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        _id: expect.anything(),
-        status: "active",
-        votingStatus: "not_started",
-        $and: expect.arrayContaining([
-          expect.objectContaining({
-            $or: expect.arrayContaining([
-              { contestEntryStatus: "open" },
-              { contestEntryStatus: { $exists: false } },
-            ]),
-          }),
-        ]),
+        eventId: expect.anything(),
+        clerkUserId: "admin_user",
+        action: "guest_record_corrected",
+        targetType: "rsvp",
+        targetId: expect.anything(),
+        changes: { fields: expect.arrayContaining(["fullName", "email"]) },
       }),
-      expect.objectContaining({ $inc: { contestEntryMutationVersion: 1 } }),
       { session: expect.any(Object) },
     );
   });
@@ -185,25 +205,32 @@ describe("admin users API", () => {
     expect(mocks.withTransaction).toHaveBeenCalledOnce();
   });
 
-  it("rejects contestant edits if the entry closes before their transaction guard", async () => {
+  it("does not audit when an existing RSVP is unchanged", async () => {
     mocks.isAdmin.mockResolvedValue(true);
-    mocks.getEventById.mockResolvedValue({ _id: eventId });
-    mocks.eventUpdateOne.mockResolvedValue({ matchedCount: 0 });
+    mocks.userFindOne.mockResolvedValue({
+      _id: "507f1f77bcf86cd799439012",
+      eventId,
+      fullName: "Nome escolhido",
+      email: "new@example.com",
+      normalizedEmail: "new@example.com",
+      contestantName: "Nome escolhido",
+      imageUrl: null,
+      group: false,
+      junior: false,
+    });
     const response = await PUT(
       new Request("http://localhost/api/admin/users", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           eventId,
           _id: "507f1f77bcf86cd799439012",
-          fullName: "Nome alterado",
-          email: "guest@example.com",
+          fullName: "Nome escolhido",
+          email: "new@example.com",
         }),
       }),
     );
-
-    expect(response.status).toBe(409);
-    expect(mocks.updateOne).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(mocks.auditInsertOne).not.toHaveBeenCalled();
   });
 
   it("keeps deletion inside the event-entry transaction and vote check", async () => {

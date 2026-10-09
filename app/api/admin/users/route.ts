@@ -1,4 +1,5 @@
 import { MongoServerError, ObjectId } from "mongodb";
+import { auth } from "@clerk/nextjs/server";
 import { isAdmin } from "@/lib/auth/admin";
 import { getDb, getMongoClient } from "@/lib/db";
 import {
@@ -105,8 +106,15 @@ export async function PUT(request: Request) {
   try {
     const body = await readJsonObject(request);
     if (!body) return errorResponse("Corpo da requisição inválido", 400);
-    const event = await adminEvent(body.eventId);
-    if (event instanceof Response) return event;
+    const { userId: actorId } = await auth();
+    if (!actorId || !(await isAdmin(actorId))) {
+      return errorResponse("Não autorizado", 401);
+    }
+    if (typeof body.eventId !== "string" || !ObjectId.isValid(body.eventId)) {
+      return errorResponse("Evento inválido", 400);
+    }
+    const event = await getEventById(body.eventId);
+    if (!event) return errorResponse("Evento não encontrado", 404);
     const userId = parseObjectId(body._id);
     const fullName = normalizeName(body.fullName);
     const normalizedEmail = normalizeEmail(body.email);
@@ -131,19 +139,45 @@ export async function PUT(request: Request) {
     let result;
     try {
       result = await session.withTransaction(async () => {
-        await claimContestEntryWrite(
-          db,
-          eventObjectId,
-          session,
-          update.updatedAt,
+        const users = db.collection("users");
+        const existing = await users.findOne(
+          { _id: userId, eventId: eventObjectId },
+          { session },
         );
-        return db
-          .collection("users")
-          .updateOne(
-            { _id: userId, eventId: eventObjectId },
-            { $set: update },
+        if (!existing) return { matchedCount: 0 };
+        const correctionFields = [
+          "fullName",
+          "email",
+          "normalizedEmail",
+          "imageUrl",
+          "contestantName",
+          "group",
+          "junior",
+        ] as const;
+        const changes = correctionFields.filter(
+          (field) => existing[field] !== update[field],
+        );
+        if (changes.length === 0) return { matchedCount: 1 };
+        const updated = await users.updateOne(
+          { _id: userId, eventId: eventObjectId },
+          { $set: update },
+          { session },
+        );
+        if (updated.matchedCount) {
+          await db.collection("adminAudits").insertOne(
+            {
+              eventId: eventObjectId,
+              clerkUserId: actorId,
+              action: "guest_record_corrected",
+              targetType: "rsvp",
+              targetId: userId,
+              at: update.updatedAt,
+              changes: { fields: changes },
+            },
             { session },
           );
+        }
+        return updated;
       });
     } finally {
       await session.endSession();
@@ -153,9 +187,6 @@ export async function PUT(request: Request) {
       return errorResponse("Usuário não encontrado", 404);
     return Response.json({ _id: body._id, eventId: event._id, ...update });
   } catch (error) {
-    if (error instanceof ContestEntryClosedError) {
-      return errorResponse("As inscrições do concurso estão encerradas", 409);
-    }
     if (error instanceof MongoServerError && error.code === 11000) {
       return errorResponse("Este email já está inscrito", 409);
     }

@@ -419,8 +419,8 @@ export default function EventDashboard({
       "reopen-contest-entry": "Reabrir as inscrições do concurso?",
       "start-voting":
         selected.votingStatus === "ended"
-          ? "Reabrir a votação? Os resultados serão ocultados automaticamente."
-          : "Iniciar a votação agora?",
+          ? "Reabrir a votação? Os resultados serão ocultados automaticamente. As inscrições e os votos já registrados serão preservados."
+          : "Iniciar a votação agora? Novas confirmações de presença e inclusões ou exclusões de participantes serão encerradas permanentemente.",
       "end-voting": "Encerrar a votação agora?",
       "publish-results": "Publicar os resultados agora?",
       "unpublish-results": "Ocultar os resultados agora?",
@@ -995,7 +995,9 @@ export default function EventDashboard({
                 disabled={
                   busy ||
                   selected.status !== "active" ||
-                  (selected.votingStatus !== "open" && !eventHasStarted)
+                  (selected.votingStatus !== "open" &&
+                    (!eventHasStarted ||
+                      selected.contestEntryStatus !== "closed"))
                 }
                 onClick={() =>
                   changeLifecycle(
@@ -1022,6 +1024,14 @@ export default function EventDashboard({
                 !eventHasStarted && (
                   <p className="text-xs text-gray-300">
                     A votação só pode começar após o início do evento.
+                  </p>
+                )}
+              {selected.status === "active" &&
+                selected.votingStatus !== "open" &&
+                eventHasStarted &&
+                selected.contestEntryStatus !== "closed" && (
+                  <p className="text-xs text-gray-300">
+                    Feche as inscrições do concurso antes de iniciar a votação.
                   </p>
                 )}
             </div>

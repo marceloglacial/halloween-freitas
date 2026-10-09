@@ -30,10 +30,10 @@ vi.mock("@/lib/db", () => ({
                 insertOne: mocks.roundInsertOne,
                 updateOne: mocks.roundUpdateOne,
               }
-          : {
-              find: () => ({ toArray: mocks.contestantToArray }),
-              updateMany: mocks.updateMany,
-            },
+            : {
+                find: () => ({ toArray: mocks.contestantToArray }),
+                updateMany: mocks.updateMany,
+              },
   }),
   getMongoClient: vi.fn().mockResolvedValue({
     startSession: () => ({
@@ -104,6 +104,7 @@ describe("event lifecycle controls", () => {
         _id: expect.any(ObjectId),
         status: "active",
         votingStatus: { $in: ["not_started", "ended"] },
+        contestEntryStatus: "closed",
         eventStartsAt: { $lte: new Date("2026-11-01T00:00:00.000Z") },
       }),
       expect.objectContaining({
@@ -118,7 +119,12 @@ describe("event lifecycle controls", () => {
     );
     expect(mocks.roundUpdateOne).toHaveBeenCalledWith(
       { _id: expect.any(ObjectId), status: "ended" },
-      { $set: { status: "open", reopenedAt: new Date("2026-11-01T00:00:00.000Z") } },
+      {
+        $set: {
+          status: "open",
+          reopenedAt: new Date("2026-11-01T00:00:00.000Z"),
+        },
+      },
       { session: expect.anything() },
     );
   });
@@ -149,7 +155,12 @@ describe("event lifecycle controls", () => {
         type: "primary",
         status: "open",
       },
-      { $set: { status: "ended", endedAt: new Date("2026-11-01T00:00:00.000Z") } },
+      {
+        $set: {
+          status: "ended",
+          endedAt: new Date("2026-11-01T00:00:00.000Z"),
+        },
+      },
       { session: expect.anything() },
     );
     expect(mocks.withTransaction).toHaveBeenCalledOnce();
@@ -311,6 +322,24 @@ describe("event lifecycle controls", () => {
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({
       error: "A votação só pode começar após o início do evento",
+    });
+  });
+
+  it("does not start voting while contestant entry is open", async () => {
+    mocks.updateOne.mockResolvedValue({ matchedCount: 0 });
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      status: "active",
+      eventStartsAt: "2026-10-31T23:00:00.000Z",
+      contestEntryStatus: "open",
+      votingStatus: "not_started",
+    });
+
+    const response = await request("start-voting");
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Feche as inscrições do concurso antes de iniciar a votação",
     });
   });
 

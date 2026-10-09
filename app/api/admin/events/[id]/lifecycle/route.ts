@@ -63,6 +63,7 @@ export async function POST(
         _id: eventId,
         status: "active",
         votingStatus: { $in: ["not_started", "ended"] },
+        contestEntryStatus: "closed",
         eventStartsAt: { $lte: now },
       },
       "end-voting": {
@@ -160,11 +161,9 @@ export async function POST(
       const session = (await getMongoClient()).startSession();
       try {
         await session.withTransaction(async () => {
-          result = await db.collection("events").updateOne(
-            filters[action],
-            { $set: updates[action] },
-            { session },
-          );
+          result = await db
+            .collection("events")
+            .updateOne(filters[action], { $set: updates[action] }, { session });
           if (!result.matchedCount) return;
           const endedRound = await db
             .collection<VotingRoundDocument>("votingRounds")
@@ -225,13 +224,25 @@ export async function POST(
         }
       }
       if (action === "start-voting") {
-        if (event.status === "active" && new Date(event.eventStartsAt) > now) {
+        if (event.status !== "active") {
+          return errorResponse(
+            "Ative o evento antes de iniciar a votação",
+            409,
+          );
+        }
+        if (new Date(event.eventStartsAt) > now) {
           return errorResponse(
             "A votação só pode começar após o início do evento",
             409,
           );
         }
-        return errorResponse("Ative o evento antes de iniciar a votação", 409);
+        if (event.contestEntryStatus !== "closed") {
+          return errorResponse(
+            "Feche as inscrições do concurso antes de iniciar a votação",
+            409,
+          );
+        }
+        return errorResponse("A votação já está aberta", 409);
       }
       if (action === "end-voting") {
         return errorResponse("A votação não está aberta", 409);
