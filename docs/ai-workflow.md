@@ -15,22 +15,42 @@ differ until its rebuild issue is complete. Follow the relevant installed skill
 for the work. When documents conflict, surface the conflict and follow the
 approved issue contract or ask for product clarification when it is unresolved.
 
-## Route work to skills
+## Skill activation
 
-- UI, responsive layout, forms, and guest/admin interaction: read
-  `halloween-frontend`.
-- API, persistence, identity resolution, and server responses: read
-  `halloween-backend`.
-- RSVP, contestant lifecycle, voting, authorization, and publication behavior:
-  read `halloween-event-workflows` and the domain documents above.
-- Index, database migration, or live database operations: read
-  `halloween-database-operations` and `docs/operations.md`.
-- Next.js runtime verification: read `next-dev-loop` and reuse an existing
-  development server when available.
+Load a skill only when its trigger matches the task. Start with the
+entrypoint(s) in this table; follow their pointers only for relevant branches.
+Do not eagerly read all skills or every domain document.
 
-Read only the relevant versioned Next.js guide and skills for a task. Delegate
-only bounded work; the primary agent owns integration and every delegate
-inherits repository, branch, data-safety, and review constraints.
+| Request                                                                                             | Skill                           |
+| --------------------------------------------------------------------------------------------------- | ------------------------------- |
+| Choose the next ready issue or implement a GitHub issue                                             | `issue-workflow`                |
+| Change pages, components, hooks, forms, responsive states, or visual alignment                      | `frontend-design`               |
+| Change API handlers, server queries, validation, identity, or response contracts                    | `backend-data`                  |
+| Change editions, schedules, RSVP availability, contestant-entry windows, or enrollment cutoff       | `event-lifecycle`               |
+| Change contest eligibility, ballots, rounds, runoff, tally, or results publication                  | `contest-voting`                |
+| Verify changes, choose tests, or report release QA                                                  | `qa-validation`                 |
+| Change an approved product, architecture, lifecycle, data, testing, design, or contributor contract | `documentation-sync`            |
+| Design indexes or perform an explicitly authorized live database operation                          | `halloween-database-operations` |
+| Verify Next.js runtime behavior                                                                     | `next-dev-loop`                 |
+
+For example, use `issue-workflow` for “implement the next ready issue” or
+“implement issue #54 after checking its dependencies.” Use `frontend-design` for
+“make the RSVP form match design.md on mobile,” `backend-data` for “validate
+the RSVP endpoint's malformed input and response contract,” `event-lifecycle`
+for “test the registration cutoff at first voting open,” `contest-voting` for
+“prevent duplicate ballots under concurrent submissions,” `qa-validation` for
+“verify this change and report remaining coverage gaps,” and
+`documentation-sync` for “update the lifecycle contract after this approved
+rule change.”
+
+Combine skills only when the task crosses their actual scopes. For example,
+voting API work may need `contest-voting` and `backend-data`; use
+`documentation-sync` only if the approved contract changes. Keep the
+`design.md` reference binding for visual work and preserve the established
+homepage layout unless a redesign is requested.
+
+Delegate only bounded work; the primary agent owns integration and every
+delegate inherits repository, branch, data-safety, and review constraints.
 
 ## Optional Codex reviewers
 
