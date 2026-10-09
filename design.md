@@ -116,7 +116,7 @@ they are not currently implemented.
 | `/votacao`                 | Verified Google/email-code access for registered guests            | Entering, rejected email or connection error, voting unavailable                       |
 | `/votacao/categories`      | Category tiles with guest greeting                                 | Available category, already voted, guest session unavailable                           |
 | `/votacao/categories/[id]` | Candidate search, selectable photo grid, floating vote action      | No matches, selected candidate, submitting, vote success or failure                    |
-| `/meu-halloween?eventId=…` | Linked guest portal for one selected edition                       | RSVP/profile, owned contestant entries/statuses, registration and voting state         |
+| `/meu-halloween?eventId=…` | Linked guest portal for one selected edition                       | RSVP/profile, owned entries/statuses, photo upload/replacement and voting state        |
 | `/perfil?eventId=...`      | Selected-edition RSVP confirmation and editable guest name         | Loading, denied/unlinked, validation, saving, saved, archived edition                  |
 | `/resultados`              | Published category tiles and event navigation                      | Published results, no published results                                                |
 | `/resultados/[id]`         | Prominent first place and remaining ranked participants            | Vote counts and percentages, category with no votes                                    |
@@ -174,9 +174,14 @@ unavailable.
 
 From the authenticated voting categories page, guests can open their selected
 edition's Meu Halloween portal to view entries, RSVP/event status, and profile
-controls. The profile page lets them update the single “Nome e sobrenome” field.
-Keep the RSVP email private. Once contestant enrollment is closed, profile edits
-do not change the contestant name frozen for voting and results.
+controls. While contestant entries are open, owners can upload or replace one
+photo per entry after confirming permission to use it. Show the current photo,
+file limits, pending upload, success, and error states. Junior entries require
+the guardian to confirm permission. Once entries close, the upload controls are
+disabled. The profile page still lets guests update the single “Nome e
+sobrenome” field. Keep the RSVP email private. Once contestant enrollment is
+closed, profile edits do not change the contestant name frozen for voting and
+results.
 
 Category tiles use purple backgrounds, emoji, and a text title. Completed
 categories become gray and translucent, prevent navigation, expose

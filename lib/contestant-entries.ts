@@ -1,6 +1,7 @@
 import { ObjectId, type ClientSession, type Db } from "mongodb";
 import { getDb } from "@/lib/db";
 import { normalizeName, parseObjectId } from "@/lib/http";
+import type { ContestPhotoAsset } from "@/lib/contestant-photos";
 
 type ContestantOwnership =
   | { ownerRsvpId: ObjectId; guardianRsvpId?: never }
@@ -15,6 +16,7 @@ export type ContestantEntryDocument = {
   status: ContestantEntryStatus;
   ownerRsvpId?: ObjectId;
   guardianRsvpId?: ObjectId;
+  contestPhoto?: ContestPhotoAsset;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -25,6 +27,7 @@ export type OwnedContestantEntry = {
   entryType: ContestantEntryType;
   displayName: string;
   status: ContestantEntryStatus;
+  contestPhoto?: ContestPhotoAsset;
 };
 
 export function isContestantEntryType(
@@ -112,6 +115,7 @@ export async function getContestantEntriesForRsvp(
         entryType: 1,
         displayName: 1,
         status: 1,
+        contestPhoto: 1,
       },
     })
     .sort({ createdAt: 1, _id: 1 })
@@ -123,6 +127,7 @@ export async function getContestantEntriesForRsvp(
     entryType: entry.entryType,
     displayName: entry.displayName,
     status: entry.status,
+    ...(entry.contestPhoto ? { contestPhoto: entry.contestPhoto } : {}),
   }));
 }
 
@@ -152,7 +157,16 @@ export async function requireContestantRsvpInEvent(
 export function serializePublicContestantEntry(
   entry: ContestantEntryDocument,
 ): PublicContestantEntry | null {
-  if (entry.status !== "ready" && entry.status !== "locked") return null;
+  const photo = entry.contestPhoto;
+  if (
+    (entry.status !== "ready" && entry.status !== "locked") ||
+    !photo?.assetId ||
+    !photo.publicId ||
+    !photo.consentAt ||
+    !photo.consentByRsvpId
+  ) {
+    return null;
+  }
   return {
     _id: entry._id.toString(),
     eventId: entry.eventId.toString(),

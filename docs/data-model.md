@@ -20,7 +20,7 @@ identity alone.
 | **Category**           | Title, icon, order, and eligibility (`all`, `group`, or `junior`) for one edition                                                                                                                    | Stable category ID; unique `(eventId, order)`; references never cross editions                                                                                                                           |
 | **RSVP**               | Attendance name, normalized email, optional linked Clerk user ID, and optional frozen contestant display-name snapshot                                                                               | Unique `(eventId, normalizedEmail)` and unique linked `(eventId, clerkUserId)`                                                                                                                           |
 | **Contestant entry**   | Stable candidate `_id`, `eventId`, `categoryId`, `entryType`, `displayName`, and either `ownerRsvpId` (individual/group) or `guardianRsvpId` (junior); readiness/consent and contest-photo reference | `draft`, `ready`, `locked`, or `withdrawn`; unique `(eventId, ownerRsvpId, entryType)` for adult-owned entries; multiple guardian-owned children allowed; drafts remain private; ballots reference `_id` |
-| **Contest photo**      | One current Cloudinary asset for a contestant entry, with public ID and validated metadata                                                                                                           | Scoped through entry and `eventId`; replacement preserves contestant ID and triggers safe old-asset cleanup                                                                                              |
+| **Contest photo**      | One current authenticated Cloudinary asset for a contestant entry, with asset/public IDs, validated format/dimensions/bytes, upload time, and consent actor/time                                     | Scoped through entry and `eventId`; drafts never expose asset IDs; replacement preserves contestant ID, queues old-asset cleanup, and never deletes an asset still referenced by an entry                |
 | **Party album**        | One album-wide publication state and audit history per edition                                                                                                                                       | Unique `eventId`; no per-photo approval state                                                                                                                                                            |
 | **Party photo**        | Stable photo ID, `eventId`, uploader RSVP ID, Cloudinary public ID, dimensions/metadata, upload time, removal and cleanup state                                                                      | Uploader RSVP and asset must belong to the same edition; public delivery follows album publication                                                                                                       |
 | **Voting round**       | Stable round ID, type (`primary` or `runoff`), manual state, and candidate/category scope                                                                                                            | Unique round identity per edition and type; at most one open round                                                                                                                                       |
@@ -75,3 +75,12 @@ RSVP details, drafts, private asset identifiers, and unpublished ballots.
 MongoDB IDs, Cloudinary public IDs, and Clerk IDs have different roles. Serialize
 stable record IDs and dates explicitly at API boundaries. Do not make a
 Cloudinary URL itself the authorization mechanism for a private asset.
+
+Contest photos accept validated JPG, PNG, and WebP uploads up to 8 MB. Store
+them as authenticated Cloudinary assets in an edition-scoped contest-photo
+folder. Return only short-lived preview URLs to an authorized guest; never
+serialize Cloudinary asset/public IDs or consent ownership to public clients.
+Replacement persists the new asset reference before queuing deletion of the
+old one. Retry cleanup through durable event-scoped jobs, checking that no
+contestant still references an asset before deletion. Keep party-photo assets
+in their independent storage flow.
