@@ -40,15 +40,16 @@ do not expose secrets through `NEXT_PUBLIC_` variables.
 ## Database lifecycle
 
 The application and database are being rebuilt cleanly; no historical data
-migration is required. Do not follow legacy event migration instructions or
-run a legacy migration against the new schema. A destructive reset is permitted
-only as an explicitly approved rebuild step with the database target confirmed.
-Annual operation creates or activates a new edition while retaining prior
-editions; it never resets the database.
+migration is required. Do not adapt or run a legacy event migration against the
+new schema. The obsolete `migrate:events` command and script have been removed.
+A destructive reset is permitted only as an explicitly approved rebuild step
+with the database target confirmed. Annual operation creates or activates a new
+edition while retaining prior editions; it never resets the database.
 
-The current package still contains `migrate:events`, `check:indexes`, and
-`create:indexes` scripts for the legacy schema. They are not valid operations
-for the rebuilt data model; do not run them against the rebuild database.
+The package still contains `check:indexes` and `create:indexes` scripts for the
+pre-rebuild schema. They do not cover the target data model's round-scoped
+ballot key or new entities; do not run them against the rebuild database.
+Replace them with target-schema tooling before any future index operation.
 
 Database schema, indexes, and transaction prerequisites are defined alongside
 the implementation contract in [architecture](architecture.md) and
