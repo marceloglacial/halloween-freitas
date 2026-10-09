@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ContestPhotoUpload from "@/components/guest/contest-photo-upload";
 import { isVotingOpen } from "@/lib/events";
 import type { OwnedContestantEntry } from "@/lib/contestant-entries";
 import { getContestEntryState } from "@/util/contest-entry-state";
@@ -34,7 +35,7 @@ export default function GuestPortal({
 }: {
   event: HalloweenEvent;
   guestName: string;
-  entries: OwnedContestantEntry[];
+  entries: (OwnedContestantEntry & { photoUrl?: string | null })[];
   categories: Category[];
   votedCategoryIds: string[];
   now: string;
@@ -136,6 +137,17 @@ export default function GuestPortal({
                   <p className="text-sm text-stone-400">
                     {entryStatusLabels[entry.status]}
                   </p>
+                  <ContestPhotoUpload
+                    eventId={event._id}
+                    entryId={entry._id}
+                    entryType={entry.entryType}
+                    initialPhotoUrl={entry.photoUrl ?? null}
+                    enabled={
+                      entryState === "open" &&
+                      entry.status !== "locked" &&
+                      entry.status !== "withdrawn"
+                    }
+                  />
                 </li>
               );
             })}

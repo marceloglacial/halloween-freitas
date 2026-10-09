@@ -7,6 +7,7 @@ import {
   GuestAccessError,
 } from "@/lib/auth/guest-registration";
 import { getContestantEntriesForRsvp } from "@/lib/contestant-entries";
+import { contestPhotoPreviewUrl } from "@/lib/contestant-photos";
 import { getDb } from "@/lib/db";
 import { getCurrentEvent, getEventById, isVotingOpen } from "@/lib/events";
 import { guestAccessUrl, validGuestEventId } from "@/util/guest-access";
@@ -77,12 +78,18 @@ export default async function MeuHalloweenPage({
           .toArray()
       : Promise.resolve([]),
   ]);
+  const portalEntries = entries.map(({ contestPhoto, ...entry }) => ({
+    ...entry,
+    photoUrl: contestPhoto
+      ? contestPhotoPreviewUrl(contestPhoto.publicId, contestPhoto.format)
+      : null,
+  }));
 
   return (
     <GuestPortal
       event={event}
       guestName={guest.fullName}
-      entries={entries}
+      entries={portalEntries}
       categories={categories}
       votedCategoryIds={votes.map((vote) => vote.categoryId.toString())}
       now={now.toISOString()}

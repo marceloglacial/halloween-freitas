@@ -174,6 +174,7 @@ describe("contestant entry schema and ownership", () => {
           entryType: 1,
           displayName: 1,
           status: 1,
+          contestPhoto: 1,
         },
       },
     );
@@ -195,6 +196,23 @@ describe("contestant entry schema and ownership", () => {
     ).toBeNull();
     expect(
       serializePublicContestantEntry({ ...entry, status: "ready" }),
+    ).toBeNull();
+    expect(
+      serializePublicContestantEntry({
+        ...entry,
+        status: "ready",
+        contestPhoto: {
+          assetId: "private-asset-id",
+          publicId: "private-cloudinary-id",
+          format: "png",
+          bytes: 1024,
+          width: 800,
+          height: 600,
+          uploadedAt: new Date("2026-10-01T00:00:00.000Z"),
+          consentAt: new Date("2026-10-01T00:00:00.000Z"),
+          consentByRsvpId: rsvpId.toString(),
+        },
+      }),
     ).toEqual({
       _id: entry._id.toString(),
       eventId: eventId.toString(),

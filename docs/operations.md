@@ -34,11 +34,14 @@ The checked-in `.env.example` names the current connection and provider settings
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Public Clerk frontend key          |
 | `CLERK_SECRET_KEY`                  | Server-only Clerk key              |
 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Public Cloudinary cloud identifier |
+| `CLOUDINARY_API_KEY`                | Server-only Cloudinary API key     |
+| `CLOUDINARY_API_SECRET`             | Server-only Cloudinary API secret  |
 
 Keep server credentials in ignored local files or the deployment secret store.
-Any Cloudinary signing or upload credentials must remain server-only. Confirm
-the implemented environment schema before adding or changing variable names;
-do not expose secrets through `NEXT_PUBLIC_` variables.
+Contest-photo uploads require the server-only Cloudinary API key and secret;
+the application stores these assets with authenticated delivery. Never move
+these values to `NEXT_PUBLIC_` variables or reuse contest-photo storage for the
+party album.
 
 ### Issue worktrees
 

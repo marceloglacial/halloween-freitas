@@ -109,4 +109,36 @@ describe("guest portal", () => {
     expect(html).not.toContain(`/votacao/categories/${categories[0]._id}?`);
     expect(html).toContain('aria-disabled="true"');
   });
+
+  it("shows an accessible photo upload and explicit consent while entry is open", () => {
+    const html = renderToStaticMarkup(
+      <GuestPortal
+        event={{
+          ...event,
+          contestEntryStatus: "open",
+          votingStatus: "not_started",
+        }}
+        guestName="Ana Freitas"
+        entries={[
+          {
+            _id: "candidate-id",
+            categoryId: categories[0]._id,
+            entryType: "junior",
+            displayName: "Bia Freitas",
+            status: "draft",
+          },
+        ]}
+        categories={categories}
+        votedCategoryIds={[]}
+        now="2026-10-09T12:00:00.000Z"
+      />,
+    );
+
+    expect(html).toContain('accept="image/jpeg,image/png,image/webp"');
+    expect(html).toContain(
+      "Confirmo que sou responsável legal e autorizo o uso desta foto",
+    );
+    expect(html).toContain("Nenhuma foto foi enviada");
+    expect(html).toContain("JPG, PNG ou WebP, até 8 MB.");
+  });
 });

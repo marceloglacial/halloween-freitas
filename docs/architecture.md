@@ -93,9 +93,14 @@ contestant addition/deletion as an edit to a frozen candidate.
 
 Contest photos and party photos are different domain assets with different
 owners, eligibility, and publication rules. A contestant entry has its own
-contest photo and readiness state. A party photo belongs to its uploader RSVP
-and one event's party album. Do not reuse contest image rows or contestant APIs
-for the party album.
+authenticated Cloudinary contest photo and readiness state. Accept only
+validated JPG, PNG, or WebP content within the documented size/dimension limit;
+record the consenting RSVP and time. Keep draft previews temporary and
+owner-authorized, and do not expose Cloudinary asset/public IDs in public
+responses. Persist a replacement before queuing old-asset deletion; cleanup
+must retry safely and verify no contestant still references the asset. A party
+photo belongs to its uploader RSVP and one event's party album. Do not reuse
+contest image rows or contestant APIs for the party album.
 
 Use signed uploads and private, server-authorized, event-scoped delivery for
 party photos. Validate actual file type and size, rate-limit abusive upload

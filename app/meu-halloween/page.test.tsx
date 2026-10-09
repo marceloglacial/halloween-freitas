@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   getEventById: vi.fn(),
   getGuestRegistration: vi.fn(),
   getContestantEntriesForRsvp: vi.fn(),
+  contestPhotoPreviewUrl: vi.fn(),
   getCategories: vi.fn(),
   getDb: vi.fn(),
   redirect: vi.fn(),
@@ -31,6 +32,9 @@ vi.mock("@/lib/auth/guest-registration", () => {
 });
 vi.mock("@/lib/contestant-entries", () => ({
   getContestantEntriesForRsvp: mocks.getContestantEntriesForRsvp,
+}));
+vi.mock("@/lib/contestant-photos", () => ({
+  contestPhotoPreviewUrl: mocks.contestPhotoPreviewUrl,
 }));
 vi.mock("@/lib/db", () => ({ getDb: mocks.getDb }));
 vi.mock("@/util/get-categories", () => ({
@@ -89,6 +93,7 @@ describe("Meu Halloween route", () => {
       fullName: "Ana Freitas",
     });
     mocks.getContestantEntriesForRsvp.mockResolvedValue([]);
+    mocks.contestPhotoPreviewUrl.mockReturnValue("temporary-photo-preview");
     mocks.getCategories.mockResolvedValue([category]);
     mocks.getDb.mockResolvedValue({
       collection: () => ({
@@ -180,5 +185,41 @@ describe("Meu Halloween route", () => {
       "507f1f77bcf86cd799439013",
     );
     expect(mocks.getDb).not.toHaveBeenCalled();
+  });
+
+  it("sends only a temporary photo URL to the guest portal", async () => {
+    mocks.getContestantEntriesForRsvp.mockResolvedValue([
+      {
+        _id: "candidate-id",
+        categoryId: category._id,
+        entryType: "individual",
+        displayName: "Ana Freitas",
+        status: "draft",
+        contestPhoto: {
+          assetId: "private-asset-id",
+          publicId: "private-cloudinary-id",
+          format: "png",
+        },
+      },
+    ]);
+
+    const result = await MeuHalloweenPage({
+      searchParams: Promise.resolve({ eventId: event._id }),
+    });
+
+    expect(result).toHaveProperty("props.entries", [
+      {
+        _id: "candidate-id",
+        categoryId: category._id,
+        entryType: "individual",
+        displayName: "Ana Freitas",
+        status: "draft",
+        photoUrl: "temporary-photo-preview",
+      },
+    ]);
+    expect(mocks.contestPhotoPreviewUrl).toHaveBeenCalledWith(
+      "private-cloudinary-id",
+      "png",
+    );
   });
 });
