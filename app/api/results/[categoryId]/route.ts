@@ -1,5 +1,5 @@
 import { getEventBySlug, resultsArePublic } from "@/lib/events";
-import { errorResponse, parseObjectId } from "@/lib/http";
+import { errorResponse, parseObjectId, logServerError } from "@/lib/http";
 import { getCategoryResults } from "@/lib/results";
 import { getCategoryById } from "@/util/get-categories";
 
@@ -24,7 +24,7 @@ export async function GET(
       await getCategoryResults(event._id, categoryId.toString()),
     );
   } catch (error) {
-    console.error("Result lookup failed", error);
+    logServerError("Result lookup failed", error);
     return errorResponse("Não foi possível carregar os resultados", 500);
   }
 }

@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import { isAdmin } from "@/lib/auth/admin";
 import { getDb } from "@/lib/db";
 import { getEventById } from "@/lib/events";
-import { errorResponse } from "@/lib/http";
+import { errorResponse, logServerError } from "@/lib/http";
 
 export async function POST(
   _request: Request,
@@ -34,7 +34,7 @@ export async function POST(
       return errorResponse("Evento não encontrado", 404);
     return Response.json(await getEventById(id));
   } catch (error) {
-    console.error("Admin event archival failed", error);
+    logServerError("Admin event archival failed", error);
     return errorResponse("Não foi possível arquivar o evento", 500);
   }
 }
