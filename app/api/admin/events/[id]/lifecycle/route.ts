@@ -5,6 +5,8 @@ import { getEventById } from "@/lib/events";
 import { errorResponse, readJsonObject } from "@/lib/http";
 
 const lifecycleActions = [
+  "close-contest-entry",
+  "reopen-contest-entry",
   "start-voting",
   "end-voting",
   "publish-results",
@@ -36,6 +38,21 @@ export async function POST(
     const eventId = new ObjectId(id);
     const now = new Date();
     const filters: Record<LifecycleAction, Record<string, unknown>> = {
+      "close-contest-entry": {
+        _id: eventId,
+        status: "active",
+        votingStatus: "not_started",
+        $or: [
+          { contestEntryStatus: "open" },
+          { contestEntryStatus: { $exists: false } },
+        ],
+      },
+      "reopen-contest-entry": {
+        _id: eventId,
+        status: "active",
+        votingStatus: "not_started",
+        contestEntryStatus: "closed",
+      },
       "start-voting": {
         _id: eventId,
         status: "active",
@@ -51,8 +68,17 @@ export async function POST(
     };
     const updates: Record<LifecycleAction, Record<string, unknown>> = {
       "start-voting": {
+        contestEntryStatus: "closed",
         votingStatus: "open",
         resultsPublished: false,
+        updatedAt: now,
+      },
+      "close-contest-entry": {
+        contestEntryStatus: "closed",
+        updatedAt: now,
+      },
+      "reopen-contest-entry": {
+        contestEntryStatus: "open",
         updatedAt: now,
       },
       "end-voting": { votingStatus: "ended", updatedAt: now },
@@ -67,6 +93,41 @@ export async function POST(
     if (!result.matchedCount) {
       const event = await getEventById(id);
       if (!event) return errorResponse("Evento não encontrado", 404);
+      if (
+        body.action === "close-contest-entry" ||
+        body.action === "reopen-contest-entry"
+      ) {
+        if (event.status !== "active") {
+          return errorResponse(
+            "Ative o evento antes de alterar as inscrições do concurso",
+            409,
+          );
+        }
+        if (event.votingStatus !== "not_started") {
+          return errorResponse(
+            "As inscrições do concurso foram encerradas com o início da votação",
+            409,
+          );
+        }
+        if (
+          body.action === "close-contest-entry" &&
+          event.contestEntryStatus === "closed"
+        ) {
+          return errorResponse(
+            "As inscrições do concurso já estão fechadas",
+            409,
+          );
+        }
+        if (
+          body.action === "reopen-contest-entry" &&
+          event.contestEntryStatus !== "closed"
+        ) {
+          return errorResponse(
+            "As inscrições do concurso já estão abertas",
+            409,
+          );
+        }
+      }
       if (body.action === "start-voting") {
         if (event.status === "active" && new Date(event.eventStartsAt) > now) {
           return errorResponse(

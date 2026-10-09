@@ -18,4 +18,13 @@ describe("candidate eligibility", () => {
       true,
     );
   });
+
+  it("does not treat an RSVP as a contest entry", () => {
+    expect(
+      isEligibleCandidate(
+        { eligibility: "all" },
+        { ...candidate, contestant: false },
+      ),
+    ).toBe(false);
+  });
 });

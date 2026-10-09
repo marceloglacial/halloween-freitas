@@ -91,6 +91,12 @@ describe("event phases", () => {
     expect(getRegistrationState({ ...event, votingStatus: "ended" })).toBe(
       "closed",
     );
+    expect(
+      getRegistrationState(
+        { ...event, contestEntryStatus: "closed" },
+        new Date("2026-09-15T00:00:00Z"),
+      ),
+    ).toBe("open");
   });
 
   it("keeps archived events closed regardless of their dates", () => {
@@ -118,15 +124,13 @@ describe("event phases", () => {
   });
 
   it("uses the newest year deterministically when no edition is active", async () => {
-    mocks.findOne
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({
-        ...event,
-        _id: new ObjectId(),
-        status: "archived",
-        registrationStartsAt: new Date(event.registrationStartsAt),
-        eventStartsAt: new Date(event.eventStartsAt),
-      });
+    mocks.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      ...event,
+      _id: new ObjectId(),
+      status: "archived",
+      registrationStartsAt: new Date(event.registrationStartsAt),
+      eventStartsAt: new Date(event.eventStartsAt),
+    });
 
     const fallback = await getCurrentEvent();
     expect(fallback).toMatchObject({
@@ -157,6 +161,7 @@ describe("event phases", () => {
     expect(await getCurrentEvent()).toMatchObject({
       registrationStartsAt: "2026-09-01T04:00:00.000Z",
       eventStartsAt: "2026-11-01T00:00:00.000Z",
+      contestEntryStatus: "open",
     });
   });
 });

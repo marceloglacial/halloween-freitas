@@ -4,12 +4,13 @@ type User = {
   fullName: string;
   email: string;
   imageUrl?: string | null;
+  contestant?: boolean;
   group?: boolean;
   junior?: boolean;
   status?: "confirmed" | "cancelled";
 };
 
-type PublicUser = Omit<User, "email" | "status">;
+type PublicUser = Omit<User, "email" | "status" | "contestant">;
 type AdminUser = User & { clerkUserId?: string };
 
 interface UserListItemProps {

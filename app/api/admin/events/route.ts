@@ -83,6 +83,7 @@ export async function POST(request: Request) {
           ...parsed.value,
           slug: `halloween-${parsed.value.year}`,
           status: "archived",
+          contestEntryStatus: "open",
           votingStatus: "not_started",
           resultsPublished: false,
           createdAt: new Date(),

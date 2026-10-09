@@ -8,6 +8,7 @@ type EventDocument = Omit<
   | "eventStartsAt"
   | "startsAt"
   | "registrationOpensAt"
+  | "contestEntryStatus"
   | "votingStatus"
   | "resultsPublished"
 > & {
@@ -17,6 +18,7 @@ type EventDocument = Omit<
   /** Legacy event date fields remain readable until existing data is migrated. */
   startsAt?: Date;
   registrationOpensAt?: Date;
+  contestEntryStatus?: ContestEntryStatus;
   votingStatus?: VotingStatus;
   resultsPublished?: boolean;
 };
@@ -38,6 +40,8 @@ function serializeEvent(event: EventDocument): HalloweenEvent {
     timezone: event.timezone,
     registrationStartsAt: new Date(registrationStartsAt).toISOString(),
     eventStartsAt: new Date(eventStartsAt).toISOString(),
+    contestEntryStatus:
+      event.contestEntryStatus === "closed" ? "closed" : "open",
     votingStatus:
       event.votingStatus === "open" || event.votingStatus === "ended"
         ? event.votingStatus

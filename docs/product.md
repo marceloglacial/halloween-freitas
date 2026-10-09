@@ -45,9 +45,10 @@ and is separate from contestant entries, contest photos, and voting candidates.
 - Show RSVP availability from the edition's scheduled `registrationStartsAt`
   until the first opening of voting. RSVP availability is independent of whether
   contestant entries are open.
-- Let administrators open, close, and reopen contestant entry before voting
-  first opens. Closing entries freezes the eligible candidate set while leaving
-  RSVP available.
+- Open contestant entry at the scheduled `registrationStartsAt` instant in the
+  edition's timezone. Administrators can close and reopen entries before
+  voting first opens. Closing entries freezes the eligible candidate set while
+  leaving RSVP available.
 - Allow a previously registered guest to verify and link their Clerk identity
   after the RSVP cutoff. Authentication does not create an RSVP or grant access
   to another edition.
