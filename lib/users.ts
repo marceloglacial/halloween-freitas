@@ -6,6 +6,7 @@ export type UserDocument = Omit<User, "_id" | "eventId"> & {
   eventId: ObjectId;
   normalizedEmail: string;
   clerkUserId?: string;
+  contestantName?: string;
   status?: "confirmed" | "cancelled";
 };
 
@@ -23,11 +24,16 @@ export function serializeUser(user: UserDocument): User {
   };
 }
 
-export function toPublicUser(user: User): PublicUser {
+export function toPublicUser(
+  user: User & { contestantName?: string },
+): PublicUser {
   return {
     _id: user._id,
     eventId: user.eventId,
-    fullName: user.fullName,
+    fullName:
+      user.contestant && user.contestantName
+        ? user.contestantName
+        : user.fullName,
     imageUrl: user.imageUrl,
     group: user.group,
     junior: user.junior,
@@ -45,13 +51,37 @@ export async function getUsersForEvent(eventId: string): Promise<User[]> {
 }
 
 export async function getPublicUsersForEvent(eventId: string) {
-  return (await getUsersForEvent(eventId)).map(toPublicUser);
+  const users = await (
+    await getDb()
+  )
+    .collection<UserDocument>("users")
+    .find({ eventId: new ObjectId(eventId) })
+    .sort({ fullName: 1 })
+    .toArray();
+  return users.map((user) =>
+    toPublicUser({
+      ...serializeUser(user),
+      contestantName: user.contestantName,
+    }),
+  );
 }
 
 export async function getPublicVotingUsersForEvent(eventId: string) {
-  return (await getUsersForEvent(eventId))
+  const users = await (
+    await getDb()
+  )
+    .collection<UserDocument>("users")
+    .find({ eventId: new ObjectId(eventId) })
+    .sort({ fullName: 1 })
+    .toArray();
+  return users
     .filter((user) => user.status !== "cancelled" && user.contestant !== false)
-    .map(toPublicUser);
+    .map((user) =>
+      toPublicUser({
+        ...serializeUser(user),
+        contestantName: user.contestantName,
+      }),
+    );
 }
 
 export async function getAdminUsersForEvent(

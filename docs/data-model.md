@@ -18,7 +18,7 @@ identity alone.
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Event**              | Year, unique slug, IANA timezone, `registrationStartsAt`, `eventStartsAt`, active/archive state, `contestEntryStatus`, first-voting enrollment cutoff, round state, and publication controls | Stable `eventId`; BSON date instants; unique year and slug; at most one active edition                                                                                                                       |
 | **Category**           | Title, icon, order, and eligibility (`all`, `group`, or `junior`) for one edition                                                                                                            | Stable category ID; unique `(eventId, order)`; references never cross editions                                                                                                                               |
-| **RSVP**               | Attendance name, normalized email, optional linked Clerk user ID                                                                                                                             | Unique `(eventId, normalizedEmail)` and unique linked `(eventId, clerkUserId)`                                                                                                                               |
+| **RSVP**               | Attendance name, normalized email, optional linked Clerk user ID, and optional frozen contestant display-name snapshot                                                                       | Unique `(eventId, normalizedEmail)` and unique linked `(eventId, clerkUserId)`                                                                                                                               |
 | **Contestant entry**   | Stable candidate identity, category/type, owner or guardian, display fields, readiness/consent, and contest-photo reference                                                                  | Draft, ready, locked, or withdrawn; at most one individual and one creator-owned couple/group per adult per edition; multiple guardian-owned children allowed; drafts remain private; ballots use stable IDs |
 | **Contest photo**      | One current Cloudinary asset for a contestant entry, with public ID and validated metadata                                                                                                   | Scoped through entry and `eventId`; replacement preserves contestant ID and triggers safe old-asset cleanup                                                                                                  |
 | **Party album**        | One album-wide publication state and audit history per edition                                                                                                                               | Unique `eventId`; no per-photo approval state                                                                                                                                                                |
@@ -33,8 +33,11 @@ identity alone.
 Clerk IDs are authentication identities, not event memberships. The RSVP is the
 per-edition guest link. Verified matching email can claim an unlinked RSVP
 atomically; concurrent claims must result in one owner. Admin corrections to an
-existing RSVP or contestant are audited and preserve stable references. An RSVP
-name/email change never silently changes a frozen contestant identity or ballot.
+existing RSVP or contestant are audited and preserve stable references. A
+verified guest can view and update only the RSVP name for the selected edition.
+An RSVP name/email change never silently changes a frozen contestant identity
+or ballot; after contestant enrollment closes, candidate and result views use
+the frozen display-name snapshot.
 
 Contestant ownership distinguishes individual entries, guardian-owned child
 entries (the `junior` category), and creator-owned couple/group entries. A

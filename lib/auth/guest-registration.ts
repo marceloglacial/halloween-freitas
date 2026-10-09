@@ -1,6 +1,7 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { MongoServerError, ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
+import { getEventById } from "@/lib/events";
 import { normalizeEmail } from "@/lib/http";
 import type { UserDocument } from "@/lib/users";
 
@@ -77,6 +78,62 @@ export async function getGuestRegistration(eventId: string) {
     "unlinked",
     "Verifique seu acesso para continuar.",
   );
+}
+
+export async function updateGuestRegistrationName(
+  eventId: string,
+  fullName: string,
+) {
+  const identity = await verifiedIdentity();
+  const registration = await linkedRegistration(eventId, identity.id);
+  if (!registration)
+    throw new GuestAccessError(
+      403,
+      "unlinked",
+      "Verifique seu acesso para continuar.",
+    );
+  guestIdentity(registration);
+
+  const event = await getEventById(eventId);
+  if (!event)
+    throw new GuestAccessError(
+      404,
+      "event_not_found",
+      "Evento não encontrado.",
+    );
+
+  const contestantFrozen =
+    event.status === "archived" ||
+    event.contestEntryStatus === "closed" ||
+    event.votingStatus !== "not_started";
+  const update: Record<string, string | Date> = {
+    fullName,
+    updatedAt: new Date(),
+  };
+  if (registration.contestant) {
+    update.contestantName = contestantFrozen
+      ? (registration.contestantName ?? registration.fullName)
+      : fullName;
+  }
+
+  const users = (await getDb()).collection<UserDocument>("users");
+  const result = await users.updateOne(
+    {
+      _id: registration._id,
+      eventId: new ObjectId(eventId),
+      clerkUserId: identity.id,
+      status: { $ne: "cancelled" },
+    },
+    { $set: update },
+  );
+  if (!result.matchedCount)
+    throw new GuestAccessError(
+      409,
+      "conflict",
+      "Seu vínculo mudou. Atualize a página e tente novamente.",
+    );
+
+  return { ...guestIdentity(registration), fullName };
 }
 
 export async function claimGuestRegistration(eventId: string) {
