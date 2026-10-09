@@ -60,34 +60,50 @@ describe("event schedule", () => {
     );
   });
 
-  it("requires registration to start before the event", () => {
+  it("allows the event and registration starts to be equal", () => {
+    const result = parseEventInput({
+      ...input,
+      registrationStartsAt: "2024-10-31T20:00",
+    });
+    expect("value" in result && result.value.eventStartsAt).toEqual(
+      new Date("2024-11-01T00:00:00.000Z"),
+    );
+  });
+
+  it("requires registration to start before the event when they differ", () => {
     expect(
       parseEventInput({
         ...input,
-        registrationStartsAt: "2024-10-31T20:00",
+        registrationStartsAt: "2024-10-31T20:01",
       }),
     ).toEqual({
       error:
-        'Defina "Início do evento" depois de "Abertura das inscrições". Sugestão: use 31/10/2024 às 20:01 ou um horário posterior.',
+        'Defina "Início do evento" depois de "Abertura das inscrições". Sugestão: use 31/10/2024 às 20:02 ou um horário posterior.',
     });
   });
 
-  it("shows a form collision for same or reversed local times", () => {
+  it("shows a form collision only when the event starts before registration", () => {
     expect(
       getScheduleCollisions({
         registrationStartsAt: "2024-10-31T20:00",
         eventStartsAt: "2024-10-31T20:00",
       }),
-    ).toHaveLength(1);
+    ).toHaveLength(0);
     expect(
       getScheduleCollisions({
-        registrationStartsAt: "2024-11-01T20:00",
+        registrationStartsAt: "2024-10-31T20:00",
+        eventStartsAt: "2024-10-31T20:01",
+      }),
+    ).toHaveLength(0);
+    expect(
+      getScheduleCollisions({
+        registrationStartsAt: "2024-10-31T20:01",
         eventStartsAt: "2024-10-31T20:00",
       }),
     ).toHaveLength(1);
   });
 
-  it("bounds the event start after registration and within its edition year", () => {
+  it("bounds the event start at registration and within its edition year", () => {
     expect(
       getScheduleFieldBounds(
         {
@@ -97,7 +113,7 @@ describe("event schedule", () => {
         "eventStartsAt",
         2024,
       ),
-    ).toEqual({ min: "2024-08-01T00:01", max: "2024-12-31T23:59" });
+    ).toEqual({ min: "2024-08-01T00:00", max: "2024-12-31T23:59" });
     expect(
       cascadeScheduleField({ ...input }, "eventStartsAt", "2024-11-01T20:00")
         .eventStartsAt,
@@ -126,6 +142,31 @@ describe("event schedule", () => {
       parseEventInput({
         ...input,
         registrationStartsAt: "2024-11-03T01:30",
+      }),
+    ).toEqual({ error: "Horário ambíguo neste fuso horário" });
+  });
+
+  it("parses schedules and rejects daylight-saving gaps and folds in Europe/Berlin", () => {
+    const berlinInput = {
+      ...input,
+      timezone: "Europe/Berlin",
+      registrationStartsAt: "2024-08-01T00:00",
+      eventStartsAt: "2024-10-31T20:00",
+    };
+    const valid = parseEventInput(berlinInput);
+    expect("value" in valid && valid.value.registrationStartsAt).toEqual(
+      new Date("2024-07-31T22:00:00.000Z"),
+    );
+    expect(
+      parseEventInput({
+        ...berlinInput,
+        registrationStartsAt: "2024-03-31T02:30",
+      }),
+    ).toEqual({ error: "Data do evento inexistente neste fuso horário" });
+    expect(
+      parseEventInput({
+        ...berlinInput,
+        registrationStartsAt: "2024-10-27T02:30",
       }),
     ).toEqual({ error: "Horário ambíguo neste fuso horário" });
   });
