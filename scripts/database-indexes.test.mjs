@@ -162,4 +162,66 @@ describe("database indexes", () => {
       order: "$order",
     });
   });
+
+  it("requires event-scoped voting rounds and unique per-round ballots", () => {
+    expect(
+      requiredIndexes.find(({ label }) => label === "round type per event"),
+    ).toMatchObject({
+      collection: "votingRounds",
+      key: { eventId: 1, type: 1 },
+      options: { unique: true },
+    });
+    expect(
+      requiredIndexes.find(({ label }) => label === "one open round per event"),
+    ).toMatchObject({
+      collection: "votingRounds",
+      key: { eventId: 1 },
+      options: {
+        unique: true,
+        partialFilterExpression: { status: "open" },
+      },
+    });
+    expect(requiredIndexes.find(({ label }) => label === "vote")).toMatchObject({
+      collection: "votes",
+      key: {
+        eventId: 1,
+        roundId: 1,
+        categoryId: 1,
+        voterRsvpId: 1,
+      },
+      options: {
+        unique: true,
+        partialFilterExpression: {
+          roundId: { $type: "objectId" },
+          voterRsvpId: { $type: "objectId" },
+        },
+      },
+    });
+  });
+
+  it("checks ballot duplicates only for round-scoped ballot documents", async () => {
+    const aggregate = vi.fn((pipeline) => ({
+      limit: () => ({
+        next: async () =>
+          pipeline[0]?.$match?.roundId ? { count: 2 } : null,
+      }),
+    }));
+    const db = { collection: vi.fn(() => ({ aggregate })) };
+    await expect(assertNoDuplicateData(db)).rejects.toThrow(
+      "Resolve duplicate vote records",
+    );
+    const ballotPipeline = aggregate.mock.calls.find(
+      ([pipeline]) => pipeline[0]?.$match?.roundId,
+    )[0];
+    expect(ballotPipeline[0].$match).toEqual({
+      roundId: { $type: "objectId" },
+      voterRsvpId: { $type: "objectId" },
+    });
+    expect(ballotPipeline[1].$group._id).toEqual({
+      eventId: "$eventId",
+      roundId: "$roundId",
+      categoryId: "$categoryId",
+      voterRsvpId: "$voterRsvpId",
+    });
+  });
 });

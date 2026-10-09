@@ -4,6 +4,7 @@ import FeatureUnavailable from "@/components/feature-unavailable";
 import { ResultList } from "@/components/results/result-list";
 import { getEventBySlug, resultsArePublic } from "@/lib/events";
 import { getCategoryResults } from "@/lib/results";
+import { getFinalVotingRound } from "@/lib/voting-rounds";
 import { getCategoryById } from "@/util/get-categories";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +36,11 @@ export default async function ResultPage({
     );
   }
 
-  const results = await getCategoryResults(event._id, category._id);
+  const round = await getFinalVotingRound(event._id);
+  const results =
+    round && round.categoryIds.some((categoryId) => categoryId.toString() === category._id)
+      ? await getCategoryResults(event._id, category._id, round._id.toString())
+      : { users: [], totalVotes: 0 };
   const backHref = `/resultados?event=${event.slug}`;
   if (!results.users.length) {
     return (

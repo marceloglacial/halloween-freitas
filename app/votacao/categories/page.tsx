@@ -11,6 +11,7 @@ import { guestAccessUrl, validGuestEventId } from "@/util/guest-access";
 import { getDb } from "@/lib/db";
 import { getCurrentEvent, isVotingOpen } from "@/lib/events";
 import { getCategories } from "@/util/get-categories";
+import { getOpenVotingRound } from "@/lib/voting-rounds";
 
 export const dynamic = "force-dynamic";
 
@@ -42,19 +43,32 @@ export default async function VotingCategoriesPage({
     redirect(guestAccessUrl(event._id, "/votacao/categories"));
   }
 
-  const [categories, votes] = await Promise.all([
+  const round = await getOpenVotingRound(session.eventId);
+  if (!round) {
+    return (
+      <FeatureUnavailable
+        title="Rodada indisponível"
+        message="A votação ainda não tem uma rodada aberta."
+      />
+    );
+  }
+  const [allCategories, votes] = await Promise.all([
     getCategories(session.eventId),
     (await getDb())
       .collection("votes")
       .find(
         {
           eventId: new ObjectId(session.eventId),
-          voterId: new ObjectId(session.userId),
+          roundId: round._id,
+          voterRsvpId: new ObjectId(session.userId),
         },
         { projection: { categoryId: 1 } },
       )
       .toArray(),
   ]);
+  const categories = allCategories.filter((category) =>
+    round.categoryIds.some((id) => id.toString() === category._id),
+  );
   const votedCategoryIds = new Set(
     votes.map((vote) => vote.categoryId.toString()),
   );

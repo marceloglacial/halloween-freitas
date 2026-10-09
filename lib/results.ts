@@ -1,39 +1,59 @@
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
+import {
+  contestPhotoPreviewUrl,
+  type ContestPhotoFormat,
+} from "@/lib/contestant-photos";
 
 export async function getCategoryResults(
   eventId: string,
   categoryId: string,
+  roundId: string,
 ): Promise<Results> {
+  const eventObjectId = new ObjectId(eventId);
+  const categoryObjectId = new ObjectId(categoryId);
+  const roundObjectId = new ObjectId(roundId);
   const rows = await (
     await getDb()
   )
     .collection("votes")
-    .aggregate<UserWithVotes>([
+    .aggregate<{
+      _id: string;
+      eventId: string;
+      fullName: string;
+      contestPhoto?: { publicId: string; format: ContestPhotoFormat };
+      votes: number;
+    }>([
       {
         $match: {
-          eventId: new ObjectId(eventId),
-          categoryId: new ObjectId(categoryId),
+          eventId: eventObjectId,
+          roundId: roundObjectId,
+          categoryId: categoryObjectId,
         },
       },
-      { $group: { _id: "$voteForId", votes: { $sum: 1 } } },
+      { $group: { _id: "$candidateId", votes: { $sum: 1 } } },
       {
         $lookup: {
-          from: "users",
+          from: "contestants",
           localField: "_id",
           foreignField: "_id",
-          as: "user",
+          as: "candidate",
         },
       },
-      { $unwind: "$user" },
+      { $unwind: "$candidate" },
+      {
+        $match: {
+          "candidate.eventId": eventObjectId,
+          "candidate.categoryId": categoryObjectId,
+          "candidate.status": "locked",
+        },
+      },
       {
         $project: {
-          _id: { $toString: "$user._id" },
-          eventId: { $toString: "$user.eventId" },
-          fullName: { $ifNull: ["$user.contestantName", "$user.fullName"] },
-          imageUrl: "$user.imageUrl",
-          group: "$user.group",
-          junior: "$user.junior",
+          _id: { $toString: "$candidate._id" },
+          eventId: { $toString: "$candidate.eventId" },
+          fullName: "$candidate.displayName",
+          contestPhoto: "$candidate.contestPhoto",
           votes: 1,
         },
       },
@@ -41,7 +61,12 @@ export async function getCategoryResults(
     ])
     .toArray();
   return {
-    users: rows,
+    users: rows.map(({ contestPhoto, ...candidate }) => ({
+      ...candidate,
+      imageUrl: contestPhoto
+        ? contestPhotoPreviewUrl(contestPhoto.publicId, contestPhoto.format)
+        : null,
+    })),
     totalVotes: rows.reduce((total, row) => total + row.votes, 0),
   };
 }

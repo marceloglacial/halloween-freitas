@@ -7,6 +7,7 @@ import { toast } from "sonner";
 export default function VoteGrid({
   users,
   categoryId,
+  roundId,
   eventId,
 }: VoteGridProps) {
   const router = useRouter();
@@ -24,8 +25,9 @@ export default function VoteGrid({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          voteForId: selectedUserId,
+          candidateId: selectedUserId,
           categoryId,
+          roundId,
           eventId,
         }),
       });

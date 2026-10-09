@@ -1,6 +1,7 @@
 import { getEventBySlug, resultsArePublic } from "@/lib/events";
 import { errorResponse, parseObjectId, logServerError } from "@/lib/http";
 import { getCategoryResults } from "@/lib/results";
+import { getFinalVotingRound } from "@/lib/voting-rounds";
 import { getCategoryById } from "@/util/get-categories";
 
 export async function GET(
@@ -20,8 +21,12 @@ export async function GET(
       return errorResponse("Resultados ainda não publicados", 403);
     }
 
+    const round = await getFinalVotingRound(event._id);
+    if (!round || !round.categoryIds.some((id) => id.equals(categoryId))) {
+      return Response.json({ users: [], totalVotes: 0 });
+    }
     return Response.json(
-      await getCategoryResults(event._id, categoryId.toString()),
+      await getCategoryResults(event._id, categoryId.toString(), round._id.toString()),
     );
   } catch (error) {
     logServerError("Result lookup failed", error);
