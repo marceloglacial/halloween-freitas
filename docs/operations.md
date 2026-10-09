@@ -85,6 +85,20 @@ the user's explicit authorization.
 
 ## AI agent tooling
 
+For issue-driven AI work, install the repository dependencies with `pnpm
+install` and use Git with worktree support. Issue selection and ticket updates
+require an authenticated GitHub CLI session (`gh auth status`). Project skill
+routing and optional reviewer agents require the Codex CLI, a trusted
+repository, and the local `.agents/skills/` and `.codex/agents/` files.
+Check CLI support with `codex --version` and `codex debug prompt-input` before
+depending on custom agents. Custom agents are optional; the primary Codex
+session must be able to continue when they are unavailable.
+
+Documentation-only harness work needs no application secrets, database, or
+running web server. For application changes, use the relevant application
+prerequisites and validation below. See the [AI harness validation
+record](ai-harness-validation.md) for a smoke-test example and its limits.
+
 Next.js bundles version-matched documentation under
 `node_modules/next/dist/docs/`. The managed block in `AGENTS.md` directs agents
 there, and `CLAUDE.md` imports the same project instructions. Preserve the
