@@ -32,6 +32,36 @@ Read only the relevant versioned Next.js guide and skills for a task. Delegate
 only bounded work; the primary agent owns integration and every delegate
 inherits repository, branch, data-safety, and review constraints.
 
+## Optional Codex reviewers
+
+Codex can load the project-scoped reviewers from `.codex/agents/` when the
+repository is trusted and the installed CLI supports custom agents. They are
+read-only and optional; the primary agent chooses whether parallel review is
+useful and remains responsible for checking delegated claims against the
+repository and approved contracts.
+
+| Role                   | Bounded review                                                                          |
+| ---------------------- | --------------------------------------------------------------------------------------- |
+| `product_architecture` | Product, lifecycle, architecture, data-model, testing, and design contract consistency  |
+| `frontend_design`      | UI implementation, design alignment, accessibility, responsive states, and interactions |
+| `backend_data`         | API contracts, server data access, ownership, event scoping, and public-data privacy    |
+| `qa_security`          | Test coverage, authorization, privacy, isolation, race conditions, and abuse cases      |
+
+Give a reviewer one concrete question, the relevant paths, and any applicable
+skill or contract. Request evidence with file and line references and a clear
+distinction between confirmed findings and coverage gaps. Reviewers must not
+edit files, access or mutate live data, commit, publish, merge, or deploy. The
+primary agent integrates changes and runs required validation. Do not delegate
+secrets or ask a read-only role to exercise a live workflow.
+
+To smoke-check local setup without running a model task, run
+`codex --version` and `codex debug prompt-input` from the trusted repository;
+the installed CLI must parse project configuration successfully. For a
+delegation smoke test, ask Codex to delegate one harmless, read-only question
+to a named role and confirm it returns evidence without modifying files. If
+project trust, CLI support, or delegation is unavailable, do the review in the
+primary session and continue; delegation is never a prerequisite for a task.
+
 ## Issue execution
 
 1. Read the issue and its dependencies. Work on one implementation issue at a

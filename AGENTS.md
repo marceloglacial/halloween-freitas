@@ -35,6 +35,14 @@ bounded task and the applicable repository and skill instructions. Subagents
 inherit the same branch, data-safety, and review rules; they do not commit,
 publish, merge, or deploy work.
 
+Project Codex roles are optional read-only reviewers in `.codex/agents/`:
+`product_architecture`, `frontend_design`, `backend_data`, and `qa_security`.
+Delegate only when the question benefits from an independent, bounded review;
+the primary agent selects the relevant role, evaluates its evidence, and owns
+all implementation and final decisions. If Codex does not load project roles
+or delegation is unavailable, perform the same focused review directly and
+continue without delegation.
+
 ## Work and branch safety
 
 - For a GitHub issue, work on exactly that implementation issue; use epics as
