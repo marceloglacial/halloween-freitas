@@ -86,9 +86,12 @@ primary session and continue; delegation is never a prerequisite for a task.
 
 1. Read the issue and its dependencies. Work on one implementation issue at a
    time; treat epics as context.
-2. Inspect branch, working tree, and worktrees. Start from the clean default
-   branch on `issue-<number>-<slug>`. Preserve unrelated work; do not stash,
-   reset, clean, overwrite, or combine it.
+2. Inspect the default branch, current branch, worktrees, and working tree. Use
+   a clean default-branch base and a dedicated `issue-<number>-<slug>` branch.
+   If the current worktree is dirty, preserve it and create a separate worktree
+   from the clean default branch when available; otherwise stop and report the
+   blocker. Never stash, reset, clean, overwrite, or start on top of pending
+   changes from another issue.
 3. Trace the existing route, domain helper, data shape, and consumer before
    implementation. Rebuild from scratch where legacy behavior conflicts with
    the approved contract.
@@ -102,10 +105,18 @@ primary session and continue; delegation is never a prerequisite for a task.
 
 ## Git, database, and release boundaries
 
-Do not commit, push, merge, or deploy automatically. Each such action requires a
-separate explicit user request. A request for review authorizes corrections to
-the current issue only; it does not authorize beginning another issue. Never
-reset a database as part of normal annual operation. The clean rebuild has no
-historical migration requirement; destructive reset still requires explicit
-approval and a confirmed target. Never perform live index or migration work
-without its documented prerequisites and explicit authorization.
+The review handoff is implementation → relevant checks → report → stop with
+uncommitted changes → user review or revision request. Commit only after the
+user explicitly authorizes the commit; push, PR creation, merge, and deploy each
+require separate explicit authorization. Review feedback authorizes corrections
+to the current issue only. Never begin another issue by inheriting pending
+changes; integrate the current issue or keep it safely isolated in another
+worktree first.
+
+GitHub CI runs validation only with read-only repository permissions. It never
+commits, pushes, merges, or deploys. Documentation-only changes run Markdown
+formatting and local-link checks; other changes run lint, tests, and build.
+Never reset a database as part of normal annual operation. The clean rebuild
+has no historical migration requirement; destructive reset still requires
+explicit approval and a confirmed target. Never perform live index or migration
+work without its documented prerequisites and explicit authorization.

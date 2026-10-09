@@ -67,6 +67,7 @@ pnpm build
 ```
 
 For documentation-only changes, check Markdown formatting and local links.
+Run `pnpm check:docs` to apply both checks.
 Use an isolated database or test fixture for mutating integration tests. Never
 point tests at production or run destructive operations as a validation shortcut.
 

@@ -12,6 +12,7 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",
+    "check:docs": "node scripts/check-docs.mjs",
     "test": "vitest run",
     "check:indexes": "node scripts/check-database-indexes.mjs",
     "create:indexes": "node scripts/create-database-indexes.mjs",
