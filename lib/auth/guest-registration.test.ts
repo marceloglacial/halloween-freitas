@@ -93,6 +93,22 @@ describe("verified guest registration", () => {
     });
   });
 
+  it("reuses an existing link without trying to claim the RSVP again", async () => {
+    mocks.find.mockReturnValue({
+      limit: () => ({
+        toArray: async () => [{ ...registration, clerkUserId: "clerk_ana" }],
+      }),
+    });
+
+    await expect(claimGuestRegistration(eventId)).resolves.toEqual({
+      userId: registration._id.toString(),
+      eventId,
+      fullName: "Ana Freitas",
+    });
+    expect(mocks.find).toHaveBeenCalledOnce();
+    expect(mocks.updateOne).not.toHaveBeenCalled();
+  });
+
   it("never treats an unverified email as registration ownership", async () => {
     mocks.currentUser.mockResolvedValue({
       id: "clerk_ana",
