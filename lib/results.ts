@@ -30,7 +30,7 @@ export async function getCategoryResults(
         $project: {
           _id: { $toString: "$user._id" },
           eventId: { $toString: "$user.eventId" },
-          fullName: "$user.fullName",
+          fullName: { $ifNull: ["$user.contestantName", "$user.fullName"] },
           imageUrl: "$user.imageUrl",
           group: "$user.group",
           junior: "$user.junior",

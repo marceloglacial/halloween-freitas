@@ -16,6 +16,11 @@ describe("guest return destinations", () => {
       ),
     ).toBe(eventId);
   });
+  it("returns an authenticated guest to their selected-edition profile", () => {
+    expect(guestReturnPath(`/perfil?eventId=${eventId}`, eventId)).toBe(
+      `/perfil?eventId=${eventId}`,
+    );
+  });
   it.each([
     "https://evil.test",
     "//evil.test",

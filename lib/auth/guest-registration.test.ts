@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   currentUser: vi.fn(),
   find: vi.fn(),
   updateOne: vi.fn(),
+  event: vi.fn(),
 }));
 vi.mock("@clerk/nextjs/server", () => ({
   auth: mocks.auth,
@@ -16,10 +17,12 @@ vi.mock("@/lib/db", () => ({
     collection: () => ({ find: mocks.find, updateOne: mocks.updateOne }),
   }),
 }));
+vi.mock("@/lib/events", () => ({ getEventById: mocks.event }));
 
 import {
   claimGuestRegistration,
   getGuestRegistration,
+  updateGuestRegistrationName,
 } from "./guest-registration";
 
 const eventId = "507f1f77bcf86cd799439011";
@@ -45,6 +48,12 @@ describe("verified guest registration", () => {
       ],
     });
     mocks.find.mockReturnValue({ limit: () => ({ toArray: async () => [] }) });
+    mocks.event.mockResolvedValue({
+      _id: eventId,
+      status: "active",
+      contestEntryStatus: "open",
+      votingStatus: "not_started",
+    });
   });
 
   it("rejects signed-out requests even if an obsolete guest cookie exists", async () => {
@@ -236,6 +245,47 @@ describe("verified guest registration", () => {
     });
     expect((await claimGuestRegistration(eventId)).userId).toBe(
       registration._id.toString(),
+    );
+  });
+
+  it("updates the linked guest RSVP only and keeps a closed candidate name frozen", async () => {
+    const linkedCandidate = {
+      ...registration,
+      contestant: true,
+      clerkUserId: "clerk_ana",
+    };
+    mocks.find.mockReturnValue({
+      limit: () => ({ toArray: async () => [linkedCandidate] }),
+    });
+    mocks.event.mockResolvedValue({
+      _id: eventId,
+      status: "active",
+      contestEntryStatus: "closed",
+      votingStatus: "not_started",
+    });
+    mocks.updateOne.mockResolvedValue({ matchedCount: 1 });
+
+    await expect(
+      updateGuestRegistrationName(eventId, "Ana Oliveira"),
+    ).resolves.toMatchObject({ fullName: "Ana Oliveira" });
+    expect(mocks.find).toHaveBeenCalledWith({
+      eventId: new ObjectId(eventId),
+      clerkUserId: "clerk_ana",
+    });
+    expect(mocks.updateOne).toHaveBeenCalledWith(
+      {
+        _id: linkedCandidate._id,
+        eventId: new ObjectId(eventId),
+        clerkUserId: "clerk_ana",
+        status: { $ne: "cancelled" },
+      },
+      {
+        $set: {
+          fullName: "Ana Oliveira",
+          contestantName: "Ana Freitas",
+          updatedAt: expect.any(Date),
+        },
+      },
     );
   });
 });

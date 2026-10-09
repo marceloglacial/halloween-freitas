@@ -1,4 +1,5 @@
 import { FC, JSX } from "react";
+import Link from "next/link";
 import { secondaryFont } from "@/util/fonts";
 import Form from "@/components/form";
 
@@ -56,6 +57,12 @@ const SignUp: FC<{
               {registrationMessage}
             </div>
           )}
+          <Link
+            href={`/perfil?${new URLSearchParams({ eventId: event._id })}`}
+            className="text-orange-300 underline focus-visible:outline-2"
+          >
+            Já confirmou presença? Consulte ou atualize seu perfil
+          </Link>
         </div>
       </div>
     </section>

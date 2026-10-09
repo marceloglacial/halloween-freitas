@@ -42,6 +42,9 @@ and is separate from contestant entries, contest photos, and voting candidates.
 - Let an adult confirm attendance through an anonymous RSVP using their full
   name and email; the RSVP does not itself create a contestant entry or a
   Clerk account.
+- Let a verified guest view and update their own RSVP name for the selected
+  edition. Keep email and account identifiers private, and keep a frozen
+  contestant display name independent from later RSVP profile edits.
 - Show RSVP availability from the edition's scheduled `registrationStartsAt`
   until the first opening of voting. RSVP availability is independent of whether
   contestant entries are open.

@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import CategoryList from "@/components/votacao/category-list";
 import FeatureUnavailable from "@/components/feature-unavailable";
@@ -67,6 +68,12 @@ export default async function VotingCategoriesPage({
       <p className="mt-2 text-xl text-orange-400 lg:text-2xl">
         Você pode votar na mesma pessoa em mais de uma categoria.
       </p>
+      <Link
+        href={`/perfil?${new URLSearchParams({ eventId: event._id })}`}
+        className="text-orange-300 underline focus-visible:outline-2"
+      >
+        Consultar ou atualizar meu perfil
+      </Link>
       {categories.length ? (
         <CategoryList
           categories={categories}

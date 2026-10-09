@@ -116,6 +116,7 @@ they are not currently implemented.
 | `/votacao`                 | Verified Google/email-code access for registered guests            | Entering, rejected email or connection error, voting unavailable                       |
 | `/votacao/categories`      | Category tiles with guest greeting                                 | Available category, already voted, guest session unavailable                           |
 | `/votacao/categories/[id]` | Candidate search, selectable photo grid, floating vote action      | No matches, selected candidate, submitting, vote success or failure                    |
+| `/perfil?eventId=...`      | Selected-edition RSVP confirmation and editable guest name         | Loading, denied/unlinked, validation, saving, saved, archived edition                  |
 | `/resultados`              | Published category tiles and event navigation                      | Published results, no published results                                                |
 | `/resultados/[id]`         | Prominent first place and remaining ranked participants            | Vote counts and percentages, category with no votes                                    |
 | `/fotos`                   | Contestant photo gallery with event navigation, search, and viewer | No photos or matches, selected photo                                                   |
@@ -135,6 +136,8 @@ Registration asks for full name and email and explains that each adult needs a
 separate email. During submission, disable the inputs and action and show
 “Enviando...”. Success resets the form and leaves a persistent “Presença confirmada!” panel; duplicate registration,
 server rejection, and connection failure produce error toasts.
+The selected-edition registration section also links guests to their profile;
+the page requires a verified sign-in linked to an RSVP for that edition.
 
 At the event start, the homepage lifecycle area can replace pre-event content
 with a centered panel for “Votação em breve”, “Votação aberta”, or “Votação
@@ -155,6 +158,12 @@ verification code, and return to voting. Clerk authenticates both guests and
 administrators; the server links each guest to their existing event registration. Keep voting actions tied to
 the event's open state and enforce voting integrity on the server as described
 in the architecture guide.
+
+From the authenticated voting categories page, guests can open their selected
+edition's profile to view RSVP/event status and update the single “Nome e
+sobrenome” field. Keep the RSVP email private. Once contestant enrollment is
+closed, profile edits do not change the contestant name frozen for voting and
+results.
 
 Category tiles use purple backgrounds, emoji, and a text title. Completed
 categories become gray and translucent, prevent navigation, expose

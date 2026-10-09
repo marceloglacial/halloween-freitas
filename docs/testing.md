@@ -32,6 +32,10 @@ cross-edition isolation cases where they apply.
 - Cover authorization denial for every protected admin and guest operation;
   forged client email, RSVP ID, or voter ID must not change server-derived
   identity.
+- Verify guests can read and update only their own RSVP name for the selected
+  edition, that email/account identifiers stay private, and that a profile
+  edit after contestant enrollment closes does not change a frozen candidate
+  name.
 - Create at least two editions in fixtures and prove that guest links,
   contestants, categories, uploads, ballots, results, audit records, and cleanup
   cannot cross the `eventId` boundary.
