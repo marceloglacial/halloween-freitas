@@ -69,12 +69,12 @@ edition while retaining prior editions; it never resets the database.
 
 The `check:indexes` and `create:indexes` scripts verify and create declared
 indexes, including unique event year and slug, a partial unique active-edition
-index, and event-scoped category ordering. They are idempotent and check for
-known duplicates before index creation, but they do not reset, seed, or migrate
-documents. The ballot key will need to be updated to include `roundId` when the
-round model is implemented. Review the index definitions and verify the target
-database before any authorized index operation; never use them on a legacy
-database.
+index, event-scoped category ordering, and unique per-edition individual/group
+contestant ownership. They are idempotent and check for known duplicates before
+index creation, but they do not reset, seed, or migrate documents. The ballot
+key will need to be updated to include `roundId` when the round model is
+implemented. Review the index definitions and verify the target database before
+any authorized index operation; never use them on a legacy database.
 
 Database schema, indexes, and transaction prerequisites are defined alongside
 the implementation contract in [architecture](architecture.md) and

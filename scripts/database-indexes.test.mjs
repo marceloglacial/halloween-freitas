@@ -58,6 +58,49 @@ describe("database indexes", () => {
     ]);
   });
 
+  it("uniquely scopes adult-owned contestant types to an event and RSVP", () => {
+    expect(
+      requiredIndexes.find(
+        ({ label }) => label === "adult contestant ownership",
+      ),
+    ).toEqual({
+      collection: "contestants",
+      label: "adult contestant ownership",
+      key: { eventId: 1, ownerRsvpId: 1, entryType: 1 },
+      options: {
+        unique: true,
+        partialFilterExpression: {
+          ownerRsvpId: { $type: "objectId" },
+        },
+      },
+    });
+    expect(
+      requiredIndexes.find(
+        ({ label }) => label === "guardian contestant entries",
+      ),
+    ).toMatchObject({
+      collection: "contestants",
+      key: { eventId: 1, guardianRsvpId: 1 },
+      options: {},
+    });
+  });
+
+  it("detects duplicate adult contestant ownership before index creation", async () => {
+    const db = {
+      collection: () => ({
+        aggregate: (pipeline) => ({
+          limit: () => ({
+            next: async () =>
+              pipeline[0]?.$match?.ownerRsvpId ? { count: 2 } : null,
+          }),
+        }),
+      }),
+    };
+    await expect(assertNoDuplicateData(db)).rejects.toThrow(
+      "Resolve duplicate adult contestant ownership records",
+    );
+  });
+
   it("stops before creating indexes when linked ownership is duplicated", async () => {
     const db = {
       collection: () => ({
