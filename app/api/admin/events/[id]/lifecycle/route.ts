@@ -103,6 +103,15 @@ export async function POST(
       const session = (await getMongoClient()).startSession();
       try {
         await session.withTransaction(async () => {
+          const previousEvent =
+            action === "start-voting"
+              ? await db
+                  .collection("events")
+                  .findOne(
+                    { _id: eventId },
+                    { projection: { votingStatus: 1 }, session },
+                  )
+              : null;
           result = await db.collection("events").updateOne(
             filters[action],
             {
@@ -118,23 +127,38 @@ export async function POST(
             await freezeContestantEntries(db, eventId, session, now);
             if (action === "start-voting") {
               const rounds = db.collection<VotingRoundDocument>("votingRounds");
-              const primaryRound = await rounds.findOne(
-                { eventId, type: "primary" },
-                { session },
-              );
-              if (primaryRound) {
-                if (primaryRound.status !== "ended") {
+              const currentRounds = await rounds
+                .find({ eventId }, { session })
+                .sort({ openedAt: -1, _id: -1 })
+                .limit(1)
+                .toArray();
+              const currentRound = currentRounds[0];
+
+              if (previousEvent?.votingStatus === "not_started") {
+                if (currentRound) {
                   throw new Error("PRIMARY_ROUND_STATE_INVALID");
                 }
+              } else if (
+                previousEvent?.votingStatus === "ended" &&
+                (!currentRound || currentRound.status !== "ended")
+              ) {
+                throw new Error("CURRENT_ROUND_STATE_INVALID");
+              }
+
+              if (previousEvent?.votingStatus === "ended" && currentRound) {
                 const reopened = await rounds.updateOne(
-                  { _id: primaryRound._id, status: "ended" },
+                  {
+                    _id: currentRound._id,
+                    eventId,
+                    status: "ended",
+                  },
                   { $set: { status: "open", reopenedAt: now } },
                   { session },
                 );
                 if (!reopened.matchedCount) {
                   throw new Error("PRIMARY_ROUND_REOPEN_FAILED");
                 }
-              } else {
+              } else if (previousEvent?.votingStatus === "not_started") {
                 const categories = await db
                   .collection("categories")
                   .find({ eventId }, { projection: { _id: 1 }, session })
@@ -161,17 +185,21 @@ export async function POST(
       const session = (await getMongoClient()).startSession();
       try {
         await session.withTransaction(async () => {
+          const rounds = db.collection<VotingRoundDocument>("votingRounds");
+          const currentRound = await rounds.findOne(
+            { eventId, status: "open" },
+            { session },
+          );
           result = await db
             .collection("events")
             .updateOne(filters[action], { $set: updates[action] }, { session });
           if (!result.matchedCount) return;
-          const endedRound = await db
-            .collection<VotingRoundDocument>("votingRounds")
-            .updateOne(
-              { eventId, type: "primary", status: "open" },
-              { $set: { status: "ended", endedAt: now } },
-              { session },
-            );
+          if (!currentRound) throw new Error("OPEN_VOTING_ROUND_NOT_FOUND");
+          const endedRound = await rounds.updateOne(
+            { _id: currentRound._id, eventId, status: "open" },
+            { $set: { status: "ended", endedAt: now } },
+            { session },
+          );
           if (!endedRound.matchedCount) {
             throw new Error("OPEN_PRIMARY_ROUND_NOT_FOUND");
           }

@@ -419,7 +419,7 @@ export default function EventDashboard({
       "reopen-contest-entry": "Reabrir as inscrições do concurso?",
       "start-voting":
         selected.votingStatus === "ended"
-          ? "Reabrir a votação? Os resultados serão ocultados automaticamente. As inscrições e os votos já registrados serão preservados."
+          ? "Reabrir a rodada atual? Os resultados serão ocultados automaticamente. Inscrições e votos já registrados serão preservados; cada convidado poderá votar apenas nas categorias pendentes."
           : "Iniciar a votação agora? Novas confirmações de presença e inclusões ou exclusões de participantes serão encerradas permanentemente.",
       "end-voting": "Encerrar a votação agora?",
       "publish-results": "Publicar os resultados agora?",
