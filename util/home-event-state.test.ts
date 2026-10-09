@@ -7,9 +7,8 @@ const event: HalloweenEvent = {
   slug: "halloween-2026",
   title: "Halloween 2026",
   timezone: "America/Toronto",
-  startsAt: "2026-11-01T00:00:00.000Z",
-  registrationOpensAt: "2026-09-01T04:00:00.000Z",
-  registrationClosesAt: "2026-10-31T23:59:00.000Z",
+  registrationStartsAt: "2026-09-01T04:00:00.000Z",
+  eventStartsAt: "2026-11-01T00:00:00.000Z",
   votingStatus: "not_started",
   resultsPublished: false,
   status: "active",
@@ -23,7 +22,7 @@ describe("homepage event state", () => {
   });
 
   it("shows voting soon exactly when the event starts", () => {
-    expect(getHomeEventState(event, new Date(event.startsAt))).toBe(
+    expect(getHomeEventState(event, new Date(event.eventStartsAt))).toBe(
       "voting_soon",
     );
   });
@@ -41,7 +40,7 @@ describe("homepage event state", () => {
     expect(
       getHomeEventState(
         { ...event, votingStatus: "open" },
-        new Date(event.startsAt),
+        new Date(event.eventStartsAt),
       ),
     ).toBe("voting_open");
   });
@@ -50,7 +49,7 @@ describe("homepage event state", () => {
     expect(
       getHomeEventState(
         { ...event, votingStatus: "ended" },
-        new Date(event.startsAt),
+        new Date(event.eventStartsAt),
       ),
     ).toBe("voting_ended");
   });
@@ -59,7 +58,7 @@ describe("homepage event state", () => {
     expect(
       getHomeEventState(
         { ...event, votingStatus: "ended", resultsPublished: true },
-        new Date(event.startsAt),
+        new Date(event.eventStartsAt),
       ),
     ).toBe("post_event");
     expect(

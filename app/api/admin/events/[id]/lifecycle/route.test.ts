@@ -39,7 +39,7 @@ describe("event lifecycle controls", () => {
     mocks.getEventById.mockResolvedValue({
       _id: eventId,
       status: "active",
-      startsAt: "2026-10-31T23:00:00.000Z",
+      eventStartsAt: "2026-10-31T23:00:00.000Z",
       votingStatus: "ended",
       resultsPublished: false,
     });
@@ -61,7 +61,7 @@ describe("event lifecycle controls", () => {
       expect.objectContaining({
         _id: expect.anything(),
         status: "active",
-        startsAt: { $lte: new Date("2026-11-01T00:00:00.000Z") },
+        eventStartsAt: { $lte: new Date("2026-11-01T00:00:00.000Z") },
       }),
       {
         $set: expect.objectContaining({
@@ -77,7 +77,7 @@ describe("event lifecycle controls", () => {
     mocks.getEventById.mockResolvedValue({
       _id: eventId,
       status: "active",
-      startsAt: "2026-11-01T00:01:00.000Z",
+      eventStartsAt: "2026-11-01T00:01:00.000Z",
       votingStatus: "not_started",
       resultsPublished: false,
     });

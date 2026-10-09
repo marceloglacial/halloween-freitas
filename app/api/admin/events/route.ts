@@ -1,9 +1,15 @@
 import { MongoServerError, ObjectId } from "mongodb";
 import { isAdmin } from "@/lib/auth/admin";
 import { getDb, getMongoClient } from "@/lib/db";
+import { parseEventCategories } from "@/lib/event-categories";
 import { parseEventInput } from "@/lib/event-schedule";
 import { getEventById, getEvents } from "@/lib/events";
 import { errorResponse, readJsonObject } from "@/lib/http";
+
+type CategoryDocument = Pick<
+  Category,
+  "title" | "icon" | "order" | "eligibility"
+> & { eventId: ObjectId };
 
 export async function GET() {
   if (!(await isAdmin())) return errorResponse("Não autorizado", 401);
@@ -25,17 +31,42 @@ export async function POST(request: Request) {
     ObjectId.isValid(body.templateEventId)
       ? new ObjectId(body.templateEventId)
       : null;
-  if (!templateId) return errorResponse("Evento modelo inválido", 400);
+  if (body?.templateEventId !== undefined && !templateId) {
+    return errorResponse("Evento modelo inválido", 400);
+  }
+  const parsedCategories = templateId
+    ? null
+    : parseEventCategories(body?.categories);
+  if (parsedCategories && "error" in parsedCategories) {
+    return errorResponse(parsedCategories.error, 400);
+  }
 
   const client = await getMongoClient();
   const db = await getDb();
   const session = client.startSession();
   try {
     const createdId = await session.withTransaction(async () => {
-      const template = await db
-        .collection("events")
-        .findOne({ _id: templateId }, { session });
-      if (!template) throw new Error("TEMPLATE_NOT_FOUND");
+      let categoriesToCopy = parsedCategories?.value ?? [];
+      if (templateId) {
+        const template = await db
+          .collection("events")
+          .findOne({ _id: templateId }, { session });
+        if (!template) throw new Error("TEMPLATE_NOT_FOUND");
+        const templateCategories = await db
+          .collection<CategoryDocument>("categories")
+          .find({ eventId: templateId }, { session })
+          .toArray();
+        categoriesToCopy = templateCategories.map(
+          ({ title, icon, order, eligibility }) => ({
+            title,
+            icon,
+            order,
+            eligibility,
+          }),
+        );
+        if (!categoriesToCopy?.length)
+          throw new Error("TEMPLATE_HAS_NO_CATEGORIES");
+      }
       const duplicateYear = await db.collection("events").findOne(
         {
           $or: [
@@ -46,11 +77,6 @@ export async function POST(request: Request) {
         { session },
       );
       if (duplicateYear) throw new Error("DUPLICATE_YEAR");
-      const categories = await db
-        .collection("categories")
-        .find({ eventId: templateId }, { session })
-        .toArray();
-      if (!categories.length) throw new Error("TEMPLATE_HAS_NO_CATEGORIES");
 
       const result = await db.collection("events").insertOne(
         {
@@ -64,7 +90,7 @@ export async function POST(request: Request) {
         { session },
       );
       await db.collection("categories").insertMany(
-        categories.map((category) => ({
+        categoriesToCopy!.map((category) => ({
           title: category.title,
           icon: category.icon,
           order: category.order,

@@ -35,6 +35,10 @@ Maintain unique event year and slug, at most one active edition, one RSVP per
 atomic conditional writes for concurrency-sensitive ownership and lifecycle
 cutoffs; application prechecks alone are insufficient.
 
+When no edition is active, current-edition reads choose the highest year, with
+stable ID ordering as a tie-breaker. This fallback is display-only; RSVP and
+voting mutations still require `status === "active"`.
+
 Historical editions remain available according to their publication and
 authorization states. Annual rollover creates or activates another edition;
 it never resets or repurposes prior-edition data.
@@ -71,6 +75,11 @@ started and contestant eligibility is frozen, then record the permanent RSVP
 and contestant add/delete cutoff before accepting ballots. Concurrent RSVP,
 contestant, and voting requests must serialize against this cutoff. Closing or
 reopening a round preserves the cutoff and prior ballots.
+
+Category configuration is event-scoped and editable only before the first
+voting opening. Serialize category saves with the event's voting transition,
+preserve category IDs during edits and reorder, and prevent removal while
+ballots reference a category.
 
 Use stable contestant IDs for ballots. Administrative corrections after first
 opening preserve IDs and ballots, and append an audit record. Never implement a

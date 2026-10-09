@@ -95,4 +95,28 @@ describe("database indexes", () => {
     expect(registrationPipeline[0]).toHaveProperty("$group");
     expect(registrationPipeline[0]).not.toHaveProperty("$match");
   });
+
+  it("checks category order duplicates within each event", async () => {
+    const aggregate = vi.fn((pipeline) => ({
+      limit: vi.fn(() => ({
+        next: vi
+          .fn()
+          .mockResolvedValue(
+            pipeline[0]?.$group?._id?.order === "$order" ? { count: 2 } : null,
+          ),
+      })),
+    }));
+    const db = { collection: vi.fn(() => ({ aggregate })) };
+
+    await expect(assertNoDuplicateData(db)).rejects.toThrow(
+      "Resolve duplicate category order records",
+    );
+    const categoryPipeline = aggregate.mock.calls.find(
+      ([pipeline]) => pipeline[0]?.$group?._id?.order === "$order",
+    )[0];
+    expect(categoryPipeline[0].$group._id).toEqual({
+      eventId: "$eventId",
+      order: "$order",
+    });
+  });
 });

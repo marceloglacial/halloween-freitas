@@ -23,8 +23,10 @@ does not erase its records or public material. A guest may use the same verified
 Clerk identity across years but must have an RSVP for each edition to receive
 guest permissions there.
 
-Only one edition is active at a time. New RSVPs and first-time voting openings
-belong to the active edition; historical editions remain individually
+At most one edition is active at a time. When none is active, current-edition
+reads choose the newest year deterministically for display; its archived state
+still blocks RSVP creation and voting. New RSVPs and first-time voting openings
+belong only to the active edition. Historical editions remain individually
 selectable according to their publication state.
 
 An RSVP records attendance intent. A contestant entry independently represents
@@ -52,6 +54,8 @@ and is separate from contestant entries, contest photos, and voting candidates.
 - After `eventStartsAt` and contestant freeze, administrators may open voting.
   The first opening permanently cuts off new RSVPs and contestant additions or
   deletions for that edition.
+- Let administrators manage event categories before voting first opens; lock
+  category configuration once voting begins.
 - Let enrolled guests upload multiple party photos after `eventStartsAt`, even
   after voting has frozen contest participation. Tell guests that photos become
   visible to everyone if the administrator publishes the album. Enforce file

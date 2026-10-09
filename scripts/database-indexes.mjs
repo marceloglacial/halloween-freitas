@@ -30,7 +30,7 @@ export const requiredIndexes = [
     collection: "categories",
     label: "category order",
     key: { eventId: 1, order: 1 },
-    options: {},
+    options: { unique: true },
   },
   {
     collection: "users",
@@ -96,6 +96,19 @@ const duplicateChecks = [
       {
         $group: {
           _id: { eventId: "$eventId", normalizedEmail: "$normalizedEmail" },
+          count: { $sum: 1 },
+        },
+      },
+      { $match: { count: { $gt: 1 } } },
+    ],
+  },
+  {
+    collection: "categories",
+    label: "category order",
+    pipeline: [
+      {
+        $group: {
+          _id: { eventId: "$eventId", order: "$order" },
           count: { $sum: 1 },
         },
       },

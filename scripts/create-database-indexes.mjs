@@ -18,7 +18,7 @@ try {
   const issues = await getIndexIssues(db);
   if (issues.length) throw new Error(issues.join("; "));
   console.log(
-    "All required database indexes are configured. Registration records were not changed.",
+    "All required database indexes are configured. Database documents were not changed.",
   );
 } finally {
   await client.close();
