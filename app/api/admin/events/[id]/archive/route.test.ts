@@ -43,6 +43,21 @@ describe("event archival", () => {
     mocks.getEventById.mockResolvedValue({ _id: eventId, status: "archived" });
   });
 
+  it("rejects non-admin requests before reading or changing event state", async () => {
+    mocks.isAdmin.mockResolvedValue(false);
+
+    const response = await POST(new Request("http://localhost"), {
+      params: Promise.resolve({ id: eventId }),
+    });
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Não autorizado" });
+    expect(mocks.findOne).not.toHaveBeenCalled();
+    expect(mocks.eventUpdateOne).not.toHaveBeenCalled();
+    expect(mocks.roundUpdateOne).not.toHaveBeenCalled();
+    expect(mocks.getEventById).not.toHaveBeenCalled();
+  });
+
   it("ends the open round in the same transaction as archival", async () => {
     const response = await POST(new Request("http://localhost"), {
       params: Promise.resolve({ id: eventId }),

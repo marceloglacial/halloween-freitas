@@ -50,6 +50,25 @@ describe("event activation", () => {
     mocks.getEventById.mockResolvedValue({ _id: eventId, status: "active" });
   });
 
+  it("rejects non-admin requests before starting activation work", async () => {
+    mocks.isAdmin.mockResolvedValue(false);
+
+    const response = await POST(new Request("http://localhost"), {
+      params: Promise.resolve({ id: eventId }),
+    });
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Não autorizado" });
+    expect(mocks.findOne).not.toHaveBeenCalled();
+    expect(mocks.eventList).not.toHaveBeenCalled();
+    expect(mocks.roundUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+    expect(mocks.updateOne).not.toHaveBeenCalled();
+    expect(mocks.getEventById).not.toHaveBeenCalled();
+    expect(session.withTransaction).not.toHaveBeenCalled();
+    expect(mocks.endSession).not.toHaveBeenCalled();
+  });
+
   it("archives the current event and activates the selected event in one transaction", async () => {
     const response = await POST(new Request("http://localhost"), {
       params: Promise.resolve({ id: eventId }),
