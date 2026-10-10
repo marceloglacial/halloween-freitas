@@ -157,6 +157,33 @@ describe("admin users API", () => {
     );
   });
 
+  it("rejects non-admin RSVP corrections before reading or changing records", async () => {
+    mocks.auth.mockResolvedValue({ userId: "guest_user" });
+    mocks.isAdmin.mockResolvedValue(false);
+
+    const response = await PUT(
+      new Request("http://localhost/api/admin/users", {
+        method: "PUT",
+        body: JSON.stringify({
+          eventId,
+          _id: "507f1f77bcf86cd799439012",
+          fullName: "Nome alterado",
+          email: "guest@example.com",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Não autorizado" });
+    expect(mocks.auth).toHaveBeenCalledOnce();
+    expect(mocks.isAdmin).toHaveBeenCalledWith("guest_user");
+    expect(mocks.getEventById).not.toHaveBeenCalled();
+    expect(mocks.getMongoClient).not.toHaveBeenCalled();
+    expect(mocks.userFindOne).not.toHaveBeenCalled();
+    expect(mocks.updateOne).not.toHaveBeenCalled();
+    expect(mocks.auditInsertOne).not.toHaveBeenCalled();
+  });
+
   it("creates contestant records only while scheduled entry is open", async () => {
     mocks.isAdmin.mockResolvedValue(true);
     mocks.getEventById.mockResolvedValue({ _id: eventId });
