@@ -41,7 +41,13 @@ export default async function DashboardPage({
         initialEvents={events}
         initialCategories={initialCategories}
         initialYear={selected?.year}
-        initialTab={query.tab === "settings" ? "settings" : "guests"}
+        initialTab={
+          query.tab === "settings"
+            ? "settings"
+            : query.tab === "results"
+              ? "results"
+              : "guests"
+        }
         initialNow={new Date().toISOString()}
       />
     </main>

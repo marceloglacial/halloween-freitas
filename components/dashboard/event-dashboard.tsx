@@ -20,8 +20,9 @@ import type { EventCategoryInput } from "@/lib/event-categories";
 import { getContestEntryState } from "@/util/contest-entry-state";
 import UserList from "./user-list";
 import LogoutButton from "@/components/logout-button";
+import AdminResults from "@/components/dashboard/admin-results";
 
-type DashboardTab = "settings" | "guests";
+type DashboardTab = "settings" | "guests" | "results";
 type EditableCategory = EventCategoryInput & { _id?: string };
 
 const scheduleHelpText: Partial<Record<EventDateField, string>> = {
@@ -588,14 +589,18 @@ export default function EventDashboard({
           aria-label="Seções do dashboard"
           className="flex gap-2 border-b border-white/20"
         >
-          {(["settings", "guests"] as const).map((item) => (
+          {(["settings", "guests", "results"] as const).map((item) => (
             <button
               key={item}
               type="button"
               onClick={() => navigate(selected.year, item)}
               className={`px-4 py-3 ${tab === item ? "border-b-2 border-orange-400 text-orange-400" : "text-gray-300"}`}
             >
-              {item === "settings" ? "Configurações" : "Convidados"}
+              {item === "settings"
+                ? "Configurações"
+                : item === "guests"
+                  ? "Convidados"
+                  : "Apuração"}
             </button>
           ))}
         </nav>
@@ -1101,6 +1106,8 @@ export default function EventDashboard({
             </button>
           </div>
         </form>
+      ) : selected && tab === "results" ? (
+        <AdminResults key={selected._id} eventId={selected._id} />
       ) : selected ? (
         <UserList key={selected._id} event={selected} />
       ) : null}
