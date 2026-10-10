@@ -18,6 +18,7 @@ export type ContestantEntryDocument = {
   categoryId: ObjectId;
   entryType: ContestantEntryType;
   displayName: string;
+  costumeTitle?: string;
   status: ContestantEntryStatus;
   ownerRsvpId?: ObjectId;
   guardianRsvpId?: ObjectId;
@@ -31,6 +32,7 @@ export type OwnedContestantEntry = {
   categoryId: string;
   entryType: ContestantEntryType;
   displayName: string;
+  costumeTitle?: string;
   status: ContestantEntryStatus;
   contestPhoto?: ContestPhotoAsset;
 };
@@ -46,6 +48,15 @@ export function isContestantEntryType(
   value: unknown,
 ): value is ContestantEntryType {
   return value === "individual" || value === "junior" || value === "group";
+}
+
+export function normalizeCostumeTitle(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "string") throw new Error("INVALID_COSTUME_TITLE");
+  const title = value.trim().replace(/\s+/g, " ");
+  if (!title) return undefined;
+  if (title.length > 100) throw new Error("INVALID_COSTUME_TITLE");
+  return title;
 }
 
 export function contestantOwnership(
@@ -69,12 +80,19 @@ export function createContestantEntry(
     entryType: unknown;
     rsvpId: unknown;
     displayName: unknown;
+    costumeTitle?: unknown;
   },
   now = new Date(),
 ): ContestantEntryDocument {
   const eventId = parseObjectId(input.eventId);
   const categoryId = parseObjectId(input.categoryId);
   const displayName = normalizeName(input.displayName);
+  let costumeTitle: string | undefined;
+  try {
+    costumeTitle = normalizeCostumeTitle(input.costumeTitle);
+  } catch {
+    throw new Error("INVALID_CONTESTANT_ENTRY");
+  }
   if (
     !eventId ||
     !categoryId ||
@@ -90,6 +108,7 @@ export function createContestantEntry(
     categoryId,
     entryType: input.entryType,
     displayName,
+    ...(costumeTitle ? { costumeTitle } : {}),
     ...contestantOwnership(input.entryType, input.rsvpId),
     status: "draft",
     createdAt: now,
@@ -126,6 +145,7 @@ export async function getContestantEntriesForRsvp(
         categoryId: 1,
         entryType: 1,
         displayName: 1,
+        costumeTitle: 1,
         status: 1,
         contestPhoto: 1,
       },
@@ -138,6 +158,7 @@ export async function getContestantEntriesForRsvp(
     categoryId: entry.categoryId.toString(),
     entryType: entry.entryType,
     displayName: entry.displayName,
+    ...(entry.costumeTitle ? { costumeTitle: entry.costumeTitle } : {}),
     status: entry.status,
     ...(entry.contestPhoto ? { contestPhoto: entry.contestPhoto } : {}),
   }));

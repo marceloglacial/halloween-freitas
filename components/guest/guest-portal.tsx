@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ContestPhotoUpload from "@/components/guest/contest-photo-upload";
+import IndividualEntryControls from "@/components/guest/individual-entry-controls";
 import { isVotingOpen } from "@/lib/events";
 import type { OwnedContestantEntry } from "@/lib/contestant-entries";
 import { getContestEntryState } from "@/util/contest-entry-state";
@@ -44,6 +45,11 @@ export default function GuestPortal({
   const eventStarted =
     new Date(now).getTime() >= new Date(event.eventStartsAt).getTime();
   const votingOpen = isVotingOpen(event) && eventStarted;
+  const individualEntry =
+    entries.find((entry) => entry.entryType === "individual") ?? null;
+  const individualCategories = categories.filter(
+    (category) => category.eligibility === "all",
+  );
   const voted = new Set(votedCategoryIds);
   const entryMessage =
     entryState === "open"
@@ -115,6 +121,12 @@ export default function GuestPortal({
             As inscrições abaixo pertencem somente a esta edição.
           </p>
         </div>
+        <IndividualEntryControls
+          eventId={event._id}
+          categories={individualCategories}
+          entry={individualEntry}
+          enabled={entryState === "open"}
+        />
         {entries.length ? (
           <ul className="grid gap-4 md:grid-cols-2">
             {entries.map((entry) => {
