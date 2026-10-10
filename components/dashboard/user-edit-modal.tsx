@@ -35,9 +35,9 @@ export function UserEditModal({
       aria-labelledby="user-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
     >
-      <div className="w-full max-w-md rounded-lg bg-gray-900 p-6 shadow-lg">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-gray-900 p-6 shadow-lg">
         <h2 id="user-modal-title" className="mb-4 text-xl font-bold">
-          {isEdit ? "Edit User" : "Create User"}
+          {isEdit ? "Editar participante" : "Adicionar participante"}
         </h2>
         <form
           onSubmit={(e) => {
@@ -58,7 +58,7 @@ export function UserEditModal({
             onChange={(e) =>
               setModalUser({ ...modalUser, fullName: e.target.value })
             }
-            placeholder="Full Name"
+            placeholder="Nome completo"
             required
             disabled={loading}
             className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-white"
@@ -84,7 +84,7 @@ export function UserEditModal({
               }
               disabled={loading}
             />
-            <span className="text-white">Grupo</span>
+            <span className="text-white">Participa como grupo</span>
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -95,7 +95,7 @@ export function UserEditModal({
               }
               disabled={loading}
             />
-            <span className="text-white">Junior</span>
+            <span className="text-white">Participante infantil</span>
           </label>
           {modalUser.imageUrl ? (
             <CldImage
@@ -120,7 +120,7 @@ export function UserEditModal({
                 }));
               }}
             >
-              Upload an image
+              Enviar uma imagem
             </CldUploadButton>
           )}
           <div className="flex justify-end gap-2">
@@ -129,7 +129,7 @@ export function UserEditModal({
               className="cursor-pointer rounded bg-gray-700 px-4 py-2 text-white"
               onClick={closeModal}
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
@@ -138,11 +138,11 @@ export function UserEditModal({
             >
               {isEdit
                 ? loading
-                  ? "Updating"
-                  : "Update"
+                  ? "Salvando…"
+                  : "Salvar alterações"
                 : loading
-                  ? "Creating"
-                  : "Create"}
+                  ? "Adicionando…"
+                  : "Adicionar participante"}
             </button>
           </div>
         </form>
@@ -163,7 +163,11 @@ export function UserEditModal({
             </button>
           </div>
         )}
-        {error && <div className="mt-2 text-red-500">{error}</div>}
+        {error && (
+          <div role="alert" className="mt-2 text-red-300">
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );

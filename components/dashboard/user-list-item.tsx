@@ -5,21 +5,23 @@ export function UserListItem({
   user,
   openEditModal,
   handleDelete,
+  canDelete,
+  disabledDescriptionId,
 }: UserListItemProps) {
   return (
     <li
       key={user._id}
-      className="flex items-center gap-4 rounded-lg bg-white/10 p-4"
+      className="flex flex-col gap-3 rounded-lg bg-white/10 p-4 sm:flex-row sm:items-center sm:gap-4"
     >
       <CldImage
         src={user.imageUrl || "halloween-freitas/apple-icon_fqkaye"}
         width={900}
         height={600}
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        alt="User Image"
+        alt={`Foto de ${user.fullName}`}
         className="h-10 w-10 rounded-full"
       />
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         <div className="w-32 truncate font-semibold md:w-fit">
           {user.fullName}
         </div>
@@ -39,18 +41,22 @@ export function UserListItem({
           )}
         </div>
       </div>
-      <div className="flex lg:gap-2">
+      <div className="flex flex-wrap gap-2 sm:justify-end">
         <button
-          className="cursor-pointer rounded px-4 py-3 text-xs text-white hover:bg-blue-700"
+          type="button"
+          className="cursor-pointer rounded px-4 py-3 text-xs text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
           onClick={() => openEditModal(user)}
         >
-          Edit
+          Editar
         </button>
         <button
-          className="cursor-pointer rounded px-4 py-2 text-xs text-white hover:bg-red-700"
+          type="button"
+          disabled={!canDelete}
+          aria-describedby={!canDelete ? disabledDescriptionId : undefined}
+          className="cursor-pointer rounded px-4 py-2 text-xs text-white hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
           onClick={() => handleDelete(user._id)}
         >
-          Delete
+          Excluir
         </button>
       </div>
     </li>

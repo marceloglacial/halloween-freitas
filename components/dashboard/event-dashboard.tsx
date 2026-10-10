@@ -17,7 +17,7 @@ import {
   shiftEventSchedule,
 } from "@/lib/event-schedule";
 import type { EventCategoryInput } from "@/lib/event-categories";
-import { getContestEntryState } from "@/util/contest-entry-state";
+import { getAdminEnrollmentControls } from "@/util/admin-enrollment-controls";
 import UserList from "./user-list";
 import LogoutButton from "@/components/logout-button";
 import AdminResults from "@/components/dashboard/admin-results";
@@ -47,6 +47,14 @@ function newEventForm(year: number): EventInput {
     registrationStartsAt: `${year}-08-01T18:00`,
     eventStartsAt: `${year}-10-31T20:00`,
   };
+}
+
+function formatEventDate(value: string, timezone: string) {
+  return new Date(value).toLocaleString("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: timezone,
+  });
 }
 
 async function responseError(response: Response) {
@@ -209,9 +217,10 @@ export default function EventDashboard({
   const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(initialEvents.length === 0);
   const selected = events.find((event) => event.year === year) ?? events[0];
-  const contestEntryState = selected
-    ? getContestEntryState(selected, new Date(initialNow))
-    : "closed";
+  const enrollmentControls = selected
+    ? getAdminEnrollmentControls(selected, new Date(initialNow))
+    : null;
+  const contestEntryState = enrollmentControls?.contestantState ?? "closed";
   const eventHasStarted = selected
     ? new Date(selected.eventStartsAt).getTime() <=
       new Date(initialNow).getTime()
@@ -553,7 +562,7 @@ export default function EventDashboard({
                   id="event-year"
                   value={selected.year}
                   onChange={(event) => selectEvent(Number(event.target.value))}
-                  className="rounded-lg border border-white/20 bg-black px-4 py-2 text-lg"
+                  className="rounded-lg border border-white/20 bg-black px-4 py-2 text-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
                 >
                   {events.map((event) => (
                     <option key={event._id} value={event.year}>
@@ -576,7 +585,7 @@ export default function EventDashboard({
           <button
             type="button"
             onClick={openCreate}
-            className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black"
+            className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
           >
             {selected ? "Novo ano" : "Criar primeiro evento"}
           </button>
@@ -593,8 +602,9 @@ export default function EventDashboard({
             <button
               key={item}
               type="button"
+              aria-pressed={tab === item}
               onClick={() => navigate(selected.year, item)}
-              className={`px-4 py-3 ${tab === item ? "border-b-2 border-orange-400 text-orange-400" : "text-gray-300"}`}
+              className={`px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400 ${tab === item ? "border-b-2 border-orange-400 text-orange-400" : "text-gray-300"}`}
             >
               {item === "settings"
                 ? "Configurações"
@@ -946,6 +956,48 @@ export default function EventDashboard({
           </section>
           <section className="space-y-3 rounded-xl border border-white/20 p-4">
             <div>
+              <h2 className="text-xl font-semibold">
+                Confirmações de presença (RSVP)
+              </h2>
+              <p className="text-sm text-gray-300">
+                {enrollmentControls?.rsvpState === "upcoming"
+                  ? `Abrem em ${formatEventDate(selected.registrationStartsAt, selected.timezone)} (${selected.timezone}).`
+                  : enrollmentControls?.rsvpState === "open"
+                    ? "As confirmações de presença estão abertas até a primeira abertura da votação."
+                    : selected.status !== "active"
+                      ? "Esta edição está arquivada e não aceita novas confirmações de presença."
+                      : "Novas confirmações de presença foram encerradas permanentemente quando a votação começou."}
+              </p>
+              <p className="text-sm text-gray-300">
+                A disponibilidade de RSVP é independente das inscrições do
+                concurso. Fechar as inscrições do concurso mantém as
+                confirmações de presença abertas.
+              </p>
+            </div>
+            <span
+              aria-label={`Status das confirmações de presença: ${
+                enrollmentControls?.rsvpState === "upcoming"
+                  ? "agendadas"
+                  : enrollmentControls?.rsvpState === "open"
+                    ? "abertas"
+                    : "encerradas"
+              }`}
+              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                enrollmentControls?.rsvpState === "open"
+                  ? "bg-green-700 text-green-100"
+                  : "bg-gray-700 text-gray-200"
+              }`}
+              role="status"
+            >
+              {enrollmentControls?.rsvpState === "upcoming"
+                ? "RSVP agendado"
+                : enrollmentControls?.rsvpState === "open"
+                  ? "RSVP aberto"
+                  : "RSVP encerrado"}
+            </span>
+          </section>
+          <section className="space-y-3 rounded-xl border border-white/20 p-4">
+            <div>
               <h2 className="text-xl font-semibold">Inscrições do concurso</h2>
               <p className="text-sm text-gray-300">
                 {contestEntryState === "upcoming"
@@ -963,6 +1015,27 @@ export default function EventDashboard({
                 possível reabrir as inscrições.
               </p>
             </div>
+            <span
+              aria-label={`Status das inscrições do concurso: ${
+                contestEntryState === "upcoming"
+                  ? "agendadas"
+                  : contestEntryState === "open"
+                    ? "abertas"
+                    : "encerradas"
+              }`}
+              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                contestEntryState === "open"
+                  ? "bg-green-700 text-green-100"
+                  : "bg-gray-700 text-gray-200"
+              }`}
+              role="status"
+            >
+              {contestEntryState === "upcoming"
+                ? "Inscrições do concurso agendadas"
+                : contestEntryState === "open"
+                  ? "Inscrições do concurso abertas"
+                  : "Inscrições do concurso fechadas"}
+            </span>
             <button
               type="button"
               disabled={
@@ -977,7 +1050,7 @@ export default function EventDashboard({
                     : "close-contest-entry",
                 )
               }
-              className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black disabled:opacity-50"
+              className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
             >
               {selected.contestEntryStatus === "closed"
                 ? "Reabrir inscrições"
@@ -986,6 +1059,11 @@ export default function EventDashboard({
             {selected.votingStatus !== "not_started" && (
               <p className="text-xs text-gray-300">
                 As inscrições não podem ser alteradas após o início da votação.
+              </p>
+            )}
+            {selected.status !== "active" && (
+              <p className="text-xs text-gray-300">
+                Ative esta edição para alterar as inscrições do concurso.
               </p>
             )}
           </section>
@@ -1017,7 +1095,7 @@ export default function EventDashboard({
                       : "start-voting",
                   )
                 }
-                className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black disabled:opacity-50"
+                className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
               >
                 {selected.votingStatus === "open"
                   ? "Encerrar votação"
@@ -1069,7 +1147,7 @@ export default function EventDashboard({
                       : "publish-results",
                   )
                 }
-                className="rounded-lg bg-green-600 px-4 py-2 font-semibold disabled:opacity-50"
+                className="rounded-lg bg-green-600 px-4 py-2 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-300 disabled:opacity-50"
               >
                 {selected.resultsPublished
                   ? "Ocultar resultados"
@@ -1109,7 +1187,7 @@ export default function EventDashboard({
       ) : selected && tab === "results" ? (
         <AdminResults key={selected._id} eventId={selected._id} />
       ) : selected ? (
-        <UserList key={selected._id} event={selected} />
+        <UserList key={selected._id} event={selected} now={initialNow} />
       ) : null}
     </div>
   );

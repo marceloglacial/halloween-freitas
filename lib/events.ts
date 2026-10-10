@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
+export { getRegistrationState } from "@/util/registration-state";
 
 type EventDocument = Omit<
   HalloweenEvent,
@@ -102,17 +103,6 @@ export function getEventPhase(
   const time = now.getTime();
   if (time < new Date(event.registrationStartsAt).getTime()) return "upcoming";
   return "registration";
-}
-
-export function getRegistrationState(
-  event: HalloweenEvent,
-  now = new Date(),
-): RegistrationState {
-  if (event.status !== "active") return "closed";
-  if (event.votingStatus !== "not_started") return "closed";
-  const time = now.getTime();
-  if (time < new Date(event.registrationStartsAt).getTime()) return "upcoming";
-  return "open";
 }
 
 export function isVotingOpen(event: HalloweenEvent) {
