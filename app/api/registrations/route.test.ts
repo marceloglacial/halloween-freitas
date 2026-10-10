@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   getRegistrationState: vi.fn(),
   getDb: vi.fn(),
   getMongoClient: vi.fn(),
+  consumeRateLimit: vi.fn(),
+  trustedClientAddress: vi.fn(),
   updateEvent: vi.fn(),
   insertUser: vi.fn(),
   withTransaction: vi.fn(),
@@ -20,6 +22,19 @@ vi.mock("@/lib/events", () => ({
 vi.mock("@/lib/db", () => ({
   getDb: mocks.getDb,
   getMongoClient: mocks.getMongoClient,
+}));
+vi.mock("@/lib/request-rate-limits", () => ({
+  consumeRateLimit: mocks.consumeRateLimit,
+  rateLimitResponse: (retryAfterSeconds: number) =>
+    Response.json(
+      { error: "Muitas tentativas. Tente novamente mais tarde." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
+    ),
+  requestRateLimitPolicies: {
+    rsvpAddress: { action: "rsvp-address", maximum: 60, windowMs: 900000 },
+    rsvpEmail: { action: "rsvp-email", maximum: 5, windowMs: 3600000 },
+  },
+  trustedClientAddress: mocks.trustedClientAddress,
 }));
 
 import { POST } from "@/app/api/registrations/route";
@@ -58,6 +73,11 @@ describe("public RSVP API", () => {
     mocks.updateEvent.mockResolvedValue({ matchedCount: 1 });
     mocks.insertUser.mockResolvedValue({ insertedId: new ObjectId() });
     mocks.startSession.mockReturnValue(session);
+    mocks.consumeRateLimit.mockResolvedValue({
+      allowed: true,
+      retryAfterSeconds: 60,
+    });
+    mocks.trustedClientAddress.mockReturnValue("203.0.113.8");
     mocks.getMongoClient.mockResolvedValue({
       startSession: mocks.startSession,
     });
@@ -77,6 +97,12 @@ describe("public RSVP API", () => {
       message: "Presença confirmada!",
     });
     expect(mocks.withTransaction).toHaveBeenCalledOnce();
+    expect(mocks.consumeRateLimit).toHaveBeenCalledTimes(2);
+    expect(mocks.consumeRateLimit).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      expect.objectContaining({ identity: "guest@example.com" }),
+    );
     const [eventFilter, eventUpdate, eventOptions] =
       mocks.updateEvent.mock.calls[0];
     expect(eventFilter).toMatchObject({
@@ -159,6 +185,32 @@ describe("public RSVP API", () => {
       error: "As inscrições estão encerradas",
     });
     expect(mocks.getMongoClient).not.toHaveBeenCalled();
+  });
+
+  it("returns a generic retry response when a request exceeds its limit", async () => {
+    mocks.consumeRateLimit
+      .mockResolvedValueOnce({ allowed: false, retryAfterSeconds: 43 })
+      .mockResolvedValueOnce({ allowed: true, retryAfterSeconds: 60 });
+
+    const response = await POST(registrationRequest());
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("43");
+    expect(await response.json()).toEqual({
+      error: "Muitas tentativas. Tente novamente mais tarde.",
+    });
+    expect(mocks.withTransaction).not.toHaveBeenCalled();
+    expect(mocks.insertUser).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the trusted proxy address is unavailable", async () => {
+    mocks.trustedClientAddress.mockReturnValue(null);
+
+    const response = await POST(registrationRequest());
+
+    expect(response.status).toBe(503);
+    expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
+    expect(mocks.insertUser).not.toHaveBeenCalled();
   });
 
   it.each([

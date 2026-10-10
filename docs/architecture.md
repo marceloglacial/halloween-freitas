@@ -54,6 +54,13 @@ abuse limits to RSVP and linking operations without revealing whether another
 email or RSVP exists. Reject ambiguous matches, mismatched event IDs, and links
 owned by another Clerk user.
 
+Apply fixed-window limits to public RSVP attempts by trusted client address and
+HMAC of the normalized email, and to guest-link attempts by trusted client
+address. Keep counters scoped to the event and action, store no raw address or
+email in limiter records, and expire buckets with a MongoDB TTL index. In
+production, trust `x-real-ip` only when the reverse proxy overwrites it; reject
+requests when that trusted address is unavailable.
+
 Administrator authorization is server-side and deny-by-default. Clerk users
 must have `publicMetadata.role === "admin"`. Protect every administrative page
 action, API operation, upload, publication, removal, and correction

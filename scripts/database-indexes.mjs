@@ -42,6 +42,12 @@ export const requiredIndexes = [
     },
   },
   {
+    collection: "requestRateLimits",
+    label: "request rate-limit expiry",
+    key: { expiresAt: 1 },
+    options: { expireAfterSeconds: 0 },
+  },
+  {
     collection: "contestants",
     label: "adult contestant ownership",
     key: { eventId: 1, ownerRsvpId: 1, entryType: 1 },

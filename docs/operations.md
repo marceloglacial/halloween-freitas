@@ -43,6 +43,25 @@ the application stores these assets with authenticated delivery. Never move
 these values to `NEXT_PUBLIC_` variables or reuse contest-photo storage for the
 party album.
 
+### Request rate limits
+
+Public RSVP and guest-link requests use short-lived, event-scoped MongoDB
+counters. The application uses the existing server-only Clerk secret to HMAC
+limiter identities; it does not store raw email addresses, Clerk IDs, or client
+addresses in rate-limit records. A TTL index removes expired buckets.
+
+The fixed windows allow 60 RSVP attempts per client address every 15 minutes,
+5 per normalized email every hour, and 30 guest-link attempts per client
+address every 15 minutes. Limited requests receive a generic `429` response
+with `Retry-After`; they do not reveal whether an RSVP or account exists.
+
+In production, configure the trusted reverse proxy to overwrite `x-real-ip`
+with the connecting client address. The application accepts only a valid
+`x-real-ip` value and fails closed with `503` when it is missing or invalid; it
+does not trust client-supplied `x-forwarded-for`. Local development uses one
+shared development bucket when no address header is present. Never forward an
+untrusted client value as `x-real-ip`.
+
 ### Issue worktrees
 
 Keep the development-only `.env.local` in the main worktree. When creating an

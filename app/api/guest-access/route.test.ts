@@ -1,10 +1,33 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ claim: vi.fn(), event: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  claim: vi.fn(),
+  event: vi.fn(),
+  getDb: vi.fn(),
+  consumeRateLimit: vi.fn(),
+  trustedClientAddress: vi.fn(),
+}));
 vi.mock("@/lib/auth/guest-registration", async (original) => ({
   ...(await original<object>()),
   claimGuestRegistration: mocks.claim,
 }));
 vi.mock("@/lib/events", () => ({ getEventById: mocks.event }));
+vi.mock("@/lib/db", () => ({ getDb: mocks.getDb }));
+vi.mock("@/lib/request-rate-limits", () => ({
+  consumeRateLimit: mocks.consumeRateLimit,
+  rateLimitResponse: (retryAfterSeconds: number) =>
+    Response.json(
+      { error: "Muitas tentativas. Tente novamente mais tarde." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
+    ),
+  requestRateLimitPolicies: {
+    guestLinkAddress: {
+      action: "guest-link-address",
+      maximum: 30,
+      windowMs: 900000,
+    },
+  },
+  trustedClientAddress: mocks.trustedClientAddress,
+}));
 import { POST } from "./route";
 import { GuestAccessError } from "@/lib/auth/guest-registration";
 const eventId = "507f1f77bcf86cd799439011";
@@ -17,6 +40,12 @@ describe("verified access endpoint", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.event.mockResolvedValue({ _id: eventId });
+    mocks.getDb.mockResolvedValue({});
+    mocks.trustedClientAddress.mockReturnValue("203.0.113.8");
+    mocks.consumeRateLimit.mockResolvedValue({
+      allowed: true,
+      retryAfterSeconds: 60,
+    });
   });
   it("rejects malformed event input", async () => {
     expect((await POST(request({ email: "ana@example.com" }))).status).toBe(
@@ -46,6 +75,33 @@ describe("verified access endpoint", () => {
     const response = await POST(request({ eventId }));
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ fullName: "Ana" });
+    expect(mocks.consumeRateLimit).toHaveBeenCalledOnce();
+  });
+
+  it("blocks over-limit link attempts before resolving guest identity", async () => {
+    mocks.consumeRateLimit.mockResolvedValue({
+      allowed: false,
+      retryAfterSeconds: 54,
+    });
+
+    const response = await POST(request({ eventId }));
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("54");
+    expect(await response.json()).toEqual({
+      error: "Muitas tentativas. Tente novamente mais tarde.",
+    });
+    expect(mocks.claim).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the trusted proxy address is unavailable", async () => {
+    mocks.trustedClientAddress.mockReturnValue(null);
+
+    const response = await POST(request({ eventId }));
+
+    expect(response.status).toBe(503);
+    expect(mocks.consumeRateLimit).not.toHaveBeenCalled();
+    expect(mocks.claim).not.toHaveBeenCalled();
   });
   it.each([
     [403, "cancelled"],
