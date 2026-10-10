@@ -25,6 +25,10 @@ Read the approved [product](../../../docs/product.md),
 4. Preserve the primary-round and single-runoff contract, ties, zero-vote
    categories, and closed-round ballots. Reopening a round never reverses the
    enrollment cutoff.
+   Party-photo uploads remain separate from contestant eligibility: an
+   existing guest with a valid RSVP may upload after the event starts even
+   after voting opens. Do not disable or authorize those uploads through
+   contestant-entry or voting state.
 5. Keep results private until the final round ends and an administrator
    publishes them. Unpublishing or reopening voting must revoke public API,
    rendering, and cache access.

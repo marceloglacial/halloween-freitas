@@ -1,98 +1,104 @@
 ---
 name: issue-finalization
-description: Finalize one GitHub issue only after explicit user approval of its reviewed change set; commit, integrate by direct merge or required PR, clean its worktree/branch, and close the ticket.
+description: After explicit approval of the current reviewed issue change set, automatically commit locally, merge into local main, validate, and safely remove that issue's worktree and local branch. Push, GitHub issue/epic closure, PRs, and deployment are separate operations and never inferred.
 ---
 
 # Issue finalization
 
-Run this skill only after explicit user approval identifies the GitHub issue
-and the reviewed change set. A request to implement, revise, review, or report
-does not authorize finalization. Approval is for one issue and one change set;
-any post-review edits require a new handoff and approval. The primary agent
-performs finalization; read-only reviewer agents never do. Never deploy.
+Use this workflow after explicit approval of the exact issue implementation
+currently presented for review. Approval authorizes the local sequence below;
+do not ask again before its commit, local merge, validation, or safe cleanup.
+Approval applies to one issue, worktree, branch, and reviewed diff. If the
+approval target is ambiguous, the diff changed materially after review, or
+repository state differs from the handoff, stop and ask for clarification or a
+new review.
+
+This is a local-only workflow. It never fetches, pulls, pushes, creates or
+merges a PR, closes an issue or epic, or deploys. Push requires a separate user
+request naming the target branch and remote. Issue and epic closure also
+require separate explicit requests. The primary agent owns finalization;
+read-only reviewer agents never perform these operations.
 
 Follow [repository instructions](../../../AGENTS.md) and the [AI workflow
-guide](../../../docs/ai-workflow.md). For a protected branch, use the
-repository's PR workflow, `.github/PULL_REQUEST_TEMPLATE.md`, and the installed
-PR-writing skill when available.
+guide](../../../docs/ai-workflow.md). Never use force, reset, stash, clean, or
+discard another worktree's changes.
 
 ## Procedure
 
-1. **Bind approval to the work.** Identify the issue number, issue branch,
-   issue worktree, approval message, and review summary. Confirm the worktree is
-   on the expected `issue-<number>-<slug>` branch and record its verified name
-   as `issue_branch`. Inspect normal and ignored
-   `git status`, staged and unstaged diffs, untracked files, recent commits,
-   and the issue state. Compare every changed path and change to the reviewed
-   scope. Stop for a new review if anything changed after approval or is
-   outside that scope. If the issue is already closed, verify its approved
-   change is integrated; otherwise stop and report the inconsistent state.
-2. **Commit only approved files.** Stage explicit reviewed paths; do not use
-   broad staging. Create a Conventional Commit that references the issue, for
-   example `fix(issue-54): enforce the RSVP cutoff`, with `Refs #54` in its
-   body. If a correct issue-referenced commit already exists, verify it instead
-   of duplicating it. Preserve unrelated changes.
-3. **Check integration policy and current `main`.** Identify the repository's
-   default branch and fetch it from `origin`. Inspect branch protection, rules,
-   required checks, and required reviews. If protection requires a pull
-   request, or the requirements cannot be determined, use the PR path and do
-   not merge directly. Use the installed PR-writing skill when available and
-   `.github/PULL_REQUEST_TEMPLATE.md`. Check applicable branch-protection and
-   repository/organization ruleset settings with GitHub; missing permission or
-   an inconclusive response means the policy is unknown, not unprotected.
-   Before pushing, confirm `origin/main` is an ancestor of the issue branch and
-   `git diff origin/main..."$issue_branch"` contains only the approved change
-   set; stop if local-only commits would enter the PR. Push only the approved
-   issue branch when needed for that PR; never force push. If direct merge is
-   allowed, locate the existing clean default-branch worktree. Do not switch,
-   clean, stash, or modify an unrelated worktree. If the default-branch
-   worktree is missing or dirty, stop and report it.
-4. **Check for integration problems.** Compare local `main` with fetched
-   `origin/main`. Fast-forward a behind, clean `main` only. If local and remote
-   histories diverge, stop without resetting or rebasing. Preflight the issue
-   branch merge with a non-mutating
-   `git merge-tree --write-tree main "$issue_branch"` check and inspect the
-   complete delta. If conflicts or
-   unrelated changes appear, stop with the issue worktree intact. If bringing
-   the branch up to date changes reviewed behavior, report the changed scope and
-   obtain fresh approval. Rerun the relevant validation when integration
-   changes code.
-5. **Merge without rewriting history.** When direct integration is allowed and
-   conflict-free, merge the issue branch into `main` with `--no-ff`. For a
-   protected branch, follow the PR's required checks and human reviews and use
-   the repository-approved PR merge method. Never bypass protections. If a
-   check, review, or merge fails, stop and preserve the issue branch/worktree.
-6. **Verify integration.** Confirm `main` contains the approved commit or
-   merged PR, inspect the final merge diff, and confirm the default-branch
-   worktree is clean. Run relevant validation if the integrated code changed.
-   Record the merge commit SHA for recovery.
-7. **Remove the completed worktree safely.** Confirm the issue worktree is
-   clean and points to the merged branch. Inspect ignored files before removal;
-   preserve local secrets and user data. Remove it without force only when
-   remaining ignored files are known disposable caches/build output. If Git
-   refuses or any file's value is unclear, stop and preserve the worktree.
-   If the issue worktree has an `.env.local` symlink, verify it points to the
-   main worktree's development-only `.env.local` source. Discover the main
-   worktree from the first entry of `git worktree list --porcelain` and resolve
-   it to an absolute path, following the provisioning rules in
-   [issue-workflow](../issue-workflow/SKILL.md). Normal worktree removal
-   removes the issue-side symlink; leave the source file untouched.
-   If `.env.local` is a regular file or points elsewhere, stop and preserve
-   the worktree for review.
-8. **Delete the local issue branch safely.** Use the normal merged-branch
-   deletion operation only after confirming its commit is reachable from
-   `main`. Never force-delete. Remote branch deletion is optional and skipped
-   by default; if the same approval explicitly includes it, confirm that the
-   remote branch exists and has been merged before deleting it.
-9. **Close and report the issue.** If a merged PR already closed the issue,
-   verify its closed state. Otherwise close only the approved issue and include
-   the commit/merge SHA and validation results in the close note. Report the
-   issue, commit, merge/PR, checks, cleanup, and final repository state.
+1. **Bind approval to the reviewed change.** Confirm the issue number/title,
+   approval message, issue worktree, expected
+   `issue-<number>-<short-description>` branch, validation results, and reviewed
+   paths. Inspect `git status` (including ignored files), staged and unstaged
+   diffs, untracked files, recent commits, and worktree list. Compare all
+   changes with the handoff. If unexpected or unrelated changes exist, preserve
+   them and stop. Do not infer approval from issue labels or status.
+2. **Verify the issue worktree.** Confirm it is the expected branch and that
+   the reviewed diff is unchanged. Ensure required validation passed during
+   development. Identify the local default branch (normally `main`) and its
+   worktree using `git worktree list --porcelain`; do not query a remote. Stop
+   if the default branch is missing, checked out ambiguously, or has unrelated
+   uncommitted changes. Preserve every other worktree as-is.
+3. **Commit only the reviewed files.** Stage explicit reviewed paths; never
+   use broad staging. Confirm staged diff and absence of secrets, generated
+   files, and unrelated changes. Create a Conventional Commit that references
+   the issue, for example `feat(issue-61): add junior entry (#61)`. If the
+   approved change already has the correct issue-referenced
+   commit, verify it rather than duplicating it. Do not amend or rewrite history.
+4. **Preflight local integration.** Compare the issue branch with the current
+   local `main`, inspect the complete change set, and use a non-mutating merge
+   check such as `git merge-tree --write-tree main <issue-branch>` where
+   available. Do not fetch, pull, or synchronize with any remote. If local
+   `main` advanced in a way that changes reviewed behavior, conflicts, or
+   unrelated changes would enter the merge, stop and preserve the issue
+   worktree for review/recovery.
+5. **Merge into local `main`.** From the existing clean `main` worktree, merge
+   the issue branch using `--no-ff` unless repository history shows an
+   established alternative. This is a local merge only. If a conflict or
+   merge failure occurs, stop; do not resolve ambiguously, reset, or discard.
+   Preserve the issue branch and worktree.
+6. **Validate the merged result.** Confirm local `main` contains the approved
+   commit and inspect the merge diff. Run required validation for the change:
+   code changes use `pnpm test`, `pnpm lint`, and `pnpm build`; documentation-
+   only changes use `pnpm check:docs`. Check for unexpected files and a clean
+   `main` worktree. If validation fails, do not roll back or clean up; preserve
+   the issue branch/worktree and report the failure for recovery.
+7. **Clean up only after successful validation.** Confirm the issue worktree is
+   clean, points to the merged branch, and has no valuable ignored files. If it
+   has an `.env.local` symlink, verify that it targets the main worktree's
+   development-only source; ordinary worktree removal removes only the
+   worktree-side symlink. Never alter or delete the source environment file.
+   Remove the issue worktree without force, then delete the local branch using
+   normal merged-branch deletion. Never remove another worktree or a branch
+   that is not verified merged. If either cleanup step fails, stop and report
+   the remaining recovery state; do not retry destructively.
+8. **Report local completion.** Provide issue number/title, commit and merge
+   SHAs, validation results, worktree and local branch cleanup, final local
+   status, and whether `main` contains unpushed commits. State clearly that the
+   issue has not been pushed or closed. Do not begin another issue until the
+   current work is integrated locally or safely isolated.
+
+## Separate operations
+
+- **Push:** perform only after an explicit request that identifies the branch
+  and remote. Inspect local/remote tracking state and pending commits with
+  read-only checks first. If the target is unclear, history diverged, or a
+  force push would be needed, stop. Never reuse earlier push authorization.
+- **Issue closure:** perform only after the user explicitly requests closure
+  of the identified issue. Verify that its approved commit is integrated into
+  local `main`; a local merge does not update GitHub. Do not close an epic as a
+  side effect.
+- **Epic closure:** only after the epic completion criteria in `docs/ai-workflow.md`
+  are met and the user explicitly approves closing that named epic. This never
+  authorizes a push.
+- **PR or deployment:** never create/merge a PR or deploy as part of local
+  finalization. Both require separate user direction; deployment also requires
+  a confirmed target and its own authorization.
 
 ## Failure handling
 
-Stop at the first failure. Do not retry with force options, reset, discard,
-rewrite approved commits, or touch another worktree. Preserve the issue branch
-and worktree for recovery. If worktree removal succeeded but a later step fails,
-recreate the branch and worktree from the recorded merge commit before stopping
-so the approved work remains available locally. Leave the deployment untouched.
+Stop at the first failed verification, commit, conflict check, merge,
+validation, or cleanup step. Preserve uncommitted work and all remaining issue
+branches/worktrees. Do not retry with force, reset, stash, clean, or rollback.
+Report the exact local state and the safe recovery point. If a worktree was
+already removed before a later branch-cleanup failure, leave the merged local
+branch intact; do not recreate or delete state automatically.

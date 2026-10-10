@@ -21,6 +21,8 @@ guide before writing framework code.
    `design.md`. Write new user-facing copy in Brazilian Portuguese. Support
    keyboard interaction, labeled controls, and clear pending, empty, error, denied,
    and success states as applicable.
+   Keep the party gallery separate from contestant-entry photos; party uploads
+   remain private until album-wide publication and continue after voting opens.
 4. For forms and mutations, follow the real response contract, handle network
    and non-success responses, and restore pending state after failure. A hidden or
    disabled control never replaces server authorization.

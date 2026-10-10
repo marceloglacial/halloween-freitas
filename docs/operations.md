@@ -129,15 +129,23 @@ edition isolation, lifecycle transitions, and publication revocation before
 release. Record environment, index, migration, and external-service changes in
 the release notes.
 
-Do not commit, push, merge, or deploy automatically. Each release action needs
-the user's explicit authorization.
+Issue implementation changes remain uncommitted for review. After approval of
+the reviewed change set, the harness performs the issue-referenced local
+commit, local `main` merge, validation, and issue worktree/local branch cleanup
+as documented in the [AI workflow](ai-workflow.md). This does not contact a
+remote, push, create a PR, close an issue or epic, or deploy. Push requires a
+separate explicit request naming the branch and remote. Issue and epic closure
+also require separate explicit requests. Deployment always requires its own
+explicit authorization.
 
 ## AI agent tooling
 
 For issue-driven AI work, install the repository dependencies with `pnpm
-install` and use Git with worktree support. Issue selection and ticket updates
-require an authenticated GitHub CLI session (`gh auth status`). Project skill
-routing and optional reviewer agents require the Codex CLI, a trusted
+install` and use Git with worktree support. Issue selection refreshes current
+GitHub data through the CLI; public issues may be read anonymously, while
+private issue reads and GitHub mutations require an authenticated session
+(`gh auth status`). Project skill routing and optional reviewer agents require
+the Codex CLI, a trusted
 repository, and the local `.agents/skills/` and `.codex/agents/` files.
 Check CLI support with `codex --version` and `codex debug prompt-input` before
 depending on custom agents. Custom agents are optional; the primary Codex
