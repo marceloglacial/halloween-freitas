@@ -12,6 +12,7 @@ vi.mock("next/link", () => ({
     </a>
   ),
 }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 import GuestPortal from "@/components/guest/guest-portal";
 
@@ -62,6 +63,61 @@ describe("guest portal", () => {
     expect(html).toContain(
       "As inscrições do concurso estão encerradas nesta edição.",
     );
+    expect(html).not.toContain("Criar inscrição individual");
+  });
+
+  it("lets a guest create one individual draft in an eligible category", () => {
+    const html = renderToStaticMarkup(
+      <GuestPortal
+        event={{
+          ...event,
+          contestEntryStatus: "open",
+          votingStatus: "not_started",
+        }}
+        guestName="Ana Freitas"
+        entries={[]}
+        categories={categories}
+        votedCategoryIds={[]}
+        now="2026-09-15T00:00:00.000Z"
+      />,
+    );
+
+    expect(html).toContain("Fantasia individual");
+    expect(html).toContain("Categoria");
+    expect(html).toContain("Fantasia mais criativa");
+    expect(html).toContain("Título da fantasia (opcional)");
+    expect(html).toContain("Criar inscrição individual");
+    expect(html).toContain("Depois, envie uma foto com autorização.");
+  });
+
+  it("lets a guest update the individual costume title while entries are open", () => {
+    const html = renderToStaticMarkup(
+      <GuestPortal
+        event={{
+          ...event,
+          contestEntryStatus: "open",
+          votingStatus: "not_started",
+        }}
+        guestName="Ana Freitas"
+        entries={[
+          {
+            _id: "individual-entry",
+            categoryId: categories[0]._id,
+            entryType: "individual",
+            displayName: "Ana Freitas",
+            costumeTitle: "Bruxa das abóboras",
+            status: "draft",
+          },
+        ]}
+        categories={categories}
+        votedCategoryIds={[]}
+        now="2026-09-15T00:00:00.000Z"
+      />,
+    );
+
+    expect(html).toContain("Título: Bruxa das abóboras");
+    expect(html).toContain('value="Bruxa das abóboras"');
+    expect(html).toContain("Salvar título");
   });
 
   it("shows each owned entry status without exposing ownership or email", () => {

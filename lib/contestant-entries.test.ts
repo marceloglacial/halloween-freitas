@@ -179,6 +179,7 @@ describe("contestant entry schema and ownership", () => {
         projection: {
           _id: 1,
           categoryId: 1,
+          costumeTitle: 1,
           entryType: 1,
           displayName: 1,
           status: 1,
