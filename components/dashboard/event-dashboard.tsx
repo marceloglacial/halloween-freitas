@@ -1135,6 +1135,12 @@ export default function EventDashboard({
               </div>
               <button
                 type="button"
+                aria-describedby={
+                  !selected.resultsPublished &&
+                  selected.votingStatus !== "ended"
+                    ? "results-publication-disabled-reason"
+                    : undefined
+                }
                 disabled={
                   busy ||
                   (!selected.resultsPublished &&
@@ -1155,7 +1161,10 @@ export default function EventDashboard({
               </button>
               {!selected.resultsPublished &&
                 selected.votingStatus !== "ended" && (
-                  <p className="text-xs text-gray-300">
+                  <p
+                    id="results-publication-disabled-reason"
+                    className="text-xs text-gray-300"
+                  >
                     Encerre a votação antes de publicar os resultados.
                   </p>
                 )}

@@ -15,24 +15,59 @@ export function UserEditModal({
   handleCreate: (user: Partial<User>) => void;
   handleResetAccess: (user: Partial<AdminUser>) => void;
 }) {
+  const dialogRef = React.useRef<HTMLDivElement>(null);
   const nameInputRef = React.useRef<HTMLInputElement>(null);
+  const returnFocusRef = React.useRef<HTMLElement | null>(null);
   React.useEffect(() => {
     if (!showModal) return;
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     nameInputRef.current?.focus();
-    const handleEscape = (event: KeyboardEvent) => {
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeModal();
+      if (event.key !== "Tab") return;
+
+      const focusableElements = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((element) => element.getClientRects().length > 0);
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (!firstElement || !lastElement) {
+        event.preventDefault();
+        dialogRef.current?.focus();
+      } else if (!dialogRef.current?.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? lastElement : firstElement).focus();
+      } else if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
     };
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
+    document.addEventListener("keydown", handleDialogKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleDialogKeyDown);
+      const returnFocusTarget = returnFocusRef.current;
+      if (returnFocusTarget?.isConnected) returnFocusTarget.focus();
+    };
   }, [showModal, closeModal]);
 
   if (!showModal) return null;
   const isEdit = !!modalUser._id;
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="user-modal-title"
+      tabIndex={-1}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
     >
       <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-gray-900 p-6 shadow-lg">
@@ -98,15 +133,22 @@ export function UserEditModal({
             <span className="text-white">Participante infantil</span>
           </label>
           {modalUser.imageUrl ? (
-            <CldImage
-              src={modalUser.imageUrl}
-              width={900}
-              height={600}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              alt={`Foto de ${modalUser.fullName || "participante"}`}
-              className="h-80 cursor-pointer overflow-hidden rounded object-contain"
+            <button
+              type="button"
+              aria-label="Remover imagem do participante"
+              disabled={loading}
+              className="cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
               onClick={() => setModalUser({ ...modalUser, imageUrl: "" })}
-            />
+            >
+              <CldImage
+                src={modalUser.imageUrl}
+                width={900}
+                height={600}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                alt={`Foto de ${modalUser.fullName || "participante"}`}
+                className="h-80 overflow-hidden rounded object-contain"
+              />
+            </button>
           ) : (
             <CldUploadButton
               uploadPreset="halloween-freitas"
