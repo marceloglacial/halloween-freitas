@@ -29,6 +29,9 @@ cross-edition isolation cases where they apply.
 
 - Cover unregistered, unverified, mismatched, ambiguous, and already-linked
   guest identities, including concurrent RSVP claims.
+- Exercise RSVP and guest-link rate limits at their threshold, across window
+  expiry, under concurrency, and across editions; verify generic `429` responses
+  and that limiter records contain no raw email, Clerk ID, or client address.
 - Cover authorization denial for every protected admin and guest operation;
   forged client email, RSVP ID, or voter ID must not change server-derived
   identity.

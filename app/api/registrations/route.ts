@@ -1,5 +1,11 @@
 import { MongoServerError, ObjectId, type ClientSession } from "mongodb";
 import { getDb, getMongoClient } from "@/lib/db";
+import {
+  consumeRateLimit,
+  rateLimitResponse,
+  requestRateLimitPolicies,
+  trustedClientAddress,
+} from "@/lib/request-rate-limits";
 import { getCurrentEvent, getRegistrationState } from "@/lib/events";
 import {
   errorResponse,
@@ -54,11 +60,38 @@ export async function POST(request: Request) {
       return errorResponse("As inscrições estão encerradas", 403);
     }
 
-    const client = await getMongoClient();
     const db = await getDb();
+    const clientAddress = trustedClientAddress(request);
+    if (!clientAddress) {
+      return errorResponse("Serviço temporariamente indisponível", 503);
+    }
+    const eventId = new ObjectId(event._id);
+    const [addressLimit, emailLimit] = await Promise.all([
+      consumeRateLimit(db, {
+        eventId,
+        policy: requestRateLimitPolicies.rsvpAddress,
+        identity: clientAddress,
+        now,
+      }),
+      consumeRateLimit(db, {
+        eventId,
+        policy: requestRateLimitPolicies.rsvpEmail,
+        identity: normalizedEmail,
+        now,
+      }),
+    ]);
+    if (!addressLimit.allowed || !emailLimit.allowed) {
+      return rateLimitResponse(
+        Math.max(
+          addressLimit.allowed ? 0 : addressLimit.retryAfterSeconds,
+          emailLimit.allowed ? 0 : emailLimit.retryAfterSeconds,
+        ),
+      );
+    }
+
+    const client = await getMongoClient();
     session = client.startSession();
     await session.withTransaction(async () => {
-      const eventId = new ObjectId(event._id);
       const gate = await db
         .collection("events")
         .updateOne(

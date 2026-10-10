@@ -39,6 +39,19 @@ describe("database indexes", () => {
     expect(await getIndexIssues(db)).toEqual([]);
   });
 
+  it("expires request rate-limit buckets automatically", () => {
+    expect(
+      requiredIndexes.find(
+        ({ label }) => label === "request rate-limit expiry",
+      ),
+    ).toEqual({
+      collection: "requestRateLimits",
+      label: "request rate-limit expiry",
+      key: { expiresAt: 1 },
+      options: { expireAfterSeconds: 0 },
+    });
+  });
+
   it("rejects a guest ownership index that also covers legacy unlinked records", async () => {
     const definitions = Object.groupBy(
       requiredIndexes,
@@ -181,29 +194,30 @@ describe("database indexes", () => {
         partialFilterExpression: { status: "open" },
       },
     });
-    expect(requiredIndexes.find(({ label }) => label === "vote")).toMatchObject({
-      collection: "votes",
-      key: {
-        eventId: 1,
-        roundId: 1,
-        categoryId: 1,
-        voterRsvpId: 1,
-      },
-      options: {
-        unique: true,
-        partialFilterExpression: {
-          roundId: { $type: "objectId" },
-          voterRsvpId: { $type: "objectId" },
+    expect(requiredIndexes.find(({ label }) => label === "vote")).toMatchObject(
+      {
+        collection: "votes",
+        key: {
+          eventId: 1,
+          roundId: 1,
+          categoryId: 1,
+          voterRsvpId: 1,
+        },
+        options: {
+          unique: true,
+          partialFilterExpression: {
+            roundId: { $type: "objectId" },
+            voterRsvpId: { $type: "objectId" },
+          },
         },
       },
-    });
+    );
   });
 
   it("checks ballot duplicates only for round-scoped ballot documents", async () => {
     const aggregate = vi.fn((pipeline) => ({
       limit: () => ({
-        next: async () =>
-          pipeline[0]?.$match?.roundId ? { count: 2 } : null,
+        next: async () => (pipeline[0]?.$match?.roundId ? { count: 2 } : null),
       }),
     }));
     const db = { collection: vi.fn(() => ({ aggregate })) };
