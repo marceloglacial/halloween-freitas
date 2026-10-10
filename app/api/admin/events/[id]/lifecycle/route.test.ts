@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ObjectId } from "mongodb";
 
 const mocks = vi.hoisted(() => ({
+  auth: vi.fn(),
   isAdmin: vi.fn(),
   getEventById: vi.fn(),
   eventFindOne: vi.fn(),
@@ -14,10 +15,12 @@ const mocks = vi.hoisted(() => ({
   roundFindMany: vi.fn(),
   roundInsertOne: vi.fn(),
   roundUpdateOne: vi.fn(),
+  auditInsertOne: vi.fn(),
   withTransaction: vi.fn(),
   endSession: vi.fn(),
 }));
 
+vi.mock("@clerk/nextjs/server", () => ({ auth: mocks.auth }));
 vi.mock("@/lib/auth/admin", () => ({ isAdmin: mocks.isAdmin }));
 vi.mock("@/lib/events", () => ({ getEventById: mocks.getEventById }));
 vi.mock("@/lib/db", () => ({
@@ -25,25 +28,27 @@ vi.mock("@/lib/db", () => ({
     collection: (name: string) =>
       name === "events"
         ? { findOne: mocks.eventFindOne, updateOne: mocks.updateOne }
-        : name === "categories"
-          ? { find: () => ({ toArray: mocks.categoryToArray }) }
-          : name === "votingRounds"
-            ? {
-                findOne: mocks.roundFindOne,
-                find: () => ({
-                  sort: () => ({
-                    limit: () => ({ toArray: mocks.roundFindMany }),
+        : name === "adminAudits"
+          ? { insertOne: mocks.auditInsertOne }
+          : name === "categories"
+            ? { find: () => ({ toArray: mocks.categoryToArray }) }
+            : name === "votingRounds"
+              ? {
+                  findOne: mocks.roundFindOne,
+                  find: () => ({
+                    sort: () => ({
+                      limit: () => ({ toArray: mocks.roundFindMany }),
+                    }),
                   }),
-                }),
-                insertOne: mocks.roundInsertOne,
-                updateOne: mocks.roundUpdateOne,
-              }
-            : name === "votes"
-              ? { find: () => ({ toArray: mocks.ballotToArray }) }
-              : {
-                  find: () => ({ toArray: mocks.contestantToArray }),
-                  updateMany: mocks.updateMany,
-                },
+                  insertOne: mocks.roundInsertOne,
+                  updateOne: mocks.roundUpdateOne,
+                }
+              : name === "votes"
+                ? { find: () => ({ toArray: mocks.ballotToArray }) }
+                : {
+                    find: () => ({ toArray: mocks.contestantToArray }),
+                    updateMany: mocks.updateMany,
+                  },
   }),
   getMongoClient: vi.fn().mockResolvedValue({
     startSession: () => ({
@@ -73,6 +78,7 @@ describe("event lifecycle controls", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-11-01T00:00:00.000Z"));
     vi.clearAllMocks();
+    mocks.auth.mockResolvedValue({ userId: "admin-clerk-id" });
     mocks.isAdmin.mockResolvedValue(true);
     mocks.updateOne.mockResolvedValue({ matchedCount: 1 });
     mocks.updateMany.mockResolvedValue({ modifiedCount: 0 });
@@ -105,8 +111,12 @@ describe("event lifecycle controls", () => {
     ]);
     mocks.roundInsertOne.mockResolvedValue({ insertedId: new ObjectId() });
     mocks.roundUpdateOne.mockResolvedValue({ matchedCount: 1 });
+    mocks.auditInsertOne.mockResolvedValue({ acknowledged: true });
     mocks.withTransaction.mockImplementation(async (callback) => callback());
-    mocks.eventFindOne.mockResolvedValue({ votingStatus: "ended" });
+    mocks.eventFindOne.mockResolvedValue({
+      votingStatus: "ended",
+      resultsPublished: false,
+    });
     mocks.getEventById.mockResolvedValue({
       _id: eventId,
       status: "active",
@@ -167,6 +177,32 @@ describe("event lifecycle controls", () => {
         reopenedAt: new Date("2026-11-01T00:00:00.000Z"),
       },
     });
+  });
+
+  it("audits automatic unpublishing when voting is reopened", async () => {
+    mocks.eventFindOne.mockResolvedValue({
+      votingStatus: "ended",
+      resultsPublished: true,
+    });
+
+    const response = await request("start-voting");
+
+    expect(response.status).toBe(200);
+    expect(mocks.auditInsertOne).toHaveBeenCalledWith(
+      {
+        eventId: new ObjectId(eventId),
+        clerkUserId: "admin-clerk-id",
+        action: "results_unpublished",
+        targetType: "event",
+        targetId: new ObjectId(eventId),
+        at: new Date("2026-11-01T00:00:00.000Z"),
+        changes: {
+          resultsPublished: { from: true, to: false },
+          reason: "voting_reopened",
+        },
+      },
+      { session: expect.anything() },
+    );
   });
 
   it("reopens the current runoff without reopening the earlier primary round", async () => {
@@ -474,6 +510,97 @@ describe("event lifecycle controls", () => {
     expect(await response.json()).toEqual({
       error: "Encerre a votação antes de publicar os resultados",
     });
+  });
+
+  it("publishes and audits results only after the latest round ended", async () => {
+    const response = await request("publish-results");
+
+    expect(response.status).toBe(200);
+    expect(mocks.roundFindMany).toHaveBeenCalledOnce();
+    expect(mocks.updateOne).toHaveBeenCalledWith(
+      {
+        _id: new ObjectId(eventId),
+        votingStatus: "ended",
+        resultsPublished: { $ne: true },
+      },
+      {
+        $set: {
+          resultsPublished: true,
+          updatedAt: new Date("2026-11-01T00:00:00.000Z"),
+        },
+      },
+      { session: expect.anything() },
+    );
+    expect(mocks.auditInsertOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clerkUserId: "admin-clerk-id",
+        action: "results_published",
+        changes: { resultsPublished: { from: false, to: true } },
+      }),
+      { session: expect.anything() },
+    );
+  });
+
+  it("rejects publication when the latest round is still open", async () => {
+    mocks.roundFindMany.mockResolvedValue([
+      { _id: new ObjectId(), status: "open", type: "runoff" },
+    ]);
+
+    const response = await request("publish-results");
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Encerre a rodada final antes de publicar os resultados",
+    });
+    expect(mocks.updateOne).not.toHaveBeenCalled();
+    expect(mocks.auditInsertOne).not.toHaveBeenCalled();
+  });
+
+  it("does not audit a publication lost to a concurrent transition", async () => {
+    mocks.updateOne.mockResolvedValue({ matchedCount: 0 });
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      votingStatus: "ended",
+      resultsPublished: true,
+    });
+
+    const response = await request("publish-results");
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Os resultados já estão publicados",
+    });
+    expect(mocks.auditInsertOne).not.toHaveBeenCalled();
+  });
+
+  it("unpublishes and audits results without changing votes", async () => {
+    const response = await request("unpublish-results");
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateOne).toHaveBeenCalledWith(
+      {
+        _id: new ObjectId(eventId),
+        votingStatus: "ended",
+        resultsPublished: true,
+      },
+      {
+        $set: {
+          resultsPublished: false,
+          updatedAt: new Date("2026-11-01T00:00:00.000Z"),
+        },
+      },
+      { session: expect.anything() },
+    );
+    expect(mocks.auditInsertOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clerkUserId: "admin-clerk-id",
+        action: "results_unpublished",
+        changes: { resultsPublished: { from: true, to: false } },
+      }),
+      { session: expect.anything() },
+    );
+    expect(mocks.ballotToArray).not.toHaveBeenCalled();
+    expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 
   it("rejects unsupported lifecycle actions", async () => {
