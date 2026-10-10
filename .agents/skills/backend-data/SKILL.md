@@ -28,6 +28,12 @@ matching installed Next.js guide before changing framework code.
 5. Use atomic writes and database uniqueness for ownership claims, enrollment
    cutoffs, and duplicate-sensitive operations. Application prechecks alone do
    not protect concurrent requests.
+6. For party-gallery work, require a valid RSVP for the same edition, allow
+   uploads after `eventStartsAt` even after voting opens, keep photos private
+   until album-wide publication, and scope administrator removal to that
+   edition. Party photos are separate from contest-entry photos and have no
+   per-photo approval state. Follow [lifecycle](../../../docs/lifecycle.md)
+   and [testing](../../../docs/testing.md).
 
 ## Output checks
 

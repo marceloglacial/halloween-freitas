@@ -23,6 +23,9 @@ when legacy code differs. Follow [repository instructions](../../../AGENTS.md).
    permanently ends new RSVP and contestant membership changes.
 4. Make competing RSVP, contestant, and voting-opening operations serialize at
    that cutoff. Closing or reopening later lifecycle states never removes it.
+   Do not apply the cutoff to party-photo uploads by guests who already have a
+   valid RSVP for the edition; those uploads remain available after the event
+   starts, including after voting opens.
 5. Update the authoritative lifecycle docs when the approved transition rules
    change; do not redefine a product rule to match legacy code.
 

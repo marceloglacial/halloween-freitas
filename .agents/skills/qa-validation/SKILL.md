@@ -15,8 +15,16 @@ not touch production data or perform an unapproved external mutation.
    Identify malformed input, authorization, privacy, concurrency, and
    cross-edition isolation cases only where the changed path makes them
    relevant.
+   For party-gallery changes, verify that a same-edition RSVP guest can upload
+   after the event starts even after voting opens; uploads stay private before
+   publication, appear automatically after publication, and removal revokes
+   access. Follow the detailed matrix in `docs/testing.md`.
 2. For documentation-only changes, check Markdown formatting and local links;
    do not run application race or security suites solely because they exist.
+   For harness workflow changes, validate the approval/operation matrix in
+   `docs/ai-harness-validation.md`. If exercising Git behavior, use only a
+   temporary isolated repository; never push to a real remote or mutate a
+   project worktree as part of the simulation.
 3. For application-code changes, add or update focused tests for relevant
    scenarios, then run the repository-required `pnpm test`, `pnpm lint`, and
    `pnpm build`. Use isolated fixtures rather than a live database.

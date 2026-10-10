@@ -52,6 +52,11 @@ all implementation and final decisions. If Codex does not load project roles
 or delegation is unavailable, perform the same focused review directly and
 continue without delegation.
 
+For “what is next?” or “continue development,” load
+`.agents/skills/issue-workflow/SKILL.md`; epic order, dependency readiness,
+live GitHub inspection, and epic-completion gates are defined in
+`docs/ai-workflow.md`.
+
 ## Work and branch safety
 
 - For a GitHub issue, work on exactly that implementation issue; use epics as
@@ -69,15 +74,24 @@ continue without delegation.
 - Development ends with implementation, required validation, and a summary of
   changes, checks, and risks. Leave issue changes uncommitted and wait for
   human review.
-- After explicit user approval of one issue and its reviewed change set, use
-  `.agents/skills/issue-finalization/SKILL.md` to commit, integrate or use the
-  required PR workflow, clean up that issue's branch/worktree, and close its
-  ticket. Approval applies only to that issue and change set; revisions require
-  a fresh review and approval, and approval never transfers to another issue.
+- Explicit approval of the current issue's reviewed change set automatically
+  authorizes the local commit, non-fast-forward merge into local `main`,
+  post-merge validation, and safe removal of that issue's worktree and local
+  branch. Follow `.agents/skills/issue-finalization/SKILL.md`; do not ask for
+  another confirmation for those local steps. If approval, scope, or repository
+  state is ambiguous, stop and clarify. Any material change after review needs
+  a fresh approval.
+- Approval never authorizes a push. Push only after the user explicitly names
+  the branch and remote. Issue closure and epic closure also require separate
+  explicit authorization; a local merge does not change GitHub issue state.
+- Never mark or close an epic automatically. Verify its implementation, branch
+  integration, validation, regressions, and cross-feature criteria, then wait
+  for the user's explicit approval of epic completion and closure.
 - Never deploy automatically. Never force push, force delete, reset, discard,
   or modify unrelated worktrees. If a finalization step fails, stop and
   preserve the issue branch/worktree for recovery. Respect branch protection
-  and required PR checks; use a PR when repository policy requires it.
+  for remote publication; do not create a PR or contact a remote as part of
+  local finalization.
 - Do not run destructive database or infrastructure operations without explicit
   user authorization. Read the relevant operations guidance first.
 - Start another issue only after the current changes are integrated or safely

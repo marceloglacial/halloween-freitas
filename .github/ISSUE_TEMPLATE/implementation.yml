@@ -18,8 +18,8 @@ body:
     id: blocking-dependencies
     attributes:
       label: Blocking dependencies
-      description: List issues that must be closed first, or write None.
-      placeholder: "#42, #43"
+      description: List canonical GitHub issue numbers and feature keys for real technical blockers only. Do not add dependencies just because an issue belongs to an earlier or later epic; write None when unblocked.
+      placeholder: "#42 — AI-06, #43 — API-02"
     validations:
       required: true
   - type: dropdown
@@ -94,4 +94,4 @@ body:
   - type: markdown
     attributes:
       value: |
-        The agent leaves implementation changes uncommitted for review. Only explicit user approval naming this issue and the reviewed change set starts finalization. Issue fields and labels track status; they do not grant approval.
+        The agent leaves implementation changes uncommitted for review. After approval of the reviewed change set, the agent commits and merges locally into main, validates, and safely removes the issue worktree and local branch. This does not push, close the issue or epic, create a PR, or deploy. Push and GitHub issue/epic closure each need a separate explicit request. Issue fields and labels do not grant approval.
