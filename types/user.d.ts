@@ -17,6 +17,8 @@ interface UserListItemProps {
   user: User;
   openEditModal: (user: User) => void;
   handleDelete: (id: string) => void;
+  canDelete: boolean;
+  disabledDescriptionId: string;
 }
 
 interface UserEditModalProps {

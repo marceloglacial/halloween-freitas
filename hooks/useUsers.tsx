@@ -23,7 +23,14 @@ export function useUsers(eventId: string) {
         const res = await fetch(
           `/api/admin/users?eventId=${encodeURIComponent(eventId)}`,
         );
-        if (!res.ok) throw new Error("Failed to fetch users");
+        if (!res.ok) {
+          throw new Error(
+            await responseError(
+              res,
+              "Não foi possível carregar os convidados.",
+            ),
+          );
+        }
         const data = await res.json();
         setUsers(data);
       } catch (err: unknown) {
@@ -34,7 +41,7 @@ export function useUsers(eventId: string) {
             "message" in err &&
             typeof (err as { message?: unknown }).message === "string"
             ? (err as { message: string }).message
-            : "Error fetching users",
+            : "Não foi possível carregar os convidados.",
         );
       } finally {
         setLoading(false);
@@ -54,7 +61,10 @@ export function useUsers(eventId: string) {
       });
       if (!res.ok) {
         throw new Error(
-          await responseError(res, "Não foi possível atualizar o usuário."),
+          await responseError(
+            res,
+            "Não foi possível atualizar o participante.",
+          ),
         );
       }
       const updated = await res.json();
@@ -71,7 +81,7 @@ export function useUsers(eventId: string) {
           "message" in err &&
           typeof (err as { message?: unknown }).message === "string"
           ? (err as { message: string }).message
-          : "Error updating user",
+          : "Não foi possível atualizar o participante.",
       );
     } finally {
       setLoading(false);
@@ -80,7 +90,14 @@ export function useUsers(eventId: string) {
 
   async function handleDelete(_id: string) {
     setError("");
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    const participant = users.find((user) => user._id === _id);
+    if (
+      !window.confirm(
+        `Excluir ${participant?.fullName ?? "este participante"}? A ação não pode ser desfeita.`,
+      )
+    )
+      return;
+    setLoading(true);
     try {
       const res = await fetch("/api/admin/users", {
         method: "DELETE",
@@ -89,7 +106,7 @@ export function useUsers(eventId: string) {
       });
       if (!res.ok) {
         throw new Error(
-          await responseError(res, "Não foi possível excluir o usuário."),
+          await responseError(res, "Não foi possível excluir o participante."),
         );
       }
       setUsers((prev: User[]) => prev.filter((u: User) => u._id !== _id));
@@ -100,8 +117,10 @@ export function useUsers(eventId: string) {
           "message" in err &&
           typeof (err as { message?: unknown }).message === "string"
           ? (err as { message: string }).message
-          : "Error deleting user",
+          : "Não foi possível excluir o participante.",
       );
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -177,7 +196,10 @@ export function useUsers(eventId: string) {
       });
       if (!res.ok) {
         throw new Error(
-          await responseError(res, "Não foi possível criar o usuário."),
+          await responseError(
+            res,
+            "Não foi possível adicionar o participante.",
+          ),
         );
       }
       const created = await res.json();
@@ -190,7 +212,7 @@ export function useUsers(eventId: string) {
           "message" in err &&
           typeof (err as { message?: unknown }).message === "string"
           ? (err as { message: string }).message
-          : "Error creating user",
+          : "Não foi possível adicionar o participante.",
       );
     } finally {
       setLoading(false);
