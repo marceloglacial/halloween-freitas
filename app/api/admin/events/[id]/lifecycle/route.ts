@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { auth } from "@clerk/nextjs/server";
 import { isAdmin } from "@/lib/auth/admin";
 import { getDb, getMongoClient } from "@/lib/db";
 import { getEventById } from "@/lib/events";
@@ -29,7 +30,10 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await isAdmin())) return errorResponse("Não autorizado", 401);
+  const { userId } = await auth();
+  if (!userId || !(await isAdmin(userId))) {
+    return errorResponse("Não autorizado", 401);
+  }
 
   const { id } = await params;
   if (!ObjectId.isValid(id)) return errorResponse("Evento inválido", 400);
@@ -72,8 +76,16 @@ export async function POST(
         status: "active",
         votingStatus: "open",
       },
-      "publish-results": { _id: eventId, votingStatus: "ended" },
-      "unpublish-results": { _id: eventId, resultsPublished: true },
+      "publish-results": {
+        _id: eventId,
+        votingStatus: "ended",
+        resultsPublished: { $ne: true },
+      },
+      "unpublish-results": {
+        _id: eventId,
+        votingStatus: "ended",
+        resultsPublished: true,
+      },
     };
     const updates: Record<LifecycleAction, Record<string, unknown>> = {
       "start-voting": {
@@ -97,6 +109,7 @@ export async function POST(
 
     let result: { matchedCount: number } = { matchedCount: 0 };
     let runoffOpened = false;
+    let publicationConflict: string | null = null;
     if (
       action === "close-contest-entry" ||
       action === "reopen-contest-entry" ||
@@ -107,12 +120,13 @@ export async function POST(
         await session.withTransaction(async () => {
           const previousEvent =
             action === "start-voting"
-              ? await db
-                  .collection("events")
-                  .findOne(
-                    { _id: eventId },
-                    { projection: { votingStatus: 1 }, session },
-                  )
+              ? await db.collection("events").findOne(
+                  { _id: eventId },
+                  {
+                    projection: { votingStatus: 1, resultsPublished: 1 },
+                    session,
+                  },
+                )
               : null;
           result = await db.collection("events").updateOne(
             filters[action],
@@ -145,6 +159,24 @@ export async function POST(
                 (!currentRound || currentRound.status !== "ended")
               ) {
                 throw new Error("CURRENT_ROUND_STATE_INVALID");
+              }
+
+              if (previousEvent?.resultsPublished) {
+                await db.collection("adminAudits").insertOne(
+                  {
+                    eventId,
+                    clerkUserId: userId,
+                    action: "results_unpublished",
+                    targetType: "event",
+                    targetId: eventId,
+                    at: now,
+                    changes: {
+                      resultsPublished: { from: true, to: false },
+                      reason: "voting_reopened",
+                    },
+                  },
+                  { session },
+                );
               }
 
               if (previousEvent?.votingStatus === "ended" && currentRound) {
@@ -285,6 +317,50 @@ export async function POST(
       } finally {
         await session.endSession();
       }
+    } else if (action === "publish-results" || action === "unpublish-results") {
+      const session = (await getMongoClient()).startSession();
+      try {
+        await session.withTransaction(async () => {
+          if (action === "publish-results") {
+            const latestRounds = await db
+              .collection<VotingRoundDocument>("votingRounds")
+              .find({ eventId }, { session })
+              .sort({ openedAt: -1, _id: -1 })
+              .limit(1)
+              .toArray();
+            if (!latestRounds[0] || latestRounds[0].status !== "ended") {
+              publicationConflict =
+                "Encerre a rodada final antes de publicar os resultados";
+              return;
+            }
+          }
+
+          result = await db
+            .collection("events")
+            .updateOne(filters[action], { $set: updates[action] }, { session });
+          if (!result.matchedCount) return;
+
+          const isPublishing = action === "publish-results";
+          await db.collection("adminAudits").insertOne(
+            {
+              eventId,
+              clerkUserId: userId,
+              action: isPublishing
+                ? "results_published"
+                : "results_unpublished",
+              targetType: "event",
+              targetId: eventId,
+              at: now,
+              changes: {
+                resultsPublished: { from: !isPublishing, to: isPublishing },
+              },
+            },
+            { session },
+          );
+        });
+      } finally {
+        await session.endSession();
+      }
     } else {
       result = await db
         .collection("events")
@@ -354,10 +430,19 @@ export async function POST(
         return errorResponse("A votação não está aberta", 409);
       }
       if (action === "publish-results") {
+        if (publicationConflict) {
+          return errorResponse(publicationConflict, 409);
+        }
+        if (event.resultsPublished) {
+          return errorResponse("Os resultados já estão publicados", 409);
+        }
         return errorResponse(
           "Encerre a votação antes de publicar os resultados",
           409,
         );
+      }
+      if (action === "unpublish-results") {
+        return errorResponse("Os resultados já estão ocultos", 409);
       }
     }
 
