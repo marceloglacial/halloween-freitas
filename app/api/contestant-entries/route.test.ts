@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getDb: vi.fn(),
   getMongoClient: vi.fn(),
   createIndividualContestantEntry: vi.fn(),
+  createJuniorContestantEntry: vi.fn(),
   logServerError: vi.fn(),
 }));
 
@@ -32,6 +33,7 @@ vi.mock("@/lib/contestant-entry-mutations", () => ({
     }
   },
   createIndividualContestantEntry: mocks.createIndividualContestantEntry,
+  createJuniorContestantEntry: mocks.createJuniorContestantEntry,
 }));
 vi.mock("@/lib/db", () => ({
   getDb: mocks.getDb,
@@ -95,6 +97,13 @@ describe("individual contestant entry route", () => {
       fullName: "Ana Freitas",
     });
     mocks.createIndividualContestantEntry.mockResolvedValue(entry);
+    mocks.createJuniorContestantEntry.mockResolvedValue({
+      ...entry,
+      entryType: "junior",
+      displayName: "Bia Freitas",
+      guardianRsvpId: new ObjectId(rsvpId),
+      ownerRsvpId: undefined,
+    });
     mocks.getDb.mockResolvedValue({});
     mocks.getMongoClient.mockResolvedValue({});
   });
@@ -150,10 +159,13 @@ describe("individual contestant entry route", () => {
       new GuestAccessError(403, "unlinked", "Verifique seu acesso."),
     );
 
-    const response = await POST(request({ eventId, categoryId }));
+    const response = await POST(
+      request({ eventId, categoryId, entryType: "junior", childName: "Bia" }),
+    );
 
     expect(response.status).toBe(403);
     expect(mocks.createIndividualContestantEntry).not.toHaveBeenCalled();
+    expect(mocks.createJuniorContestantEntry).not.toHaveBeenCalled();
   });
 
   it("rejects creation when contestant registration is not open", async () => {
@@ -166,6 +178,20 @@ describe("individual contestant entry route", () => {
 
     expect(response.status).toBe(409);
     expect(mocks.createIndividualContestantEntry).not.toHaveBeenCalled();
+  });
+
+  it("rejects junior creation after entries close", async () => {
+    mocks.getEventById.mockResolvedValue({
+      ...event,
+      contestEntryStatus: "closed",
+    });
+
+    const response = await POST(
+      request({ eventId, categoryId, entryType: "junior", childName: "Bia" }),
+    );
+
+    expect(response.status).toBe(409);
+    expect(mocks.createJuniorContestantEntry).not.toHaveBeenCalled();
   });
 
   it("turns an ownership uniqueness conflict into a safe conflict response", async () => {
@@ -189,5 +215,68 @@ describe("individual contestant entry route", () => {
 
     expect(response.status).toBe(400);
     expect(mocks.createIndividualContestantEntry).not.toHaveBeenCalled();
+  });
+
+  it("creates a guardian-owned child draft without trusting a client RSVP id", async () => {
+    mocks.createJuniorContestantEntry.mockResolvedValueOnce({
+      ...entry,
+      entryType: "junior",
+      displayName: "Bia Freitas",
+      costumeTitle: "Pequena fada",
+      guardianRsvpId: new ObjectId(rsvpId),
+      ownerRsvpId: undefined,
+    });
+    const response = await POST(
+      request({
+        eventId,
+        entryType: "junior",
+        categoryId,
+        childName: "  Bia   Freitas ",
+        costumeTitle: "  Pequena fada ",
+        guardianRsvpId: "forged-rsvp",
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(await response.json()).toMatchObject({
+      entryType: "junior",
+      displayName: "Bia Freitas",
+      costumeTitle: "Pequena fada",
+      status: "draft",
+    });
+    expect(mocks.createJuniorContestantEntry).toHaveBeenCalledWith(
+      {},
+      {},
+      expect.objectContaining({
+        eventId: new ObjectId(eventId),
+        categoryId: new ObjectId(categoryId),
+        guardianRsvpId: new ObjectId(rsvpId),
+        childName: "Bia Freitas",
+        costumeTitle: "Pequena fada",
+      }),
+    );
+    expect(mocks.createIndividualContestantEntry).not.toHaveBeenCalled();
+  });
+
+  it.each(["", "A", "x".repeat(121)])(
+    "rejects an invalid child name without creating an entry",
+    async (childName) => {
+      const response = await POST(
+        request({ eventId, entryType: "junior", categoryId, childName }),
+      );
+
+      expect(response.status).toBe(400);
+      expect(mocks.createJuniorContestantEntry).not.toHaveBeenCalled();
+    },
+  );
+
+  it("rejects group creation through the individual and junior endpoint", async () => {
+    const response = await POST(
+      request({ eventId, entryType: "group", categoryId }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.createIndividualContestantEntry).not.toHaveBeenCalled();
+    expect(mocks.createJuniorContestantEntry).not.toHaveBeenCalled();
   });
 });

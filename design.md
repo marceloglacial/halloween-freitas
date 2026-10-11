@@ -177,8 +177,11 @@ edition's Meu Halloween portal to view entries, RSVP/event status, and profile
 controls. While contestant entries are open, owners can upload or replace one
 photo per entry after confirming permission to use it. Show the current photo,
 file limits, pending upload, success, and error states. Junior entries require
-the guardian to confirm permission. Once entries close, the upload controls are
-disabled. The profile page still lets guests update the single “Nome e
+the guardian to confirm permission. Guardians can add multiple child entries in
+a junior category with the child's name, an optional costume title, and a clear
+instruction to finish the private draft by uploading a photo and confirming
+permission. Once entries close, creation and upload controls are disabled. The
+profile page still lets guests update the single “Nome e
 sobrenome” field. Keep the RSVP email private. Once contestant enrollment is
 closed, profile edits do not change the contestant name frozen for voting and
 results.

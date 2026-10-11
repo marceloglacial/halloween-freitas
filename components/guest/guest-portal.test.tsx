@@ -39,6 +39,14 @@ const categories: Category[] = [
     order: 0,
     eligibility: "all",
   },
+  {
+    _id: "507f1f77bcf86cd799439015",
+    eventId: event._id,
+    title: "Fantasia infantil",
+    icon: "🧒",
+    order: 1,
+    eligibility: "junior",
+  },
 ];
 
 describe("guest portal", () => {
@@ -118,6 +126,30 @@ describe("guest portal", () => {
     expect(html).toContain("Título: Bruxa das abóboras");
     expect(html).toContain('value="Bruxa das abóboras"');
     expect(html).toContain("Salvar título");
+  });
+
+  it("offers guardian-managed junior registration in junior categories", () => {
+    const html = renderToStaticMarkup(
+      <GuestPortal
+        event={{
+          ...event,
+          contestEntryStatus: "open",
+          votingStatus: "not_started",
+        }}
+        guestName="Ana Freitas"
+        entries={[]}
+        categories={categories}
+        votedCategoryIds={[]}
+        now="2026-09-15T00:00:00.000Z"
+      />,
+    );
+
+    expect(html).toContain("Adicionar criança ao concurso");
+    expect(html).toContain("Nome da criança");
+    expect(html).toContain("Fantasia (opcional)");
+    expect(html).toContain("Inscreva cada criança separadamente");
+    expect(html).toContain("Fantasia infantil");
+    expect(html).toContain("rascunho fica privado");
   });
 
   it("shows each owned entry status without exposing ownership or email", () => {

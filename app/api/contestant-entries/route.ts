@@ -6,6 +6,7 @@ import {
 import { ContestEntryClosedError } from "@/lib/contest-entry-writes";
 import {
   ContestantEntryWriteError,
+  createJuniorContestantEntry,
   createIndividualContestantEntry,
 } from "@/lib/contestant-entry-mutations";
 import { normalizeCostumeTitle } from "@/lib/contestant-entries";
@@ -14,6 +15,7 @@ import { getEventById } from "@/lib/events";
 import {
   errorResponse,
   logServerError,
+  normalizeName,
   parseObjectId,
   readJsonObject,
 } from "@/lib/http";
@@ -49,7 +51,7 @@ function failure(error: unknown) {
     const messages: Record<string, string> = {
       category_not_found: "Categoria não encontrada nesta edição.",
       category_not_available:
-        "Escolha uma categoria disponível para fantasia individual.",
+        "Escolha uma categoria disponível para este tipo de inscrição.",
       entry_not_found: "Inscrição não encontrada.",
       entry_not_editable: "Esta inscrição não pode mais ser alterada.",
       invalid_costume_title: "O título deve ter até 100 caracteres.",
@@ -65,7 +67,7 @@ function failure(error: unknown) {
       409,
     );
   }
-  logServerError("Individual contestant entry creation failed", error);
+  logServerError("Contestant entry creation failed", error);
   return errorResponse(
     "Não foi possível criar a inscrição. Tente novamente.",
     500,
@@ -80,6 +82,20 @@ export async function POST(request: Request) {
     }
     const categoryId = parseObjectId(body.categoryId);
     if (!categoryId) return errorResponse("Categoria inválida.", 400);
+
+    const entryType = body.entryType ?? "individual";
+    if (entryType !== "individual" && entryType !== "junior") {
+      return errorResponse("Tipo de inscrição inválido.", 400);
+    }
+
+    const childName =
+      entryType === "junior" ? normalizeName(body.childName) : null;
+    if (entryType === "junior" && !childName) {
+      return errorResponse(
+        "Informe o nome da criança (de 2 a 120 caracteres).",
+        400,
+      );
+    }
 
     let costumeTitle: string | undefined;
     try {
@@ -98,18 +114,25 @@ export async function POST(request: Request) {
       return errorResponse("As inscrições do concurso estão encerradas.", 409);
     }
 
-    const entry = await createIndividualContestantEntry(
-      await getMongoClient(),
-      await getDb(),
-      {
-        eventId: new ObjectId(event._id),
-        categoryId,
-        rsvpId: new ObjectId(guest.userId),
-        displayName: guest.fullName,
-        ...(costumeTitle ? { costumeTitle } : {}),
-        now,
-      },
-    );
+    const [client, db] = await Promise.all([getMongoClient(), getDb()]);
+    const entry =
+      entryType === "junior"
+        ? await createJuniorContestantEntry(client, db, {
+            eventId: new ObjectId(event._id),
+            categoryId,
+            guardianRsvpId: new ObjectId(guest.userId),
+            childName: childName!,
+            ...(costumeTitle ? { costumeTitle } : {}),
+            now,
+          })
+        : await createIndividualContestantEntry(client, db, {
+            eventId: new ObjectId(event._id),
+            categoryId,
+            rsvpId: new ObjectId(guest.userId),
+            displayName: guest.fullName,
+            ...(costumeTitle ? { costumeTitle } : {}),
+            now,
+          });
 
     return Response.json(serializeOwnedEntry(entry), {
       status: 201,
