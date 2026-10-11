@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ContestPhotoUpload from "@/components/guest/contest-photo-upload";
 import IndividualEntryControls from "@/components/guest/individual-entry-controls";
+import GroupEntryControls from "@/components/guest/group-entry-controls";
 import JuniorEntryControls from "@/components/guest/junior-entry-controls";
 import { isVotingOpen } from "@/lib/events";
 import type { OwnedContestantEntry } from "@/lib/contestant-entries";
@@ -48,11 +49,16 @@ export default function GuestPortal({
   const votingOpen = isVotingOpen(event) && eventStarted;
   const individualEntry =
     entries.find((entry) => entry.entryType === "individual") ?? null;
+  const groupEntry =
+    entries.find((entry) => entry.entryType === "group") ?? null;
   const individualCategories = categories.filter(
     (category) => category.eligibility === "all",
   );
   const juniorCategories = categories.filter(
     (category) => category.eligibility === "junior",
+  );
+  const groupCategories = categories.filter(
+    (category) => category.eligibility === "group",
   );
   const voted = new Set(votedCategoryIds);
   const entryMessage =
@@ -134,6 +140,12 @@ export default function GuestPortal({
         <JuniorEntryControls
           eventId={event._id}
           categories={juniorCategories}
+          enabled={entryState === "open"}
+        />
+        <GroupEntryControls
+          eventId={event._id}
+          categories={groupCategories}
+          entry={groupEntry}
           enabled={entryState === "open"}
         />
         {entries.length ? (

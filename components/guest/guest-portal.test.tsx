@@ -47,6 +47,14 @@ const categories: Category[] = [
     order: 1,
     eligibility: "junior",
   },
+  {
+    _id: "507f1f77bcf86cd799439016",
+    eventId: event._id,
+    title: "Fantasia em grupo",
+    icon: "👻",
+    order: 2,
+    eligibility: "group",
+  },
 ];
 
 describe("guest portal", () => {
@@ -150,6 +158,59 @@ describe("guest portal", () => {
     expect(html).toContain("Inscreva cada criança separadamente");
     expect(html).toContain("Fantasia infantil");
     expect(html).toContain("rascunho fica privado");
+  });
+
+  it("lets a guest create one group entry without registering a roster", () => {
+    const html = renderToStaticMarkup(
+      <GuestPortal
+        event={{
+          ...event,
+          contestEntryStatus: "open",
+          votingStatus: "not_started",
+        }}
+        guestName="Ana Freitas"
+        entries={[]}
+        categories={categories}
+        votedCategoryIds={[]}
+        now="2026-09-15T00:00:00.000Z"
+      />,
+    );
+
+    expect(html).toContain("Criar inscrição de grupo");
+    expect(html).toContain("Nome do grupo");
+    expect(html).toContain("Fantasia em grupo");
+    expect(html).toContain("Título da fantasia (opcional)");
+    expect(html).toContain("Não é necessário cadastrar integrantes");
+    expect(html).toContain("você poderá votar na sua própria inscrição");
+    expect(html).not.toContain("Nome dos integrantes");
+  });
+
+  it("does not offer a second group when the guest already owns one", () => {
+    const html = renderToStaticMarkup(
+      <GuestPortal
+        event={{
+          ...event,
+          contestEntryStatus: "open",
+          votingStatus: "not_started",
+        }}
+        guestName="Ana Freitas"
+        entries={[
+          {
+            _id: "group-entry",
+            categoryId: categories[2]._id,
+            entryType: "group",
+            displayName: "Família Freitas",
+            status: "draft",
+          },
+        ]}
+        categories={categories}
+        votedCategoryIds={[]}
+        now="2026-09-15T00:00:00.000Z"
+      />,
+    );
+
+    expect(html).toContain("Você já tem uma inscrição de grupo nesta edição.");
+    expect(html).not.toContain("Criar inscrição de grupo");
   });
 
   it("shows each owned entry status without exposing ownership or email", () => {

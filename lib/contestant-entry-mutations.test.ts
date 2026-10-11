@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ObjectId } from "mongodb";
 import {
+  createGroupContestantEntry,
   createJuniorContestantEntry,
   createIndividualContestantEntry,
   updateIndividualContestantEntryTitle,
@@ -281,6 +282,94 @@ describe("junior contestant entry mutations", () => {
         categoryId,
         guardianRsvpId: rsvpId,
         childName: "Bia Freitas",
+        now,
+      }),
+    ).rejects.toThrow("CONTEST_ENTRY_CLOSED");
+    expect(f.rsvpFind).not.toHaveBeenCalled();
+    expect(f.insert).not.toHaveBeenCalled();
+  });
+});
+
+describe("group contestant entry mutations", () => {
+  it("creates a private creator-owned draft in a group category", async () => {
+    const f = fixture({
+      category: { _id: categoryId, eligibility: "group" },
+    });
+
+    const created = await createGroupContestantEntry(f.client, f.db, {
+      eventId,
+      categoryId,
+      ownerRsvpId: rsvpId,
+      groupName: "  Família   Freitas ",
+      costumeTitle: "  Família Addams ",
+      now,
+    });
+
+    expect(created).toMatchObject({
+      eventId,
+      categoryId,
+      ownerRsvpId: rsvpId,
+      entryType: "group",
+      displayName: "Família Freitas",
+      costumeTitle: "Família Addams",
+      status: "draft",
+      createdAt: now,
+      updatedAt: now,
+    });
+    expect(created).not.toHaveProperty("guardianRsvpId");
+    expect(f.rsvpFind).toHaveBeenCalledWith(
+      { _id: rsvpId, eventId, status: { $ne: "cancelled" } },
+      expect.objectContaining({ session: f.session }),
+    );
+    expect(f.categoryFind).toHaveBeenCalledWith(
+      { _id: categoryId, eventId },
+      expect.objectContaining({ session: f.session }),
+    );
+    expect(f.insert).toHaveBeenCalledWith(created, { session: f.session });
+    expect(f.session.endSession).toHaveBeenCalledOnce();
+  });
+
+  it("requires a group-eligible category and same-edition creator RSVP", async () => {
+    const wrongCategory = fixture();
+    await expect(
+      createGroupContestantEntry(wrongCategory.client, wrongCategory.db, {
+        eventId,
+        categoryId,
+        ownerRsvpId: rsvpId,
+        groupName: "Família Freitas",
+        now,
+      }),
+    ).rejects.toMatchObject({ status: 400, code: "category_not_available" });
+    expect(wrongCategory.insert).not.toHaveBeenCalled();
+
+    const wrongEventRsvp = fixture({
+      category: { _id: categoryId, eligibility: "group" },
+      rsvp: null,
+    });
+    await expect(
+      createGroupContestantEntry(wrongEventRsvp.client, wrongEventRsvp.db, {
+        eventId,
+        categoryId,
+        ownerRsvpId: rsvpId,
+        groupName: "Família Freitas",
+        now,
+      }),
+    ).rejects.toThrow("CONTESTANT_RSVP_NOT_FOUND_FOR_EVENT");
+    expect(wrongEventRsvp.insert).not.toHaveBeenCalled();
+  });
+
+  it("does not create a group draft after the enrollment cutoff wins", async () => {
+    const f = fixture({
+      eventMatched: 0,
+      category: { _id: categoryId, eligibility: "group" },
+    });
+
+    await expect(
+      createGroupContestantEntry(f.client, f.db, {
+        eventId,
+        categoryId,
+        ownerRsvpId: rsvpId,
+        groupName: "Família Freitas",
         now,
       }),
     ).rejects.toThrow("CONTEST_ENTRY_CLOSED");
