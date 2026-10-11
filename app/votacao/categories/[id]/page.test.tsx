@@ -42,6 +42,9 @@ vi.mock("@/components/votacao/vote-grid", () => ({ default: () => null }));
 vi.mock("@/components/feature-unavailable", () => ({
   default: (props: { title: string; message: string }) => props,
 }));
+vi.mock("@/util/fonts", () => ({
+  secondaryFont: { className: "secondary-font" },
+}));
 vi.mock("next/navigation", () => ({
   notFound: vi.fn(),
   redirect: vi.fn(),
@@ -83,7 +86,7 @@ describe("voting category page", () => {
     mocks.getVotingCandidatesForCategory.mockResolvedValue([]);
   });
 
-  it("does not show a completed category after a round is reopened", async () => {
+  it("returns completed voters to the category list", async () => {
     mocks.hasVotedInRoundCategory.mockResolvedValue(true);
 
     const result = await CategoryPage({
@@ -91,10 +94,11 @@ describe("voting category page", () => {
       searchParams: Promise.resolve({ eventId }),
     });
 
-    expect(result.props).toMatchObject({
-      title: "Categoria concluída",
-      message: "Você já registrou seu voto nesta categoria.",
-    });
+    expect(result.type).toBe("main");
+    expect(result.props.children[0].props.children).toBe("Categoria concluída");
+    expect(result.props.children[2].props.href).toBe(
+      `/votacao/categories?eventId=${eventId}`,
+    );
     expect(mocks.getVotingCandidatesForCategory).not.toHaveBeenCalled();
     expect(mocks.hasVotedInRoundCategory).toHaveBeenCalledWith(
       eventId,

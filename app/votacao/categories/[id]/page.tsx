@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import BackButton from "@/components/back-button";
 import VoteGrid from "@/components/votacao/vote-grid";
@@ -71,10 +72,19 @@ export default async function CategoryPage({
     )
   ) {
     return (
-      <FeatureUnavailable
-        title="Categoria concluída"
-        message="Você já registrou seu voto nesta categoria."
-      />
+      <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 text-center">
+        <h1 className="text-4xl">Categoria concluída</h1>
+        <p className="max-w-xl text-xl text-orange-100">
+          Seu voto nesta categoria já foi registrado. Continue pelas categorias
+          que ainda estão abertas.
+        </p>
+        <Link
+          className="rounded-xl bg-orange-400 px-5 py-3 font-semibold text-black focus-visible:outline-2"
+          href={`/votacao/categories?eventId=${event._id}`}
+        >
+          Voltar às categorias
+        </Link>
+      </main>
     );
   }
 
