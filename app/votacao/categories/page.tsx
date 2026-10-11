@@ -79,8 +79,13 @@ export default async function VotingCategoriesPage({
         Bem-vindo, <br />
         {session.fullName}!
       </h1>
-      <p className="mt-2 text-xl text-orange-400 lg:text-2xl">
-        Você pode votar na mesma pessoa em mais de uma categoria.
+      <p className="mt-2 max-w-2xl text-xl text-orange-100 lg:text-2xl">
+        Você pode votar na mesma pessoa em mais de uma categoria. Escolha uma
+        categoria, confira seu voto antes de confirmar e volte aqui para
+        continuar quando quiser.
+      </p>
+      <p className="font-semibold text-orange-300" aria-live="polite">
+        {votedCategoryIds.size} de {categories.length} categorias concluídas
       </p>
       <Link
         href={`/meu-halloween?${new URLSearchParams({ eventId: event._id })}`}
