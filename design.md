@@ -181,10 +181,13 @@ the guardian to confirm permission. Guardians can add multiple child entries in
 a junior category with the child's name, an optional costume title, and a clear
 instruction to finish the private draft by uploading a photo and confirming
 permission. Once entries close, creation and upload controls are disabled. The
-profile page still lets guests update the single “Nome e
-sobrenome” field. Keep the RSVP email private. Once contestant enrollment is
-closed, profile edits do not change the contestant name frozen for voting and
-results.
+profile page still lets guests update the single “Nome e sobrenome” field.
+While entries are open, a guest can create one group entry per edition with a
+group name, a group-eligible category, and an optional costume title. Do not ask
+for member rosters or invitations. The creator can vote for their group, and
+the entry remains a private draft until its required photo is uploaded. Keep
+the RSVP email private. Once contestant enrollment is closed, profile edits do
+not change the contestant name frozen for voting and results.
 
 Category tiles use purple backgrounds, emoji, and a text title. Completed
 categories become gray and translucent, prevent navigation, expose

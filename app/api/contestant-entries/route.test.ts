@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   getMongoClient: vi.fn(),
   createIndividualContestantEntry: vi.fn(),
   createJuniorContestantEntry: vi.fn(),
+  createGroupContestantEntry: vi.fn(),
   logServerError: vi.fn(),
 }));
 
@@ -34,6 +35,7 @@ vi.mock("@/lib/contestant-entry-mutations", () => ({
   },
   createIndividualContestantEntry: mocks.createIndividualContestantEntry,
   createJuniorContestantEntry: mocks.createJuniorContestantEntry,
+  createGroupContestantEntry: mocks.createGroupContestantEntry,
 }));
 vi.mock("@/lib/db", () => ({
   getDb: mocks.getDb,
@@ -103,6 +105,12 @@ describe("individual contestant entry route", () => {
       displayName: "Bia Freitas",
       guardianRsvpId: new ObjectId(rsvpId),
       ownerRsvpId: undefined,
+    });
+    mocks.createGroupContestantEntry.mockResolvedValue({
+      ...entry,
+      entryType: "group",
+      displayName: "Família Freitas",
+      costumeTitle: "Família Addams",
     });
     mocks.getDb.mockResolvedValue({});
     mocks.getMongoClient.mockResolvedValue({});
@@ -270,13 +278,113 @@ describe("individual contestant entry route", () => {
     },
   );
 
-  it("rejects group creation through the individual and junior endpoint", async () => {
+  it("creates a group draft from the authenticated RSVP without exposing ownership", async () => {
     const response = await POST(
-      request({ eventId, entryType: "group", categoryId }),
+      request({
+        eventId,
+        entryType: "group",
+        categoryId,
+        groupName: "  Família   Freitas ",
+        costumeTitle: "  Família Addams ",
+        ownerRsvpId: "forged-rsvp",
+        members: ["Ana", "Bia"],
+      }),
     );
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({
+      _id: entry._id.toString(),
+      categoryId,
+      entryType: "group",
+      displayName: "Família Freitas",
+      costumeTitle: "Família Addams",
+      status: "draft",
+    });
+    expect(mocks.createGroupContestantEntry).toHaveBeenCalledWith(
+      {},
+      {},
+      expect.objectContaining({
+        eventId: new ObjectId(eventId),
+        categoryId: new ObjectId(categoryId),
+        ownerRsvpId: new ObjectId(rsvpId),
+        groupName: "Família Freitas",
+        costumeTitle: "Família Addams",
+      }),
+    );
     expect(mocks.createIndividualContestantEntry).not.toHaveBeenCalled();
     expect(mocks.createJuniorContestantEntry).not.toHaveBeenCalled();
+  });
+
+  it.each(["", "A", "x".repeat(121)])(
+    "rejects an invalid group name without creating an entry",
+    async (groupName) => {
+      const response = await POST(
+        request({ eventId, entryType: "group", categoryId, groupName }),
+      );
+      expect(response.status).toBe(400);
+      expect(mocks.createGroupContestantEntry).not.toHaveBeenCalled();
+    },
+  );
+
+  it("rejects unknown entry types", async () => {
+    const response = await POST(
+      request({ eventId, entryType: "unknown", categoryId }),
+    );
+    expect(response.status).toBe(400);
+    expect(mocks.createGroupContestantEntry).not.toHaveBeenCalled();
+  });
+
+  it("maps the group ownership uniqueness conflict to a safe response", async () => {
+    const { MongoServerError } = await import("mongodb");
+    mocks.createGroupContestantEntry.mockRejectedValue(
+      new MongoServerError({ code: 11000, message: "duplicate group owner" }),
+    );
+    const response = await POST(
+      request({
+        eventId,
+        entryType: "group",
+        categoryId,
+        groupName: "A Família",
+      }),
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Você já tem uma inscrição de grupo nesta edição.",
+    });
+  });
+
+  it("rejects group creation after contestant registration closes", async () => {
+    mocks.getEventById.mockResolvedValue({
+      ...event,
+      contestEntryStatus: "closed",
+    });
+    const response = await POST(
+      request({
+        eventId,
+        entryType: "group",
+        categoryId,
+        groupName: "A Família",
+      }),
+    );
+    expect(response.status).toBe(409);
+    expect(mocks.createGroupContestantEntry).not.toHaveBeenCalled();
+  });
+
+  it("denies group creation for a guest without an RSVP-linked account", async () => {
+    const GuestAccessError = (await import("@/lib/auth/guest-registration"))
+      .GuestAccessError;
+    mocks.getGuestRegistration.mockRejectedValue(
+      new GuestAccessError(403, "unlinked", "Verifique seu acesso."),
+    );
+    const response = await POST(
+      request({
+        eventId,
+        entryType: "group",
+        categoryId,
+        groupName: "A Família",
+      }),
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.createGroupContestantEntry).not.toHaveBeenCalled();
   });
 });

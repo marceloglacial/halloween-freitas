@@ -22,6 +22,10 @@ cross-edition isolation cases where they apply.
   categories in the selected edition; each entry uses the child's name,
   remains a private draft without its required photo and guardian consent, and
   cannot be created after the first-voting cutoff.
+- Verify a linked guest can create one group entry in an eligible group
+  category per edition; use the creator's RSVP, reject a second entry even
+  under concurrency, keep entries private until a valid photo is uploaded, and
+  permit the creator to vote for the group.
 - Verify voting cannot open before `eventStartsAt` or before eligible candidates
   are frozen; first opening atomically ends new RSVP and contestant membership
   changes.

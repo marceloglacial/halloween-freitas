@@ -136,6 +136,66 @@ export async function createJuniorContestantEntry(
   return entry;
 }
 
+export async function createGroupContestantEntry(
+  client: MongoClient,
+  db: Db,
+  input: {
+    eventId: ObjectId;
+    categoryId: ObjectId;
+    ownerRsvpId: ObjectId;
+    groupName: string;
+    costumeTitle?: string;
+    now: Date;
+  },
+) {
+  const session = client.startSession();
+  let entry: ContestantEntryDocument | undefined;
+
+  try {
+    await session.withTransaction(async () => {
+      await claimContestEntryWrite(db, input.eventId, session, input.now);
+      await requireContestantRsvpInEvent(
+        db,
+        input.eventId.toString(),
+        input.ownerRsvpId.toString(),
+        session,
+      );
+
+      const category = await db
+        .collection("categories")
+        .findOne(
+          { _id: input.categoryId, eventId: input.eventId },
+          { projection: { _id: 1, eligibility: 1 }, session },
+        );
+      if (!category)
+        throw new ContestantEntryWriteError(404, "category_not_found");
+      if (category.eligibility !== "group") {
+        throw new ContestantEntryWriteError(400, "category_not_available");
+      }
+
+      entry = createContestantEntry(
+        {
+          eventId: input.eventId.toString(),
+          categoryId: input.categoryId.toString(),
+          entryType: "group",
+          rsvpId: input.ownerRsvpId.toString(),
+          displayName: input.groupName,
+          costumeTitle: input.costumeTitle,
+        },
+        input.now,
+      );
+      await db
+        .collection<ContestantEntryDocument>("contestants")
+        .insertOne(entry, { session });
+    });
+  } finally {
+    await session.endSession();
+  }
+
+  if (!entry) throw new Error("CONTESTANT_ENTRY_NOT_CREATED");
+  return entry;
+}
+
 export async function updateIndividualContestantEntryTitle(
   client: MongoClient,
   db: Db,

@@ -6,6 +6,7 @@ import {
 import { ContestEntryClosedError } from "@/lib/contest-entry-writes";
 import {
   ContestantEntryWriteError,
+  createGroupContestantEntry,
   createJuniorContestantEntry,
   createIndividualContestantEntry,
 } from "@/lib/contestant-entry-mutations";
@@ -37,7 +38,7 @@ function serializeOwnedEntry(
   };
 }
 
-function failure(error: unknown) {
+function failure(error: unknown, entryType: "individual" | "junior" | "group") {
   if (error instanceof GuestAccessError) {
     return Response.json(
       { error: error.message, code: error.code },
@@ -63,7 +64,11 @@ function failure(error: unknown) {
   }
   if (error instanceof MongoServerError && error.code === 11000) {
     return errorResponse(
-      "Você já tem uma inscrição individual nesta edição.",
+      entryType === "individual"
+        ? "Você já tem uma inscrição individual nesta edição."
+        : entryType === "group"
+          ? "Você já tem uma inscrição de grupo nesta edição."
+          : "Não foi possível concluir esta inscrição.",
       409,
     );
   }
@@ -75,6 +80,7 @@ function failure(error: unknown) {
 }
 
 export async function POST(request: Request) {
+  let entryType: "individual" | "junior" | "group" = "individual";
   try {
     const body = await readJsonObject(request);
     if (!body || !validGuestEventId(body.eventId)) {
@@ -83,16 +89,27 @@ export async function POST(request: Request) {
     const categoryId = parseObjectId(body.categoryId);
     if (!categoryId) return errorResponse("Categoria inválida.", 400);
 
-    const entryType = body.entryType ?? "individual";
-    if (entryType !== "individual" && entryType !== "junior") {
+    const requestedType = body.entryType ?? "individual";
+    if (
+      requestedType !== "individual" &&
+      requestedType !== "junior" &&
+      requestedType !== "group"
+    ) {
       return errorResponse("Tipo de inscrição inválido.", 400);
     }
+    entryType = requestedType;
 
-    const childName =
-      entryType === "junior" ? normalizeName(body.childName) : null;
-    if (entryType === "junior" && !childName) {
+    const entryName =
+      entryType === "junior"
+        ? normalizeName(body.childName)
+        : entryType === "group"
+          ? normalizeName(body.groupName)
+          : null;
+    if (entryType !== "individual" && !entryName) {
       return errorResponse(
-        "Informe o nome da criança (de 2 a 120 caracteres).",
+        entryType === "junior"
+          ? "Informe o nome da criança (de 2 a 120 caracteres)."
+          : "Informe o nome do grupo (de 2 a 120 caracteres).",
         400,
       );
     }
@@ -116,29 +133,38 @@ export async function POST(request: Request) {
 
     const [client, db] = await Promise.all([getMongoClient(), getDb()]);
     const entry =
-      entryType === "junior"
-        ? await createJuniorContestantEntry(client, db, {
+      entryType === "group"
+        ? await createGroupContestantEntry(client, db, {
             eventId: new ObjectId(event._id),
             categoryId,
-            guardianRsvpId: new ObjectId(guest.userId),
-            childName: childName!,
+            ownerRsvpId: new ObjectId(guest.userId),
+            groupName: entryName!,
             ...(costumeTitle ? { costumeTitle } : {}),
             now,
           })
-        : await createIndividualContestantEntry(client, db, {
-            eventId: new ObjectId(event._id),
-            categoryId,
-            rsvpId: new ObjectId(guest.userId),
-            displayName: guest.fullName,
-            ...(costumeTitle ? { costumeTitle } : {}),
-            now,
-          });
+        : entryType === "junior"
+          ? await createJuniorContestantEntry(client, db, {
+              eventId: new ObjectId(event._id),
+              categoryId,
+              guardianRsvpId: new ObjectId(guest.userId),
+              childName: entryName!,
+              ...(costumeTitle ? { costumeTitle } : {}),
+              now,
+            })
+          : await createIndividualContestantEntry(client, db, {
+              eventId: new ObjectId(event._id),
+              categoryId,
+              rsvpId: new ObjectId(guest.userId),
+              displayName: guest.fullName,
+              ...(costumeTitle ? { costumeTitle } : {}),
+              now,
+            });
 
     return Response.json(serializeOwnedEntry(entry), {
       status: 201,
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
-    return failure(error);
+    return failure(error, entryType);
   }
 }
