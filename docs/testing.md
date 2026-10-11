@@ -18,6 +18,10 @@ cross-edition isolation cases where they apply.
   permanent first-voting cutoff, independently of contestant-entry state.
 - Exercise contestant entry open/close/reopen, freeze, incomplete drafts,
   consent/photo eligibility, and attempts to add/edit while closed.
+- Verify a linked guardian can add multiple child entries only to junior
+  categories in the selected edition; each entry uses the child's name,
+  remains a private draft without its required photo and guardian consent, and
+  cannot be created after the first-voting cutoff.
 - Verify voting cannot open before `eventStartsAt` or before eligible candidates
   are frozen; first opening atomically ends new RSVP and contestant membership
   changes.

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ObjectId } from "mongodb";
 import {
+  createJuniorContestantEntry,
   createIndividualContestantEntry,
   updateIndividualContestantEntryTitle,
 } from "@/lib/contestant-entry-mutations";
@@ -14,12 +15,14 @@ const now = new Date("2026-09-15T00:00:00.000Z");
 function fixture({
   eventMatched = 1,
   rsvp = { _id: rsvpId } as { _id: ObjectId } | null,
-  category = { _id: categoryId, eligibility: "all" } as
-    | { _id: ObjectId; eligibility: string }
-    | null,
-  entry = { _id: entryId, status: "draft" } as
-    | { _id: ObjectId; status: string }
-    | null,
+  category = { _id: categoryId, eligibility: "all" } as {
+    _id: ObjectId;
+    eligibility: string;
+  } | null,
+  entry = { _id: entryId, status: "draft" } as {
+    _id: ObjectId;
+    status: string;
+  } | null,
 }: {
   eventMatched?: number;
   rsvp?: { _id: ObjectId } | null;
@@ -186,5 +189,102 @@ describe("individual contestant entry mutations", () => {
       ).rejects.toMatchObject({ status: entry ? 409 : 404 });
       expect(f.update).not.toHaveBeenCalled();
     }
+  });
+});
+
+describe("junior contestant entry mutations", () => {
+  it("creates multiple private child drafts owned by the event guardian", async () => {
+    const f = fixture({
+      category: { _id: categoryId, eligibility: "junior" },
+    });
+
+    const first = await createJuniorContestantEntry(f.client, f.db, {
+      eventId,
+      categoryId,
+      guardianRsvpId: rsvpId,
+      childName: "  Bia   Freitas ",
+      costumeTitle: "Fada",
+      now,
+    });
+    const second = await createJuniorContestantEntry(f.client, f.db, {
+      eventId,
+      categoryId,
+      guardianRsvpId: rsvpId,
+      childName: "Clara Freitas",
+      now,
+    });
+
+    expect(first).toMatchObject({
+      eventId,
+      categoryId,
+      guardianRsvpId: rsvpId,
+      entryType: "junior",
+      displayName: "Bia Freitas",
+      costumeTitle: "Fada",
+      status: "draft",
+      createdAt: now,
+      updatedAt: now,
+    });
+    expect(first).not.toHaveProperty("ownerRsvpId");
+    expect(second).toMatchObject({
+      guardianRsvpId: rsvpId,
+      entryType: "junior",
+      displayName: "Clara Freitas",
+      status: "draft",
+    });
+    expect(second._id).not.toEqual(first._id);
+    expect(f.insert).toHaveBeenCalledTimes(2);
+    expect(f.rsvpFind).toHaveBeenCalledWith(
+      { _id: rsvpId, eventId, status: { $ne: "cancelled" } },
+      expect.objectContaining({ session: f.session }),
+    );
+  });
+
+  it("requires a junior category and the same-edition guardian RSVP", async () => {
+    const wrongCategory = fixture();
+    await expect(
+      createJuniorContestantEntry(wrongCategory.client, wrongCategory.db, {
+        eventId,
+        categoryId,
+        guardianRsvpId: rsvpId,
+        childName: "Bia Freitas",
+        now,
+      }),
+    ).rejects.toMatchObject({ status: 400, code: "category_not_available" });
+    expect(wrongCategory.insert).not.toHaveBeenCalled();
+
+    const wrongEventRsvp = fixture({
+      category: { _id: categoryId, eligibility: "junior" },
+      rsvp: null,
+    });
+    await expect(
+      createJuniorContestantEntry(wrongEventRsvp.client, wrongEventRsvp.db, {
+        eventId,
+        categoryId,
+        guardianRsvpId: rsvpId,
+        childName: "Bia Freitas",
+        now,
+      }),
+    ).rejects.toThrow("CONTESTANT_RSVP_NOT_FOUND_FOR_EVENT");
+    expect(wrongEventRsvp.insert).not.toHaveBeenCalled();
+  });
+
+  it("does not create a draft after the voting cutoff wins", async () => {
+    const f = fixture({
+      eventMatched: 0,
+      category: { _id: categoryId, eligibility: "junior" },
+    });
+
+    await expect(
+      createJuniorContestantEntry(f.client, f.db, {
+        eventId,
+        categoryId,
+        guardianRsvpId: rsvpId,
+        childName: "Bia Freitas",
+        now,
+      }),
+    ).rejects.toThrow("CONTEST_ENTRY_CLOSED");
+    expect(f.rsvpFind).not.toHaveBeenCalled();
+    expect(f.insert).not.toHaveBeenCalled();
   });
 });
