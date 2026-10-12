@@ -45,18 +45,23 @@ export default async function ResultPage({
     return (
       <main className="flex min-h-screen w-full flex-col items-center justify-center gap-8">
         <BackButton href={backHref} />
-        <h1 className="text-4xl lg:text-6xl">
+        <h1 className="px-4 text-center text-4xl lg:text-6xl">
           {category.icon} {category.title}
         </h1>
-        <p className="text-2xl text-orange-400">Nenhum voto nessa categoria.</p>
+        <p
+          className="px-4 text-center text-xl text-orange-300 sm:text-2xl"
+          role="status"
+        >
+          Nenhum voto nesta categoria.
+        </p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen w-full px-8 py-16 text-center">
+    <main className="mx-auto min-h-screen w-full max-w-7xl px-4 py-8 text-center text-white sm:px-8 lg:py-12">
       <BackButton href={backHref} />
-      <h1 className="mt-8 mb-24 text-4xl lg:mb-32 lg:text-6xl">
+      <h1 className="mx-auto mt-12 mb-8 max-w-4xl text-4xl break-words lg:mt-16 lg:mb-14 lg:text-6xl">
         {category.icon} {category.title}
       </h1>
       <ResultList users={results.users} totalVotes={results.totalVotes} />

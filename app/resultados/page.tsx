@@ -41,42 +41,60 @@ export default async function ResultsPage({
   const categories = event ? await getCategories(event._id) : [];
 
   return (
-    <main className="mx-auto max-w-6xl px-8 py-12">
+    <main className="mx-auto min-h-screen w-full max-w-7xl px-4 py-8 text-white sm:px-8 lg:py-12">
       <BackButton href="/" />
-      <h1 className="mx-auto mb-8 pt-16 text-center text-5xl font-bold">
-        Resultados
-      </h1>
-      {events.length > 1 && (
-        <nav aria-label="Eventos" className="mb-10 flex justify-center gap-3">
-          {events.map((item) => (
-            <Link
-              key={item._id}
-              href={`/resultados?event=${item.slug}`}
-              aria-current={item._id === event?._id ? "page" : undefined}
-              className={`rounded-lg px-4 py-2 ${item._id === event?._id ? "bg-orange-500 text-black" : "bg-white/10"}`}
-            >
-              {item.title}
-            </Link>
-          ))}
-        </nav>
-      )}
+      <header className="grid justify-items-center gap-5 pt-12 pb-10 text-center sm:pb-14">
+        <p className="text-5xl" aria-hidden="true">
+          🏆
+        </p>
+        <h1 className="text-5xl lg:text-7xl">Resultados</h1>
+        <p className="text-orange-300">{event.title}</p>
+        {events.length > 1 ? (
+          <nav
+            aria-label="Edições com resultados publicados"
+            className="flex flex-wrap justify-center gap-3"
+          >
+            {events.map((item) => (
+              <Link
+                key={item._id}
+                href={`/resultados?event=${encodeURIComponent(item.slug)}`}
+                aria-current={item._id === event._id ? "page" : undefined}
+                className={`rounded-lg px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 ${item._id === event._id ? "bg-orange-500 text-black" : "bg-white/10 hover:bg-white/20"}`}
+              >
+                {item.title}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
+      </header>
       {!categories.length ? (
-        <p className="mt-4 text-center">Nenhum resultado publicado.</p>
+        <p className="py-12 text-center text-stone-300" role="status">
+          Nenhum resultado publicado nesta edição.
+        </p>
       ) : (
-        <div className="grid gap-8 lg:grid-cols-6">
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-6 lg:gap-8">
           {categories.map((category, index) => (
-            <Link
-              href={`/resultados/${category._id}?event=${event.slug}`}
+            <li
               key={category._id}
-              className={`col-span-2 ${categories.length === index + 1 ? "lg:col-start-3" : ""} flex items-center justify-center gap-6 rounded-xl bg-purple-600 p-4 text-left text-3xl lg:p-6 ${secondaryFont.className}`}
+              className={`lg:col-span-2 ${index === categories.length - 1 && categories.length % 3 === 1 ? "lg:col-start-3" : ""}`}
             >
-              <span className="text-4xl lg:text-6xl" aria-hidden="true">
-                {category.icon}
-              </span>
-              <span className="text-xl">{category.title}</span>
-            </Link>
+              <Link
+                href={`/resultados/${category._id}?event=${encodeURIComponent(event.slug)}`}
+                className={`flex min-h-24 w-full items-center justify-center gap-4 rounded-xl bg-purple-600 p-4 text-left hover:bg-purple-500 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300 sm:min-h-28 sm:gap-6 sm:p-6 ${secondaryFont.className}`}
+              >
+                <span
+                  className="shrink-0 text-4xl sm:text-5xl"
+                  aria-hidden="true"
+                >
+                  {category.icon}
+                </span>
+                <span className="min-w-0 text-lg break-words sm:text-xl">
+                  {category.title}
+                </span>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </main>
   );
