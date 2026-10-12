@@ -5,6 +5,7 @@ interface UserImageProps {
   imageSrc: string;
   position: number;
   alt: string;
+  name: string;
   onClick: () => void;
 }
 
@@ -12,9 +13,15 @@ const UserImage: React.FC<UserImageProps> = ({
   imageSrc,
   position,
   alt,
+  name,
   onClick,
 }) => (
-  <button type="button" onClick={onClick} aria-label="Ampliar foto">
+  <button
+    type="button"
+    onClick={onClick}
+    aria-label={`Ampliar foto de ${name}`}
+    className="shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300"
+  >
     <CldImage
       src={imageSrc}
       width={900}
@@ -23,8 +30,8 @@ const UserImage: React.FC<UserImageProps> = ({
       alt={alt}
       className={
         position === 1
-          ? "h-68 w-68 cursor-pointer rounded-full border-8 border-orange-400 object-cover"
-          : "h-12 w-12 cursor-pointer rounded-full border-orange-400 object-cover"
+          ? "size-48 cursor-pointer rounded-full border-8 border-orange-400 object-cover sm:size-64"
+          : "size-12 cursor-pointer rounded-full border-2 border-orange-400 object-cover"
       }
     />
   </button>
