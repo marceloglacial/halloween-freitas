@@ -117,5 +117,13 @@ export default function EventLifecycle({
   const state = getHomeEventState(event, observedAt);
   if (state === "pre_event") return preEventContent;
   if (state === "post_event") return postEventContent;
+  if (state === "voting_soon") {
+    return (
+      <>
+        {preEventContent}
+        <VotingPanel state={state} />
+      </>
+    );
+  }
   return <VotingPanel state={state} />;
 }
