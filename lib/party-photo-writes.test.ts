@@ -2,9 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import { ObjectId } from "mongodb";
 import {
   enqueuePartyPhotoCleanup,
+  getPartyAlbumForAdmin,
   getPartyPhotosForGuest,
+  PartyAlbumWriteError,
+  removePartyPhoto,
   retryPartyPhotoCleanup,
   savePartyPhoto,
+  setPartyAlbumPublication,
   serializePartyPhotoForGuest,
 } from "@/lib/party-photo-writes";
 
@@ -176,6 +180,15 @@ describe("party photo persistence", () => {
 
     expect(deleteAsset).toHaveBeenCalledOnce();
     expect(deleteAsset).toHaveBeenCalledWith("party-photos/event/orphan");
+    expect(photoFindOne).toHaveBeenNthCalledWith(
+      1,
+      {
+        eventId,
+        assetId: "still-used",
+        removedAt: { $exists: false },
+      },
+      { projection: { _id: 1 } },
+    );
     expect(collection.updateOne).toHaveBeenNthCalledWith(
       1,
       { _id: "still-used", eventId },
@@ -200,4 +213,251 @@ describe("party photo persistence", () => {
     );
     expect(collection.deleteOne).not.toHaveBeenCalled();
   });
+});
+
+it("loads retained admin photos only for the selected edition", async () => {
+  const toArray = vi.fn().mockResolvedValue([]);
+  const sort = vi.fn(() => ({ toArray }));
+  const find = vi.fn(() => ({ sort }));
+  const findOne = vi.fn().mockResolvedValue(null);
+  const db = {
+    collection: vi.fn((name: string) =>
+      name === "partyAlbums" ? { findOne } : { find },
+    ),
+  };
+
+  await getPartyAlbumForAdmin(db as never, eventId);
+
+  expect(findOne).toHaveBeenCalledWith({ eventId });
+  expect(find).toHaveBeenCalledWith(
+    { eventId, removedAt: { $exists: false } },
+    expect.objectContaining({
+      projection: expect.objectContaining({ publicId: 1 }),
+    }),
+  );
+  expect(sort).toHaveBeenCalledWith({ uploadedAt: -1, _id: -1 });
+  expect(db.collection).not.toHaveBeenCalledWith("contestants");
+});
+
+it("publishes an edition album and audits the operator atomically", async () => {
+  const albumId = new ObjectId();
+  const updateOne = vi.fn().mockResolvedValue({ matchedCount: 1 });
+  const findOne = vi.fn().mockResolvedValue({
+    _id: albumId,
+    eventId,
+    published: false,
+    createdAt: uploadedAt,
+  });
+  const auditInsert = vi.fn();
+  const session = {
+    withTransaction: vi.fn(async (operation: () => Promise<void>) =>
+      operation(),
+    ),
+    endSession: vi.fn(),
+  };
+  const db = {
+    collection: vi.fn((name: string) =>
+      name === "partyAlbums"
+        ? { findOne, updateOne }
+        : { insertOne: auditInsert },
+    ),
+  };
+
+  const publication = await setPartyAlbumPublication(
+    { startSession: () => session } as never,
+    db as never,
+    { eventId, published: true, actorId: "admin-user", now: uploadedAt },
+  );
+
+  expect(updateOne).toHaveBeenCalledWith(
+    { _id: albumId, eventId, published: false },
+    {
+      $set: {
+        eventId,
+        published: true,
+        createdAt: uploadedAt,
+        updatedAt: uploadedAt,
+        updatedBy: "admin-user",
+        publishedAt: uploadedAt,
+        publishedBy: "admin-user",
+      },
+    },
+    { session },
+  );
+  expect(auditInsert).toHaveBeenCalledWith(
+    expect.objectContaining({
+      eventId,
+      clerkUserId: "admin-user",
+      action: "party_album_published",
+      targetType: "party_album",
+      at: uploadedAt,
+      changes: { published: { from: false, to: true } },
+    }),
+    { session },
+  );
+  expect(publication).toMatchObject({
+    published: true,
+    publishedBy: "admin-user",
+  });
+  expect(session.endSession).toHaveBeenCalledOnce();
+});
+
+it("rejects duplicate publication without recording another audit", async () => {
+  const auditInsert = vi.fn();
+  const session = {
+    withTransaction: vi.fn(async (operation: () => Promise<void>) =>
+      operation(),
+    ),
+    endSession: vi.fn(),
+  };
+  const db = {
+    collection: vi.fn((name: string) =>
+      name === "partyAlbums"
+        ? {
+            findOne: vi.fn().mockResolvedValue({
+              _id: new ObjectId(),
+              eventId,
+              published: true,
+              createdAt: uploadedAt,
+            }),
+          }
+        : { insertOne: auditInsert },
+    ),
+  };
+
+  await expect(
+    setPartyAlbumPublication(
+      { startSession: () => session } as never,
+      db as never,
+      { eventId, published: true, actorId: "admin-user", now: uploadedAt },
+    ),
+  ).rejects.toBeInstanceOf(PartyAlbumWriteError);
+  expect(auditInsert).not.toHaveBeenCalled();
+  expect(session.endSession).toHaveBeenCalledOnce();
+});
+
+it("unpublishes the edition album and records the operator", async () => {
+  const albumId = new ObjectId();
+  const updateOne = vi.fn().mockResolvedValue({ matchedCount: 1 });
+  const auditInsert = vi.fn();
+  const session = {
+    withTransaction: vi.fn(async (operation: () => Promise<void>) =>
+      operation(),
+    ),
+    endSession: vi.fn(),
+  };
+  const now = new Date(uploadedAt.getTime() + 60_000);
+  const db = {
+    collection: vi.fn((name: string) =>
+      name === "partyAlbums"
+        ? {
+            findOne: vi.fn().mockResolvedValue({
+              _id: albumId,
+              eventId,
+              published: true,
+              createdAt: uploadedAt,
+              publishedAt: uploadedAt,
+              publishedBy: "earlier-admin",
+            }),
+            updateOne,
+          }
+        : { insertOne: auditInsert },
+    ),
+  };
+
+  await setPartyAlbumPublication(
+    { startSession: () => session } as never,
+    db as never,
+    { eventId, published: false, actorId: "current-admin", now },
+  );
+
+  expect(updateOne).toHaveBeenCalledWith(
+    { _id: albumId, eventId, published: true },
+    {
+      $set: {
+        eventId,
+        published: false,
+        createdAt: uploadedAt,
+        updatedAt: now,
+        updatedBy: "current-admin",
+      },
+      $unset: { publishedAt: 1, publishedBy: 1 },
+    },
+    { session },
+  );
+  expect(auditInsert).toHaveBeenCalledWith(
+    expect.objectContaining({
+      action: "party_album_unpublished",
+      clerkUserId: "current-admin",
+      at: now,
+      changes: { published: { from: true, to: false } },
+    }),
+    { session },
+  );
+});
+
+it("removes an active photo in its edition, audits, and queues cleanup", async () => {
+  const photoId = new ObjectId();
+  const photo = { _id: photoId, eventId, uploaderRsvpId: rsvpId, ...asset };
+  const photoFindOne = vi.fn().mockResolvedValue(photo);
+  const photoUpdateOne = vi.fn().mockResolvedValue({ matchedCount: 1 });
+  const cleanupUpdate = vi.fn();
+  const auditInsert = vi.fn();
+  const session = {
+    withTransaction: vi.fn(async (operation: () => Promise<void>) =>
+      operation(),
+    ),
+    endSession: vi.fn(),
+  };
+  const db = {
+    collection: vi.fn((name: string) =>
+      name === "partyPhotos"
+        ? { findOne: photoFindOne, updateOne: photoUpdateOne }
+        : name === "partyPhotoCleanups"
+          ? { updateOne: cleanupUpdate }
+          : { insertOne: auditInsert },
+    ),
+  };
+
+  await removePartyPhoto(
+    { startSession: () => session } as never,
+    db as never,
+    { eventId, photoId, actorId: "admin-user", now: uploadedAt },
+  );
+
+  expect(photoFindOne).toHaveBeenCalledWith(
+    { _id: photoId, eventId, removedAt: { $exists: false } },
+    { session },
+  );
+  expect(photoUpdateOne).toHaveBeenCalledWith(
+    {
+      _id: photoId,
+      eventId,
+      removedAt: { $exists: false },
+      assetId: asset.assetId,
+    },
+    { $set: { removedAt: uploadedAt, removedBy: "admin-user" } },
+    { session },
+  );
+  expect(cleanupUpdate).toHaveBeenCalledWith(
+    { _id: asset.assetId },
+    {
+      $setOnInsert: {
+        _id: asset.assetId,
+        eventId,
+        publicId: asset.publicId,
+        attempts: 0,
+        nextAttemptAt: uploadedAt,
+      },
+    },
+    { upsert: true, session },
+  );
+  expect(auditInsert).toHaveBeenCalledWith(
+    expect.objectContaining({
+      action: "party_photo_removed",
+      clerkUserId: "admin-user",
+      targetId: photoId,
+    }),
+    { session },
+  );
 });

@@ -21,8 +21,9 @@ import { getAdminEnrollmentControls } from "@/util/admin-enrollment-controls";
 import UserList from "./user-list";
 import LogoutButton from "@/components/logout-button";
 import AdminResults from "@/components/dashboard/admin-results";
+import AdminPartyAlbum from "@/components/dashboard/admin-party-album";
 
-type DashboardTab = "settings" | "guests" | "results";
+type DashboardTab = "settings" | "guests" | "results" | "photos";
 type EditableCategory = EventCategoryInput & { _id?: string };
 
 const scheduleHelpText: Partial<Record<EventDateField, string>> = {
@@ -596,23 +597,27 @@ export default function EventDashboard({
       {selected && !creating && (
         <nav
           aria-label="Seções do dashboard"
-          className="flex gap-2 border-b border-white/20"
+          className="flex gap-2 overflow-x-auto border-b border-white/20"
         >
-          {(["settings", "guests", "results"] as const).map((item) => (
-            <button
-              key={item}
-              type="button"
-              aria-pressed={tab === item}
-              onClick={() => navigate(selected.year, item)}
-              className={`px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400 ${tab === item ? "border-b-2 border-orange-400 text-orange-400" : "text-gray-300"}`}
-            >
-              {item === "settings"
-                ? "Configurações"
-                : item === "guests"
-                  ? "Convidados"
-                  : "Apuração"}
-            </button>
-          ))}
+          {(["settings", "guests", "results", "photos"] as const).map(
+            (item) => (
+              <button
+                key={item}
+                type="button"
+                aria-pressed={tab === item}
+                onClick={() => navigate(selected.year, item)}
+                className={`shrink-0 px-4 py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400 ${tab === item ? "border-b-2 border-orange-400 text-orange-400" : "text-gray-300"}`}
+              >
+                {item === "settings"
+                  ? "Configurações"
+                  : item === "guests"
+                    ? "Convidados"
+                    : item === "results"
+                      ? "Apuração"
+                      : "Fotos da festa"}
+              </button>
+            ),
+          )}
         </nav>
       )}
 
@@ -1195,6 +1200,8 @@ export default function EventDashboard({
         </form>
       ) : selected && tab === "results" ? (
         <AdminResults key={selected._id} eventId={selected._id} />
+      ) : selected && tab === "photos" ? (
+        <AdminPartyAlbum key={selected._id} eventId={selected._id} />
       ) : selected ? (
         <UserList key={selected._id} event={selected} now={initialNow} />
       ) : null}
