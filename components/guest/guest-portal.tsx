@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PartyPhotoUpload from "@/components/guest/party-photo-upload";
 import ContestPhotoUpload from "@/components/guest/contest-photo-upload";
 import IndividualEntryControls from "@/components/guest/individual-entry-controls";
 import GroupEntryControls from "@/components/guest/group-entry-controls";
@@ -192,6 +193,8 @@ export default function GuestPortal({
           </p>
         )}
       </section>
+
+      <PartyPhotoUpload eventId={event._id} available={eventStarted} />
 
       <section aria-labelledby="voting-heading" className="grid gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

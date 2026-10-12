@@ -52,6 +52,49 @@ describe("database indexes", () => {
     });
   });
 
+  it("uniquely scopes party albums and event guest photo/cleanup reads", () => {
+    expect(
+      requiredIndexes.find(
+        ({ label }) => label === "one party album per event",
+      ),
+    ).toEqual({
+      collection: "partyAlbums",
+      label: "one party album per event",
+      key: { eventId: 1 },
+      options: { unique: true },
+    });
+    expect(
+      requiredIndexes.find(
+        ({ label }) => label === "guest party photos per event",
+      ),
+    ).toMatchObject({
+      collection: "partyPhotos",
+      key: { eventId: 1, uploaderRsvpId: 1, uploadedAt: -1, _id: -1 },
+    });
+    expect(
+      requiredIndexes.find(
+        ({ label }) => label === "party photo cleanup retry order",
+      ),
+    ).toMatchObject({
+      collection: "partyPhotoCleanups",
+      key: { eventId: 1, nextAttemptAt: 1, _id: 1 },
+    });
+  });
+
+  it("detects existing duplicate party albums by event before index creation", async () => {
+    const aggregate = vi.fn((pipeline) => ({
+      limit: () => ({
+        next: async () =>
+          pipeline[0]?.$group?._id === "$eventId" ? { count: 2 } : null,
+      }),
+    }));
+    const db = { collection: vi.fn(() => ({ aggregate })) };
+
+    await expect(assertNoDuplicateData(db)).rejects.toThrow(
+      "Resolve duplicate one party album per event records",
+    );
+  });
+
   it("rejects a guest ownership index that also covers legacy unlinked records", async () => {
     const definitions = Object.groupBy(
       requiredIndexes,

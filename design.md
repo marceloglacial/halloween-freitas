@@ -236,6 +236,13 @@ party photography and avoid reusing contestant names, eligibility, or photo
 controls. The public party album route and navigation are defined with the
 gallery feature work; this visual reference does not assign a new route.
 
+In Meu Halloween, show the party-photo upload area after the edition's event
+start. Use a multiple-file picker, local previews, per-file progress, and clear
+upload errors. Explain that photos stay private until the organization
+publishes the album. Show the guest only their own uploaded photos before
+publication; provide an opening-time message before the party starts. Keep this
+upload flow separate from contestant photo controls.
+
 ### Administration
 
 The dashboard provides event selection, status badges, settings and participant

@@ -69,8 +69,14 @@ cross-edition isolation cases where they apply.
 
 - Reject uploads before `eventStartsAt`, from users without an RSVP in the same
   edition, invalid files, oversize files, and rate-limit abuse.
-- Verify multiple party uploads do not alter contestant photos/readiness and
-  remain private until the album is published.
+- Verify multiple party uploads do not alter contestant photos/readiness;
+  allow only JPG, PNG, and WebP files up to 8 MB each; and keep assets private
+  until album publication.
+- Verify guest photo reads return only that RSVP's event-scoped photos with
+  short-lived private preview URLs, never Cloudinary asset/public IDs.
+- Verify the upload rate limits are event-scoped, concurrency-safe, expire, and
+  store only HMAC identities; verify failed metadata writes enqueue orphan
+  cleanup and retry Cloudinary deletion safely.
 - Verify post-publication uploads appear by default, album unpublish revokes
   public API/rendered/cache access, and republish exposes only retained photos.
 - Verify removals disappear immediately even when Cloudinary deletion fails;

@@ -10,6 +10,16 @@ export const requestRateLimitPolicies = {
     maximum: 30,
     windowMs: 15 * 60_000,
   },
+  partyPhotoAddress: {
+    action: "party-photo-address",
+    maximum: 30,
+    windowMs: 15 * 60_000,
+  },
+  partyPhotoGuest: {
+    action: "party-photo-guest",
+    maximum: 10,
+    windowMs: 15 * 60_000,
+  },
 } as const;
 
 export type RateLimitPolicy = {

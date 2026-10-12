@@ -48,6 +48,24 @@ export const requiredIndexes = [
     options: { expireAfterSeconds: 0 },
   },
   {
+    collection: "partyAlbums",
+    label: "one party album per event",
+    key: { eventId: 1 },
+    options: { unique: true },
+  },
+  {
+    collection: "partyPhotos",
+    label: "guest party photos per event",
+    key: { eventId: 1, uploaderRsvpId: 1, uploadedAt: -1, _id: -1 },
+    options: {},
+  },
+  {
+    collection: "partyPhotoCleanups",
+    label: "party photo cleanup retry order",
+    key: { eventId: 1, nextAttemptAt: 1, _id: 1 },
+    options: {},
+  },
+  {
     collection: "contestants",
     label: "adult contestant ownership",
     key: { eventId: 1, ownerRsvpId: 1, entryType: 1 },
@@ -117,6 +135,16 @@ const duplicateChecks = [
     label: "event year",
     pipeline: [
       { $group: { _id: "$year", count: { $sum: 1 } } },
+      { $match: { count: { $gt: 1 } } },
+    ],
+  },
+  {
+    collection: "partyAlbums",
+    label: "one party album per event",
+    pipeline: [
+      {
+        $group: { _id: "$eventId", count: { $sum: 1 } },
+      },
       { $match: { count: { $gt: 1 } } },
     ],
   },
