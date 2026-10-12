@@ -79,6 +79,12 @@ cross-edition isolation cases where they apply.
   cleanup and retry Cloudinary deletion safely.
 - Verify post-publication uploads appear by default, album unpublish revokes
   public API/rendered/cache access, and republish exposes only retained photos.
+- Verify the public party-gallery route and API return no photos, photo IDs,
+  dimensions, uploader details, or Cloudinary identifiers for a private album;
+  published edition selection never mixes years.
+- Verify removal disappears from the public gallery immediately, new uploads
+  appear on refresh while published, and a large album renders lazy thumbnails
+  with a keyboard-accessible enlarged viewer.
 - Verify removals disappear immediately even when Cloudinary deletion fails;
   retry cleanup safely and never affect contestant assets.
 - Verify results remain private until final voting ends and an administrator

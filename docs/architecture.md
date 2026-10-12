@@ -114,7 +114,11 @@ party photos. Validate actual file type and size, rate-limit abusive upload
 attempts and ballot submissions, and allow administrators to remove
 inappropriate content. An unpublished album must not expose images through
 public response data, server-rendered markup, caches, or predictable permanent
-asset URLs. Publishing is one
+asset URLs. The public gallery list and server-rendered page recheck publication
+and disable caching; they return only event-scoped application image paths and
+display dimensions. Each image request independently checks that the selected
+edition's album is published and the photo is retained, then streams the private
+Cloudinary image without exposing its asset or public ID. Publishing is one
 album-wide event-scoped action. Unpublishing revokes application access and
 invalidates relevant caches; photo removal hides the record immediately and
 queues idempotent Cloudinary cleanup with retries. If metadata persistence

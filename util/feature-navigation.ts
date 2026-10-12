@@ -94,5 +94,12 @@ export function getFeatureNavigationItems(
     pathname: "/fotos",
   });
 
+  items.push({
+    key: "party-gallery",
+    label: "Álbum da festa",
+    href: `/album-da-festa?event=${encodeURIComponent(event.slug)}`,
+    pathname: "/album-da-festa",
+  });
+
   return items;
 }

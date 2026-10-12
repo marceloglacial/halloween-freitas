@@ -23,6 +23,13 @@ type PartyAlbumDocument = {
   updatedBy?: string;
 };
 
+export type PublicPartyGalleryPhoto = {
+  photoId: string;
+  previewUrl: string;
+  width: number;
+  height: number;
+};
+
 export class PartyAlbumWriteError extends Error {
   constructor(
     public status: number,
@@ -124,6 +131,72 @@ export async function getPartyAlbumForAdmin(db: Db, eventId: ObjectId) {
   ]);
 
   return { album, photos };
+}
+
+export async function getPublicPartyAlbum(db: Db, eventId: ObjectId) {
+  const album = await db
+    .collection<PartyAlbumDocument>("partyAlbums")
+    .findOne({ eventId, published: true }, { projection: { _id: 1 } });
+
+  if (!album) return { published: false as const, photos: [] };
+
+  const photos = await db
+    .collection<PartyPhotoDocument>("partyPhotos")
+    .find(
+      { eventId, removedAt: { $exists: false } },
+      {
+        projection: {
+          _id: 1,
+          publicId: 1,
+          format: 1,
+          width: 1,
+          height: 1,
+        },
+      },
+    )
+    .sort({ uploadedAt: -1, _id: -1 })
+    .toArray();
+
+  return { published: true as const, photos };
+}
+
+export async function getPublicPartyPhoto(
+  db: Db,
+  eventId: ObjectId,
+  photoId: ObjectId,
+) {
+  const album = await db
+    .collection<PartyAlbumDocument>("partyAlbums")
+    .findOne({ eventId, published: true }, { projection: { _id: 1 } });
+  if (!album) return null;
+
+  return db
+    .collection<PartyPhotoDocument>("partyPhotos")
+    .findOne(
+      { _id: photoId, eventId, removedAt: { $exists: false } },
+      { projection: { publicId: 1, format: 1 } },
+    );
+}
+
+export function serializePublicPartyGalleryPhoto(
+  photo: Pick<PartyPhotoDocument, "_id" | "width" | "height">,
+  eventSlug: string,
+): PublicPartyGalleryPhoto {
+  return {
+    photoId: photo._id.toString(),
+    previewUrl: `/api/party-gallery/${photo._id.toString()}?event=${encodeURIComponent(eventSlug)}`,
+    width: photo.width,
+    height: photo.height,
+  };
+}
+
+export async function getPublishedPartyAlbumEventIds(db: Db) {
+  const albums = await db
+    .collection<PartyAlbumDocument>("partyAlbums")
+    .find({ published: true }, { projection: { _id: 0, eventId: 1 } })
+    .toArray();
+
+  return new Set(albums.map((album) => album.eventId.toString()));
 }
 
 export async function setPartyAlbumPublication(

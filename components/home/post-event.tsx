@@ -8,8 +8,8 @@ export const PastEvent = () => {
         <Link href={"/resultados"}>
           <Card title={"Resultados"} icon={"🏆"} />
         </Link>
-        <Link href={"/fotos"}>
-          <Card title={"Galeria de Fotos"} icon={"📸"} />
+        <Link href={"/album-da-festa"}>
+          <Card title={"Álbum da Festa"} icon={"📸"} />
         </Link>
       </div>
     </section>

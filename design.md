@@ -121,6 +121,7 @@ they are not currently implemented.
 | `/resultados`              | Published category tiles and event navigation                      | Published results, no published results                                                |
 | `/resultados/[id]`         | Prominent first place and remaining ranked participants            | Vote counts and percentages, category with no votes                                    |
 | `/fotos`                   | Contestant photo gallery with event navigation, search, and viewer | No photos or matches, selected photo                                                   |
+| `/album-da-festa`          | Published party-photo album with annual archive selection          | Waiting for publication, empty published album, selected photo                         |
 | `/dashboard`               | Event selector, settings and participants, event creation          | Authentication/authorization, active or archived event, validation and pending actions |
 
 ### Homepage and registration
@@ -228,13 +229,13 @@ viewer supports previous/next buttons, arrow keys, swipes, Escape, and backdrop
 click; navigation wraps at either end. Dialogs focus the close button, lock body
 scrolling, and restore prior focus when closed.
 
-The party photo album is a separate edition-scoped gallery. Before an admin
-publishes it, show a waiting state without exposing photos or their metadata.
-After publication, use the same dark surfaces, orange accents, responsive
-thumbnail grid, and accessible enlarged-photo viewer. Clearly identify this as
-party photography and avoid reusing contestant names, eligibility, or photo
-controls. The public party album route and navigation are defined with the
-gallery feature work; this visual reference does not assign a new route.
+The party photo album is a separate edition-scoped gallery at
+`/album-da-festa`. Before an admin publishes it, show a waiting state without
+exposing photos or their metadata. After publication, use the same dark
+surfaces, orange accents, responsive thumbnail grid, and accessible
+enlarged-photo viewer. Clearly identify this as party photography and avoid
+reusing contestant names, eligibility, or photo controls. Keep published
+editions navigable while an unpublished edition shows only its waiting state.
 
 In Meu Halloween, show the party-photo upload area after the edition's event
 start. Use a multiple-file picker, local previews, per-file progress, and clear
