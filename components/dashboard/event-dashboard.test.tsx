@@ -9,6 +9,9 @@ vi.mock("@/components/logout-button", () => ({ default: () => null }));
 vi.mock("@/components/dashboard/admin-results", () => ({
   default: () => null,
 }));
+vi.mock("@/components/dashboard/admin-party-album", () => ({
+  default: () => <div>Gerenciamento do álbum</div>,
+}));
 vi.mock("@/components/dashboard/user-list", () => ({ default: () => null }));
 
 import EventDashboard from "@/components/dashboard/event-dashboard";
@@ -27,13 +30,17 @@ const event: HalloweenEvent = {
   status: "active",
 };
 
-function renderDashboard(selectedEvent: HalloweenEvent, now: string) {
+function renderDashboard(
+  selectedEvent: HalloweenEvent,
+  now: string,
+  tab: "settings" | "guests" | "results" | "photos" = "settings",
+) {
   return renderToStaticMarkup(
     <EventDashboard
       initialEvents={[selectedEvent]}
       initialCategories={[]}
       initialYear={selectedEvent.year}
-      initialTab="settings"
+      initialTab={tab}
       initialNow={now}
     />,
   );
@@ -66,5 +73,14 @@ describe("admin event dashboard enrollment states", () => {
     expect(markup).toContain("RSVP encerrado");
     expect(markup).toContain("permanentemente");
     expect(markup).toContain("As inscrições não podem ser alteradas");
+  });
+});
+
+describe("admin party album dashboard navigation", () => {
+  it("opens the album management section for the selected edition", () => {
+    const markup = renderDashboard(event, "2026-10-31T20:00:00.000Z", "photos");
+
+    expect(markup).toContain("Fotos da festa");
+    expect(markup).toContain("Gerenciamento do álbum");
   });
 });

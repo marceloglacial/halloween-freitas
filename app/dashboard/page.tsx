@@ -46,7 +46,9 @@ export default async function DashboardPage({
             ? "settings"
             : query.tab === "results"
               ? "results"
-              : "guests"
+              : query.tab === "photos"
+                ? "photos"
+                : "guests"
         }
         initialNow={new Date().toISOString()}
       />
