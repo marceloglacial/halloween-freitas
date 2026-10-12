@@ -38,10 +38,11 @@ The checked-in `.env.example` names the current connection and provider settings
 | `CLOUDINARY_API_SECRET`             | Server-only Cloudinary API secret  |
 
 Keep server credentials in ignored local files or the deployment secret store.
-Contest-photo uploads require the server-only Cloudinary API key and secret;
-the application stores these assets with authenticated delivery. Never move
-these values to `NEXT_PUBLIC_` variables or reuse contest-photo storage for the
-party album.
+Contest-photo and party-photo uploads require the server-only Cloudinary API
+key and secret; the server signs uploads and stores both asset types with
+authenticated delivery in separate event-scoped folders. Never move these
+values to `NEXT_PUBLIC_` variables or reuse contest-photo storage for the party
+album.
 
 ### Request rate limits
 
@@ -51,9 +52,11 @@ limiter identities; it does not store raw email addresses, Clerk IDs, or client
 addresses in rate-limit records. A TTL index removes expired buckets.
 
 The fixed windows allow 60 RSVP attempts per client address every 15 minutes,
-5 per normalized email every hour, and 30 guest-link attempts per client
-address every 15 minutes. Limited requests receive a generic `429` response
-with `Retry-After`; they do not reveal whether an RSVP or account exists.
+5 per normalized email every hour, 30 guest-link attempts per client address
+every 15 minutes, and party-photo uploads at 30 per client address and 10 per
+linked RSVP every 15 minutes. Limited requests receive a generic `429` response
+with `Retry-After`; RSVP and guest-link limits do not reveal whether an RSVP or
+account exists. Limiter identities are HMACed and event-scoped.
 
 In production, configure the trusted reverse proxy to overwrite `x-real-ip`
 with the connecting client address. The application accepts only a valid
@@ -91,9 +94,10 @@ edition while retaining prior editions; it never resets the database.
 
 The `check:indexes` and `create:indexes` scripts verify and create declared
 indexes, including unique event year and slug, a partial unique active-edition
-index, event-scoped category ordering, unique per-edition individual/group
-contestant ownership, unique voting-round types per edition, one open round per
-edition, and unique ballots per event/round/category/RSVP. They are idempotent
+index, event-scoped category ordering, unique party albums, guest party-photo
+and cleanup lookups, unique per-edition individual/group contestant ownership,
+unique voting-round types per edition, one open round per edition, and unique
+ballots per event/round/category/RSVP. They are idempotent
 and check for known duplicates before index creation, but they do not reset,
 seed, or migrate documents. Review the index definitions and verify the target
 database before any authorized index operation; never use them on a legacy

@@ -50,6 +50,19 @@ function limiterDatabase() {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("request rate limits", () => {
+  it("limits party-photo attempts by address and linked RSVP", () => {
+    expect(requestRateLimitPolicies.partyPhotoAddress).toEqual({
+      action: "party-photo-address",
+      maximum: 30,
+      windowMs: 15 * 60_000,
+    });
+    expect(requestRateLimitPolicies.partyPhotoGuest).toEqual({
+      action: "party-photo-guest",
+      maximum: 10,
+      windowMs: 15 * 60_000,
+    });
+  });
+
   it("allows up to the policy maximum and returns a fixed retry window", async () => {
     vi.stubEnv("CLERK_SECRET_KEY", "test-clerk-secret");
     const fixture = limiterDatabase();
