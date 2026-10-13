@@ -133,8 +133,13 @@ still required. Those remain explicit owner/provider checks before cleanup.
 
 The AI-08 follow-up removed `public/next.svg`, `public/vercel.svg`, and the
 obsolete `migrate:events` command and `scripts/migrate-events.mjs`. Repository
-references were checked before removal. The current `check:indexes` and
-`create:indexes` scripts remain deferred because the target-schema replacement
-is not implemented. `date-fns` remains installed because `date-fns-tz` declares
-it as a peer dependency. Application routes, homepage assets, database records,
-and Cloudinary assets were not removed or changed.
+references were checked before removal. At that time, the `check:indexes` and
+`create:indexes` scripts remained deferred because the target-schema
+replacement was not implemented. Issue #82 later updated the index definitions
+and duplicate checks for the rebuilt event, guest, contestant, voting, rate
+limit, and party-photo collections. The index definitions have automated
+coverage; applying indexes to a live database remains an operational step that
+requires a confirmed non-production target and explicit authorization.
+`date-fns` remains installed because `date-fns-tz` declares it as a peer
+dependency. Application routes, homepage assets, database records, and
+Cloudinary assets were not removed or changed by AI-08.
