@@ -1,10 +1,11 @@
 # QA-01 Release QA report
 
 **Status:** Incomplete. Automated checks pass, selected authenticated 2026 flows
-passed in the prior walkthrough, and the current public 2026/2027 routes and
-responsive states were checked. Guest/admin lifecycle flows still need signed-in
-test sessions. Cloudinary-side deletion and the 2027 party gallery remain
-unverified; 2027 uploads must wait for the real event start. E05 is not ready to
+passed in the earlier walkthrough and this follow-up, and public 2026/2027 routes
+and responsive states were checked. Party-photo upload, publication, revocation,
+and Cloudinary deletion passed for 2026. Contestant and voting lifecycle flows
+still need an isolated scheduled test edition. The 2027 party gallery remains
+unverified; its uploads must wait for the real event start. E05 is not ready to
 close.
 
 ## Automated checks
@@ -79,19 +80,40 @@ published). No schedule or database reset was performed.
   audits of contestant photos and results reported zero violations.
 
 The development database still contains the 2027 RSVP and incomplete draft
-noted above, plus existing 2026 smoke-test contestant/results data. This
-follow-up run performed no migration, index script, Cloudinary mutation, or
+noted above, plus existing 2026 smoke-test contestant/results data. The browser
+pass above performed no migration, index script, Cloudinary mutation, or
 destructive database operation.
 AI-08 cleanup and its deferred decisions are recorded in
 [`legacy-code-audit.md`](legacy-code-audit.md); target-schema index behavior has
 automated test coverage.
 
+## Follow-up authenticated party-album QA — October 13, 2026
+
+Using the saved development admin and RSVP guest session, the follow-up uploaded
+two temporary copies of a local test image to the 2026 edition after its event
+start. It did not change event schedules, contestant entries, ballots, or
+results publication.
+
+- While unpublished, the public album route showed its waiting state and no
+  photos. The guest upload appeared in the admin album as private.
+- Publishing the album made the first photo visible in the public gallery. A
+  second upload made while published appeared automatically.
+- Unpublishing returned the public route to its waiting state.
+- The admin removed both temporary photos. Direct Cloudinary Admin API lookups
+  returned `404` for both assets after removal, and no active matching test
+  photo records remained. Removal tombstones and admin audit entries remain in
+  development data.
+- Without a signed-in session, the admin album API returned `401`; guest photo
+  and profile APIs returned `401 signed_out`.
+- Next.js `get_compilation_issues` returned no issues and `get_errors` showed no
+  configuration or session errors during the follow-up.
+
 ## Remaining release gates
 
-1. With signed-in development guest and admin sessions, complete individual,
-   junior, and group contestant entry flows with consented photos; verify
-   readiness, private photo delivery, admin edit-only behavior, and permanent
-   entry/RSVP cutoffs after voting first opens.
+1. In an isolated scheduled test edition, complete individual, junior, and
+   group contestant entry flows with signed-in development guest and admin
+   sessions; verify readiness, private photo delivery, admin edit-only behavior,
+   and permanent entry/RSVP cutoffs after voting first opens.
 2. Exercise ballot submission and resumption, duplicate-tab behavior, runoff,
    round reopening, stable ballot IDs, and results publication/revocation. The
    current 2026 event has voting ended, so these transitions need an isolated
@@ -99,13 +121,10 @@ automated test coverage.
 3. Repeat cross-edition guest, contestant, vote, and result checks with signed-in
    accounts. The public 2026/2027 result and gallery checks passed, as did the
    earlier fresh-RSVP isolation check.
-4. Independently verify Cloudinary deletion for a known development test asset.
-   Application responses confirmed removal, but there is no retained test asset
-   identifier to compare remotely in this run.
-5. After the 2027 event starts on October 12, 2027, verify its party upload,
+4. After the 2027 event starts on October 12, 2027, verify its party upload,
    publication, post-publication upload, unpublish, individual removal,
    Cloudinary cleanup, and isolation. Its date was preserved and not backdated.
 
-QA-01 and E05 remain open until the authenticated lifecycle checks and provider
-cleanup check pass. The 2027 party-gallery scenario cannot be completed before
-its scheduled event start.
+QA-01 and E05 remain open until the contestant and voting lifecycle checks pass
+against an isolated scheduled test edition. The 2027 party-gallery scenario
+cannot be completed before its scheduled event start.
