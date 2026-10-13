@@ -302,7 +302,8 @@ Recommended improvements for future UI work:
   close. Current dialogs do not implement a focus trap.
 - Verify contrast for every text/action combination, especially white text on
   orange, and supplement color or opacity with meaningful text or semantics.
-- Respect reduced motion and provide an alternative to continuous hero video.
+- The decorative hero video is hidden when reduced motion is requested; the
+  dark hero background remains as its static alternative.
 - Give the shared loading spinner an accessible status label and preserve
   logical heading structure; some card titles currently use generic elements.
 - Check long names, large text, and narrow viewports for overflow, especially in

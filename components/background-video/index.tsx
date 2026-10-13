@@ -7,7 +7,7 @@ const BackgroundVideo: FC = (): JSX.Element => {
       playsInline
       loop
       muted
-      className="absolute inset-0 top-0 left-0 -z-10 h-full w-full object-cover"
+      className="absolute inset-0 top-0 left-0 -z-10 h-full w-full object-cover motion-reduce:hidden"
       src="/hero-video.mp4"
     />
   );
