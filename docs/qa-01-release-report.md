@@ -1,67 +1,67 @@
 # QA-01 Release QA report
 
-**Status:** Automated checks pass. A local Next.js server starts, but runtime
-browser checks are blocked because Clerk has no publishable key in this
-worktree. The full E2E walkthrough also needs a confirmed development-only
-environment with test accounts and event data.
+**Status:** Incomplete. Automated checks pass and selected 2026 browser flows
+passed against the confirmed development environment. The required full
+two-edition walkthrough and remaining contest, voting, accessibility, and
+responsive scenarios have not passed. E05 is not ready to close.
 
 ## Automated checks
 
-| Check        | Result                    | Evidence                                                                                                                                                                  |
-| ------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm test`  | Pass: 68 files, 394 tests | Route, domain, serialization, authorization, concurrency, publication, and UI render tests.                                                                               |
-| `pnpm lint`  | Pass                      | Current `main` snapshot in the #81 worktree.                                                                                                                              |
-| `pnpm build` | Pass                      | Next.js 16.4 production build completed without `.env.local`.                                                                                                             |
-| Dev runtime  | Blocked                   | Server starts on port 3000; `/`, `/resultados`, and `/album-da-festa` return a 500 because `@clerk/nextjs` has no publishable key. Next.js reports no compilation issues. |
+| Check               | Result                    | Evidence                                                                                                     |
+| ------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `pnpm test`         | Pass: 68 files, 394 tests | Route, domain, serialization, authorization, concurrency, publication, and UI render tests.                  |
+| `pnpm lint`         | Pass                      | Completed in the #81 worktree.                                                                               |
+| `pnpm build`        | Pass                      | Next.js 16.4 production build and TypeScript completed successfully with the development environment linked. |
+| Next.js diagnostics | Pass                      | `get_errors` returned no config or session errors; `get_compilation_issues` returned no issues.              |
 
-## Covered behavior
+## Browser checks completed
 
-- **RSVP and guest access:** `app/api/registrations/route.test.ts`,
-  `app/api/guest-access/route.test.ts`, and
-  `app/api/guest-session/route.test.ts` cover cutoff behavior, rate limits,
-  identity linking, and private responses.
-- **Contest entries and photos:** contestant entry and photo tests cover
-  individual, junior, and group ownership; consent/readiness; edition checks;
-  enrollment cutoff; and safe photo replacement/cleanup behavior.
-- **Voting and lifecycle:** vote and admin lifecycle route tests cover verified
-  voters, frozen candidates, round isolation, concurrent close/submission,
-  runoff, enrollment cutoff, reopening, and audited publication transitions.
-- **Results and party photos:** result page/API and gallery route tests cover
-  publication privacy, edition isolation, event-start upload timing, rate
-  limits, private asset responses, album publication, removal, and cleanup.
-- **AI-08 cleanup:** local `main` includes merge `3708a6d`. The removed starter
-  assets and event migration are recorded in `docs/legacy-code-audit.md`. The
-  target-schema index definitions were updated later by #82 and are covered by
-  `scripts/database-indexes.test.mjs`; no live database index operation was run.
+The development-only `.env.local` was linked into this worktree. Using the
+authenticated admin and guest sessions, the browser walkthrough verified the
+following against the 2026 edition:
 
-These tests use fixtures and mocks. They verify route and domain behavior, but
-do not demonstrate the full guest/admin journeys in a browser or against Clerk,
-MongoDB, or Cloudinary services.
+- A guest with a verified RSVP uploaded two party photos after event start
+  while voting was open.
+- Before publication, the public page showed the album as awaiting release and
+  the public API returned no photos.
+- Publishing exposed the photos. A photo uploaded after publication was also
+  visible, and the public API response omitted uploader and Cloudinary identity
+  fields.
+- Removing each photo removed it from the public response. Unpublishing hid the
+  album again.
+- Reopening voting automatically hid published contest results; ending voting
+  and republishing restored the public 2026 results page.
+- A 2027 edition was created from the 2026 template, then archived. Its public
+  gallery remained private and empty while 2026 data existed.
+- The original 2026 edition was restored as active, with voting ended, results
+  published, and the party album unpublished. The two temporary party photos
+  were removed through the admin interface. Cloudinary-side deletion was not
+  independently verified.
 
-## Runtime walkthrough still required
+No migration or index script was run. AI-08 cleanup on local `main` remains
+recorded in `docs/legacy-code-audit.md`; target-schema index definitions are
+covered by `scripts/database-indexes.test.mjs`.
 
-Run against a confirmed non-production development environment with two
-isolated annual editions. Do not run migration or index scripts as part of the
-walkthrough.
+## Remaining release gates
 
-1. Create an RSVP in the selected edition, link a Clerk account, and verify that
-   an account with only a prior-year RSVP cannot access the new edition.
-2. Add individual, junior, and group entries with photos. Verify draft privacy,
-   readiness, and frozen candidate state after the first voting opening.
-3. Open and close voting, submit and resume ballots, race a duplicate tab,
-   trigger a runoff, reopen the current round, and verify ballots and the
-   permanent RSVP/contest-entry cutoff remain intact.
-4. Publish results, browse the selected and historic published editions,
-   unpublish and confirm public pages/APIs hide results, then republish.
-5. Upload multiple party photos after event start while voting is open. Verify
-   private access before publication, automatic visibility after publication,
-   revocation on unpublish, individual removal, and safe Cloudinary cleanup.
-6. Repeat the public and guest checks across both editions. Check mobile and
-   desktop layouts, keyboard navigation, focus handling, and Portuguese
-   loading, empty, error, denied, and success states.
+The acceptance walkthrough in issue #81 is not complete:
 
-The #81 worktree has no `.env.local` link because the main worktree's existing
-file has not been confirmed as development-only. The local dev server was
-started without environment credentials. No database, Clerk account, or
-Cloudinary operation was used. The runtime walkthrough remains pending until a
-development-only environment with test accounts and event data is available.
+1. Verify a fresh 2027 RSVP linked to the same Clerk account and prove a
+   prior-year-only RSVP does not grant access to the new edition. Only the
+   existing 2026 guest session and 2027 private empty state were checked.
+2. Exercise individual, junior, and group entries, photo readiness, privacy,
+   and frozen candidate behavior in the browser.
+3. Exercise ballot submission/resumption, duplicate-tab behavior, runoff,
+   round reopening, and persistence of the permanent RSVP and entry cutoffs.
+4. Verify published and unpublished results across both editions and confirm
+   no cross-edition leakage in guest, contest, vote, and result flows.
+5. Complete the 2027 party gallery upload, publication, post-publication
+   upload, unpublish, individual removal, Cloudinary cleanup, and edition
+   isolation checks after the 2027 event begins on October 12, 2027. Its future
+   event date was preserved; it was not backdated to bypass the upload rule.
+6. Check mobile and desktop layouts, keyboard navigation and focus behavior,
+   and Portuguese loading, empty, error, denied, and success states.
+
+The 2026 gallery cleanup was verified through application responses and UI,
+but the remote Cloudinary asset state was not independently queried. These
+gates require follow-up before QA-01 or E05 can be closed.
