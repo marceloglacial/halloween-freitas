@@ -64,6 +64,7 @@ export async function freezeContestantEntries(
       {
         projection: {
           _id: 1,
+          eventId: 1,
           categoryId: 1,
           entryType: 1,
           displayName: 1,

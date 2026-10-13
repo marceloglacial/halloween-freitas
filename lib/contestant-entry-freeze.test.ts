@@ -125,6 +125,9 @@ describe("contestant entry readiness and freeze", () => {
       status: "withdrawn",
     });
     const updateMany = vi.fn().mockResolvedValue({ modifiedCount: 1 });
+    const contestantFind = vi.fn(() => ({
+      toArray: async () => [complete, incompleteReady, draft, withdrawn],
+    }));
     const db = {
       collection: (name: string) =>
         name === "categories"
@@ -134,14 +137,7 @@ describe("contestant entry readiness and freeze", () => {
               }),
             }
           : {
-              find: () => ({
-                toArray: async () => [
-                  complete,
-                  incompleteReady,
-                  draft,
-                  withdrawn,
-                ],
-              }),
+              find: contestantFind,
               updateMany,
             },
     } as unknown as Db;
@@ -149,6 +145,13 @@ describe("contestant entry readiness and freeze", () => {
 
     await freezeContestantEntries(db, eventId, session, now);
 
+    expect(contestantFind).toHaveBeenCalledWith(
+      { eventId, status: { $ne: "withdrawn" } },
+      {
+        projection: expect.objectContaining({ eventId: 1 }),
+        session,
+      },
+    );
     expect(updateMany).toHaveBeenCalledTimes(2);
     expect(updateMany).toHaveBeenNthCalledWith(
       1,
