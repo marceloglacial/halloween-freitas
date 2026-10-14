@@ -1,14 +1,12 @@
 # QA-01 Release QA report
 
-**Status:** Incomplete. Automated checks pass, selected authenticated 2026 flows
-passed in the earlier walkthrough and follow-ups, and public 2026/2027 routes
-and responsive states were checked. Party-photo upload, publication, revocation,
-and Cloudinary deletion passed for 2026. An isolated 2026 QA edition verified
-contestant entry creation, consented photo upload, entry closure, voting start,
-and permanent cutoff responses. Voting candidate lists were empty, so ballot,
-resumption, duplicate-tab, runoff, and results-transition scenarios remain
-unverified. The 2027 party gallery remains unverified; its uploads must wait for
-the real event start. E05 is not ready to close.
+**Status:** Incomplete. Automated checks pass, and the isolated 2026 QA edition
+verified the contestant, voting, results, reopening, and party-photo lifecycles.
+Ballot submission, duplicate prevention, publication/revocation, and ballot
+preservation after reopening passed. One candidate per eligible category was
+available, so a multi-candidate runoff/tie and cross-edition authenticated ballot
+flows remain unverified. The 2027 party gallery remains unverified until its
+scheduled event start. E05 is not ready to close.
 
 ## Automated checks
 
@@ -19,7 +17,7 @@ the real event start. E05 is not ready to close.
 | `pnpm build`         | Pass                      | Next.js 16.4 production build and TypeScript completed with the development environment linked. |
 | Markdown checks      | Pass                      | `pnpm check:docs`; formatting and local links passed.                                           |
 | Next.js compilation  | Pass                      | `get_compilation_issues` returned no issues. Browser console showed no errors.                  |
-| Next.js `get_errors` | Unavailable               | The MCP endpoint reported no connected browser session; runtime checks used `agent-browser`.    |
+| Next.js `get_errors` | Pass                      | `get_errors` returned no configuration or session errors.                                       |
 
 ## Earlier authenticated 2026 walkthrough
 
@@ -145,25 +143,59 @@ photo is still referenced by the isolated contestant record; it was not removed
 because voting has permanently locked contestant changes in this fixture. No
 other Cloudinary asset was changed by this run.
 
+## Isolated full E05 lifecycle QA — October 14, 2026
+
+The #81 worktree used the development-only environment with its database name
+overridden to `hf_qa_issue81_20261014_b`. That database was confirmed absent
+before setup. The isolated fixture contains one active 2026 edition, three
+categories, and two RSVPs (one linked to the verified development guest). No
+existing development edition or schedule was changed.
+
+- Created complete individual, junior, and group entries and uploaded consented
+  photos. An incomplete junior draft without a photo stayed out of the public
+  gallery. The completed entries appeared in the gallery.
+- Closed contestant entry, then confirmed an RSVP could still be created
+  (`201`) while a late contestant entry was rejected (`409`). After starting
+  voting, RSVP creation returned `403` and contestant entry returned `409`.
+- The candidate API excluded the individual voter’s own entry and returned one
+  eligible junior and group candidate. The guardian voted for the junior entry,
+  and the group creator voted for their group. A repeated junior ballot was
+  rejected (`409`), and the category appeared completed. Admin tallies showed
+  the expected private counts.
+- Before publication, public results APIs returned `403`; the admin results
+  endpoint returned the expected unpublished tally. Publishing exposed the
+  results. Reopening voting revoked public results and kept both ballots. A
+  repeated vote remained rejected, and the ballot count and ID fingerprint
+  matched before and after reopening.
+- An authenticated admin photo correction after voting began returned `200`;
+  the same request without credentials returned `401`.
+- Guest party-photo uploads remained private before publication. Publishing
+  exposed the album; an upload made while published appeared automatically.
+  Unpublishing hid the album, and removing all three test photos removed them
+  from Cloudinary. Direct Cloudinary checks confirmed all three assets were
+  absent and no cleanup jobs remained. The public album API exposed only the
+  intended photo fields.
+- Next.js `get_compilation_issues` returned no issues and `get_errors` returned
+  no configuration or session errors.
+
+The isolated database remains intact as QA evidence. Its three contestant test
+photos remain attached to fixture contestants. The party test photos were
+deleted from Cloudinary; removal tombstones remain in the database. No pending
+party-photo cleanup jobs remain.
+
 ## Remaining release gates
 
-1. In an isolated scheduled test edition with enough complete entries, verify
-   candidate readiness, private photo delivery, admin edit-only behavior, and
-   RSVP availability after contestant entry closes but before voting opens. This
-   run created all three entry types and verified post-voting write cutoffs, but
-   its junior/group entries had no photos and the voter had no eligible
-   candidates.
-2. With at least two verified guest identities and complete candidates, exercise
-   ballot submission and resumption, duplicate-tab behavior, runoff, round
-   reopening, stable ballot IDs, and results publication/revocation. The current
-   isolated fixture has no eligible candidates and cannot support those flows.
-3. Repeat cross-edition guest, contestant, vote, and result checks with signed-in
-   accounts. The public 2026/2027 result and gallery checks passed, as did the
-   earlier fresh-RSVP isolation check.
-4. After the 2027 event starts on October 12, 2027, verify its party upload,
+1. With at least two verified guest identities and multiple eligible candidates,
+   exercise a tied tally, runoff creation and voting, round reopening, and
+   duplicate-tab behavior. The isolated fixture had one eligible candidate per
+   voted category, so it could not produce a runoff.
+2. Repeat cross-edition contestant, ballot, and result checks with signed-in
+   accounts. Existing checks cover public 2026/2027 result and gallery isolation,
+   plus a fresh 2027 RSVP before guest access.
+3. After the 2027 event starts on October 12, 2027, verify its party upload,
    publication, post-publication upload, unpublish, individual removal,
    Cloudinary cleanup, and isolation. Its date was preserved and not backdated.
 
-QA-01 and E05 remain open until eligible ballot and runoff flows, the additional
-cross-edition checks, and other remaining gates pass. The 2027 party-gallery
-scenario cannot be completed before its scheduled event start.
+QA-01 and E05 remain open until the runoff/tie and additional cross-edition
+checks pass. The 2027 party-gallery scenario cannot be completed before its
+scheduled event start.
