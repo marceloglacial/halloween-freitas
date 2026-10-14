@@ -19,6 +19,13 @@ scheduled event start. E05 is not ready to close.
 | Next.js compilation  | Pass                      | `get_compilation_issues` returned no issues. Browser console showed no errors.                  |
 | Next.js `get_errors` | Pass                      | `get_errors` returned no configuration or session errors.                                       |
 
+## Post-merge verification — October 14, 2026
+
+After QA-01's report was merged into local `main`, the integrated code passed
+`pnpm test` (69 files, 395 tests), `pnpm lint`, and `pnpm build` on Next.js
+16.4. The build completed TypeScript checks and generated all 18 static pages.
+This verification did not change event data or schedules.
+
 ## Earlier authenticated 2026 walkthrough
 
 Using authenticated admin and guest sessions, the earlier walkthrough verified:
