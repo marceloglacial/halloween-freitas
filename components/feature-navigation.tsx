@@ -74,6 +74,13 @@ export default function FeatureNavigation() {
         const response = await fetch("/api/events/current", {
           cache: "no-store",
         });
+        if (response.status === 404) {
+          if (active) {
+            setEvent(null);
+            setUpdatedAt(new Date());
+          }
+          return;
+        }
         if (!response.ok) return;
         const currentEvent = (await response.json()) as HalloweenEvent;
         if (active) {

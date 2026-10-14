@@ -7,6 +7,7 @@ vi.mock("@/lib/db", () => ({ getDb: mocks.getDb }));
 
 import {
   getCurrentEvent,
+  getActiveEvent,
   getEventPhase,
   getRegistrationState,
   resultsArePublic,
@@ -117,6 +118,36 @@ describe("event phases", () => {
     });
 
     expect(await getCurrentEvent()).toMatchObject({ slug: event.slug });
+    expect(mocks.findOne).toHaveBeenCalledWith(
+      { status: "active" },
+      { sort: { year: -1, _id: 1 } },
+    );
+  });
+
+  it("returns only an active edition for active-event reads", async () => {
+    mocks.findOne.mockResolvedValueOnce({
+      ...event,
+      _id: new ObjectId(),
+      registrationStartsAt: new Date(event.registrationStartsAt),
+      eventStartsAt: new Date(event.eventStartsAt),
+    });
+
+    await expect(getActiveEvent()).resolves.toMatchObject({
+      slug: event.slug,
+      status: "active",
+    });
+    expect(mocks.findOne).toHaveBeenCalledWith(
+      { status: "active" },
+      { sort: { year: -1, _id: 1 } },
+    );
+    expect(mocks.findOne).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns no active edition without falling back to archived records", async () => {
+    mocks.findOne.mockResolvedValueOnce(null);
+
+    await expect(getActiveEvent()).resolves.toBeNull();
+    expect(mocks.findOne).toHaveBeenCalledTimes(1);
     expect(mocks.findOne).toHaveBeenCalledWith(
       { status: "active" },
       { sort: { year: -1, _id: 1 } },

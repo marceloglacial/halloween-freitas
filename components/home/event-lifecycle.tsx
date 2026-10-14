@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { secondaryFont } from "@/util/fonts";
 import { getHomeEventState, HomeEventState } from "@/util/home-event-state";
 
@@ -10,7 +11,7 @@ const POLL_INTERVAL_MS = 10_000;
 function VotingPanel({
   state,
 }: {
-  state: Exclude<HomeEventState, "pre_event" | "post_event">;
+  state: Exclude<HomeEventState, "waiting" | "pre_event" | "post_event">;
 }) {
   const content = {
     voting_soon: {
@@ -76,12 +77,18 @@ export default function EventLifecycle({
   initialNow,
   preEventContent,
   postEventContent,
+  heroContent,
+  footerContent,
 }: {
   initialEvent: HalloweenEvent | null;
   initialNow: string;
   preEventContent: ReactNode;
   postEventContent: ReactNode;
+  heroContent: ReactNode;
+  footerContent: ReactNode;
 }) {
+  const router = useRouter();
+  const currentEventKey = useRef(initialEvent?._id ?? null);
   const [event, setEvent] = useState(initialEvent);
   const [observedAt, setObservedAt] = useState(() => new Date(initialNow));
 
@@ -94,11 +101,27 @@ export default function EventLifecycle({
         const response = await fetch("/api/events/current", {
           cache: "no-store",
         });
+        if (response.status === 404) {
+          if (active) {
+            setEvent(null);
+            if (currentEventKey.current !== null) {
+              currentEventKey.current = null;
+              router.refresh();
+            }
+          }
+          return;
+        }
         if (!response.ok) return;
         const currentEvent = (await response.json()) as HalloweenEvent & {
           phase: EventPhase;
         };
-        if (active) setEvent(currentEvent);
+        if (active) {
+          setEvent(currentEvent);
+          if (currentEventKey.current !== currentEvent._id) {
+            currentEventKey.current = currentEvent._id;
+            router.refresh();
+          }
+        }
       } catch {
         // Keep the last valid state and retry on the next interval.
       } finally {
@@ -112,18 +135,60 @@ export default function EventLifecycle({
       active = false;
       window.clearInterval(interval);
     };
-  }, []);
+  }, [router]);
 
   const state = getHomeEventState(event, observedAt);
-  if (state === "pre_event") return preEventContent;
-  if (state === "post_event") return postEventContent;
-  if (state === "voting_soon") {
+  if (state === "waiting") {
     return (
       <>
-        {preEventContent}
-        <VotingPanel state={state} />
+        {heroContent}
+        <section className="grid min-h-[28rem] place-items-center bg-black px-6 py-16 text-center">
+          <div className="grid max-w-3xl gap-6">
+            <span className="text-7xl" aria-hidden="true">
+              🎃
+            </span>
+            <h2 className={`${secondaryFont.className} text-5xl lg:text-7xl`}>
+              Aguardando o próximo evento
+            </h2>
+            <p className="text-xl text-orange-300 lg:text-2xl">
+              Em breve teremos novidades. Volte para acompanhar!
+            </p>
+          </div>
+        </section>
       </>
     );
   }
-  return <VotingPanel state={state} />;
+  if (state === "pre_event")
+    return (
+      <>
+        {heroContent}
+        {preEventContent}
+        {footerContent}
+      </>
+    );
+  if (state === "post_event")
+    return (
+      <>
+        {heroContent}
+        {postEventContent}
+        {footerContent}
+      </>
+    );
+  if (state === "voting_soon") {
+    return (
+      <>
+        {heroContent}
+        {preEventContent}
+        <VotingPanel state={state} />
+        {footerContent}
+      </>
+    );
+  }
+  return (
+    <>
+      {heroContent}
+      <VotingPanel state={state} />
+      {footerContent}
+    </>
+  );
 }
