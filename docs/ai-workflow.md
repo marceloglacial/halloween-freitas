@@ -155,10 +155,13 @@ completion and closure.
    branch/worktree is already in use, preserve it and create a separate
    worktree from the clean default branch; otherwise stop and report the
    blocker. Never stash, reset, clean, overwrite, or start on top of pending
-   changes from another issue. Provision `.env.local` as an absolute symlink
-   from the main worktree only by following the
+   changes from another issue. From the issue worktree, run
+   `node scripts/link-issue-env.mjs`; it resolves the canonical checkout
+   dynamically and validates ignored, untracked development-only sources before
+   creating or reusing absolute symlinks. Follow the
    [issue-workflow skill](../.agents/skills/issue-workflow/SKILL.md) and
-   [development environment rules](operations.md#issue-worktrees).
+   [development environment rules](operations.md#issue-worktrees) for missing
+   or conflicting files.
 3. Read applicable product contracts and skills. Trace the existing route,
    domain helper, data shape, authorization check, and consumer before
    implementation. Rebuild from scratch where legacy behavior conflicts with
@@ -166,21 +169,35 @@ completion and closure.
 4. Implement server-enforced authorization, event isolation, lifecycle
    transitions, and public data shaping. Update contracts, docs, and focused
    regression tests together.
-5. Validate by scope: docs-only work uses formatting and link checks; code work
-   runs the tests, lint, build, and relevant runtime or responsive checks.
+5. Validate by scope: docs-only work uses formatting and local-link checks;
+   code work runs tests, lint, build, and relevant runtime or responsive
+   checks. After all automated checks pass, start the project's declared dev
+   script from the issue worktree for every issue, including documentation-only
+   work. Use the package manager and command in `package.json`, retain the
+   process in a persistent session, follow its reported port, and verify the
+   reported local URL responds. Never stop an unrelated port listener. If the
+   server or reachability check fails, report the blocker instead of presenting
+   the change as ready for manual review. Keep a successful dev server running
+   throughout review. If revisions are requested, continue in the same
+   worktree, rerun affected checks, and restart or reverify the server; the
+   changed diff needs fresh approval.
 6. Report the selected issue and rationale, scope, changed files, acceptance
-   criteria, checks/results, and risks. Leave work uncommitted and ready for
-   human review.
+   criteria, checks/results, risks, worktree/branch, and working local URL.
+   Leave work uncommitted and ready for human review. Explicit approval then
+   authorizes local finalization under
+   [issue-finalization](../.agents/skills/issue-finalization/SKILL.md), which
+   stops that issue's dev server after validation and before worktree removal.
 
 ## Git, database, and release boundaries
 
-The development handoff is implementation → relevant checks → report → stop
-with uncommitted changes → user review or revision request. Never commit during
-development. After explicit approval of the exact reviewed issue change set,
-the primary agent automatically follows the local commit, local `main` merge,
-post-merge validation, issue-worktree removal, and local branch deletion
-workflow in [issue-finalization](../.agents/skills/issue-finalization/SKILL.md).
-Approval never transfers to another issue, an epic, or a changed diff.
+The development handoff is implementation → relevant checks → running review
+server and URL → report with uncommitted changes → user review or revision
+request. Never commit during development. After explicit approval of the exact
+reviewed issue change set, the primary agent automatically follows the local
+commit, local `main` merge, post-merge validation, issue-server shutdown,
+worktree removal, and local branch deletion workflow in
+[issue-finalization](../.agents/skills/issue-finalization/SKILL.md). Approval
+never transfers to another issue, an epic, or a changed diff.
 
 Push is a separate operation and is forbidden until the user explicitly names
 the branch and remote. Finalization does not fetch, pull, push, create or merge

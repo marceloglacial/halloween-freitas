@@ -129,3 +129,30 @@ the primary session can still refresh public issue state anonymously where
 available. The local-finalization simulation does not validate Codex's
 interpretation for every phrasing of an approval, so ambiguous approval still
 requires clarification.
+
+## Issue worktree environment and review-server smoke test
+
+On 2026-10-14, `scripts/link-issue-env.test.mjs` exercised the bootstrap in a
+temporary Git repository whose canonical checkout and `issue-999-test`
+worktree paths contained spaces. The fixture used a synthetic environment
+sentinel, never a real credential. It verified an absolute link to the
+canonical `.env.local` entry, reuse on a second run, Git ignore/untracked
+status, safe rejection of a regular-file or wrong-link conflict, an actionable
+missing-source failure, and refusal of unignored or tracked source entries or
+in-checkout resolved targets. Rejected targets remained unchanged, and
+captured helper output did not contain the sentinel.
+
+The same fixture declared its package manager and `dev` script in
+`package.json`. The check launched that script in the issue worktree, accepted
+the server-reported OS-selected port, fetched the reported URL successfully,
+and stopped the fixture server. This covers startup and reachability handoff
+without assuming a port or touching an application database. It does not
+simulate Clerk login or replace the actual issue server's startup check.
+
+The actual #91 worktree then started the repository's declared `pnpm dev`
+command. A temporary IPv6 listener owned by this validation occupied the
+default port; Next.js reported the conflict and selected port `3001`. The
+fixture listener was stopped by its own terminal handle, while Next remained
+running. A request to the reported app URL returned HTTP 200. The check used
+only a root-page GET, issued no mutation request, and left the issue server
+running for review.

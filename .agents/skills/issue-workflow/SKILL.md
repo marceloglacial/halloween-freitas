@@ -56,70 +56,67 @@ and [AI workflow](../../../docs/ai-workflow.md).
    existing work is dirty or another task must remain open, preserve it and use
    a separate worktree. Never stash, reset, clean, overwrite, or build on
    another issue's pending changes.
-7. Provision the worktree environment before application development:
-   - Run `git worktree list --porcelain` from the repository. Git lists the
-     main worktree first. Resolve the first `worktree` path to an absolute
-     physical path. Resolve the issue worktree path to an absolute physical
-     path after obtaining it with `git rev-parse --show-toplevel`. Do not infer
-     either path from a home directory, checkout layout, or project name.
-     For example:
-
-     ```sh
-     main_worktree_path="$(git worktree list --porcelain | sed -n '1s/^worktree //p')"
-     main_worktree_path="$(cd -- "$main_worktree_path" && pwd -P)"
-     issue_worktree_path="$(git rev-parse --show-toplevel)"
-     issue_worktree_path="$(cd -- "$issue_worktree_path" && pwd -P)"
-     env_source_path="$main_worktree_path/.env.local"
-     env_link_path="$issue_worktree_path/.env.local"
-     ```
-
-   - The source is `<main-worktree>/.env.local`; check it with
-     `test -f "$env_source_path"`. It must be the development-only environment
-     described in [operations](../../../docs/operations.md). Never inspect or
-     display its values. If its development-only status is unknown or it may
-     contain production credentials, leave it unlinked and report the blocker.
-   - Confirm the source is not tracked with
-     `git -C "$main_worktree_path" ls-files --error-unmatch -- .env.local`
-     and is ignored with
-     `git -C "$main_worktree_path" check-ignore --quiet -- .env.local`.
-     If the tracked-file check succeeds, or ignore verification fails, stop
-     before creating a link and report the configuration problem. Keep both
-     checks' output quiet.
-   - If the source is a file and the issue worktree has no `.env.local` entry,
-     create an absolute symbolic link to the source with `ln -s`. Link creation
-     must fail when the target already exists. If an existing target is already
-     a symlink to this source and resolves to a file, verify it and leave it in
-     place; for any other existing target, stop without changing it. Verify a
-     newly created link the same way. Verify quietly with:
-
-     ```sh
-     test -L "$env_link_path" \
-       && test -f "$env_link_path" \
-       && test "$(readlink "$env_link_path")" = "$env_source_path"
-     ```
-
-   - If the main worktree has no `.env.local`, continue without a link and
-     report the missing environment configuration. Do not create or copy a
-     secrets file. Before starting the app or any environment-dependent
-     validation, confirm the needed development environment exists.
+7. Provision the issue worktree environment before implementation:
+   - Read [operations](../../../docs/operations.md) for the development-only
+     environment contract. Resolve the canonical checkout from the first
+     `worktree` entry in `git worktree list --porcelain`, then resolve that
+     path and `git rev-parse --show-toplevel` with `pwd -P`. Never infer a
+     checkout path from a fixed parent directory.
+   - The canonical checkout's local environment files are explicitly listed
+     in `scripts/link-issue-env.mjs` (currently `.env.local`). Confirm those
+     source files are development-only from the documented setup; never read,
+     print, or copy their values. If that status is unknown or production
+     credentials may be present, stop and report the blocker.
+   - From the issue worktree root, run `node scripts/link-issue-env.mjs`. The
+     helper validates every source before linking: each must resolve to a
+     regular file; the source entry and any in-checkout resolved target must be
+     untracked and ignored by Git. Missing or unsafe sources stop with an
+     actionable error. The helper creates an absolute symlink only when the
+     target is absent, verifies an existing correct symlink idempotently, and
+     preserves any conflicting file or link while stopping. It checks all
+     targets before creating any link. Never stage or commit environment
+     symlinks; confirm they remain ignored. Do not create or copy secrets.
 8. Load only the skill entrypoints needed for this issue. Use optional
    subagents only for bounded independent work; continue in the primary session
    if delegation is unavailable.
 9. Implement only the issue's scope. Match validation to the changed behavior
    and repository instructions. Update documentation only when a documented
    contract or contributor rule changes.
-10. Report the issue and selection rationale, files changed, acceptance
-    criteria, checks/results, and risks. Leave changes uncommitted for review.
-    After explicit approval of this issue and reviewed diff, automatically use
+10. Run the required automated checks for the change. Do not start the review
+    server before those checks pass.
+11. Start the project's development server from the issue worktree for every
+    issue, including documentation-only harness work:
+    - Read `package.json` to identify the package manager and actual `dev`
+      script. Run that script with the declared package manager; do not assume
+      a command or port that the project does not declare.
+    - Keep the process in a persistent terminal/session and record its handle.
+      Readiness requires the server's ready message, the URL it reports, and a
+      successful HTTP request to that URL. Report the actual URL and worktree.
+    - Let the dev command select an available port when it supports fallback.
+      If a port conflict prevents startup, use the framework's installed,
+      version-matched CLI guidance to select another free port. Never stop or
+      kill an unrelated listener. If the app cannot start or the URL cannot be
+      reached, report the error and blocker; do not describe it as ready for
+      manual validation.
+    - Keep the server running during review. Do not use the production build's
+      output directory while this dev server is running.
+12. Report the issue and selection rationale, files changed, acceptance
+    criteria, checks/results, risks, branch/worktree, and verified local URL.
+    Leave changes uncommitted for review. After explicit approval of this issue
+    and reviewed diff, automatically use
     [issue-finalization](../issue-finalization/SKILL.md) for local commit,
-    local merge into `main`, post-merge validation, and safe issue worktree and
-    local branch cleanup. Do not push, close an issue/epic, create a PR, or
-    deploy unless separately requested. Approval does not transfer to another
-    issue, an epic, or a changed diff.
+    local merge into `main`, post-merge validation, safe shutdown of this
+    issue's dev server, and issue worktree and local branch cleanup. Do not
+    push, close an issue/epic, create a PR, or deploy unless separately
+    requested. Approval does not transfer to another issue, an epic, or a
+    changed diff.
+    If the user requests revisions, keep the same issue worktree and branch,
+    rerun affected checks, and restart or reverify the server as needed. Present
+    the revised diff and URL for fresh approval.
 
 ## Completion check
 
-The issue scope is complete, relevant validation has run, unrelated work is
-preserved, and the user receives a review-ready handoff. Do not start another
-issue until the current changes are integrated or safely isolated in another
-worktree.
+The scope and relevant checks are complete, the issue worktree has a running
+reachable dev server with a reported URL, unrelated work is preserved, and the
+user receives a review-ready handoff. Do not start another issue until the
+current changes are integrated or safely isolated in another worktree.

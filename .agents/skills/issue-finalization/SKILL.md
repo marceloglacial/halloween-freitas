@@ -62,15 +62,21 @@ discard another worktree's changes.
    only changes use `pnpm check:docs`. Check for unexpected files and a clean
    `main` worktree. If validation fails, do not roll back or clean up; preserve
    the issue branch/worktree and report the failure for recovery.
-7. **Clean up only after successful validation.** Confirm the issue worktree is
-   clean, points to the merged branch, and has no valuable ignored files. If it
-   has an `.env.local` symlink, verify that it targets the main worktree's
-   development-only source; ordinary worktree removal removes only the
-   worktree-side symlink. Never alter or delete the source environment file.
-   Remove the issue worktree without force, then delete the local branch using
-   normal merged-branch deletion. Never remove another worktree or a branch
-   that is not verified merged. If either cleanup step fails, stop and report
-   the remaining recovery state; do not retry destructively.
+7. **Stop the issue dev server and clean up only after successful validation.**
+   Stop the exact process/session handle recorded at startup, using its
+   terminal's graceful interrupt, and confirm it exited. Never stop a process
+   based only on its port or kill an unrelated listener. If the recorded
+   handle is unavailable, identify the process by its working directory and
+   command; if ownership is uncertain, preserve the worktree and report the
+   blocker. Then confirm the issue worktree is clean, points to the merged
+   branch, and has no valuable ignored files. If it has environment symlinks,
+   verify they target the canonical checkout's development-only sources;
+   ordinary worktree removal removes only those links and generated files.
+   Never alter or delete source environment files. Remove the issue worktree
+   without force, then delete the local branch using normal merged-branch
+   deletion. Never remove another worktree or a branch that is not verified
+   merged. If either cleanup step fails, stop and report the remaining recovery
+   state; do not retry destructively.
 8. **Report local completion.** Provide issue number/title, commit and merge
    SHAs, validation results, worktree and local branch cleanup, final local
    status, and whether `main` contains unpushed commits. State clearly that the

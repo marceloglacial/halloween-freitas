@@ -64,23 +64,25 @@ live GitHub inspection, and epic-completion gates are defined in
 - Before changing files, inspect the current branch, working tree, and
   worktrees. Start each issue in its own worktree on a clean, dedicated
   `issue-<number>-<slug>` branch based on the default branch.
-- When creating an issue worktree, follow the environment-linking procedure in
-  `.agents/skills/issue-workflow/SKILL.md` and the development-only credential
-  rules in `docs/operations.md`. Report when the main worktree has no
-  `.env.local` file.
+- When creating an issue worktree, run `node scripts/link-issue-env.mjs` from
+  its root and follow the development-only credential rules in
+  `docs/operations.md`. Missing or unsafe environment files and conflicting
+  targets stop setup; preserve existing files and report the actionable error.
 - If the tree contains uncommitted work or the target branch/worktree is already
   in use, preserve it. Do not stash, reset, clean, overwrite, or mix that work;
   stop and ask the user to resolve the conflict or choose an isolated worktree.
-- Development ends with implementation, required validation, and a summary of
-  changes, checks, and risks. Leave issue changes uncommitted and wait for
-  human review.
+- Development ends with implementation, required validation, and a reachable
+  dev server running from the issue worktree. Report its URL, branch/worktree,
+  changes, checks, and risks. Keep the server running and issue changes
+  uncommitted for human review.
 - Explicit approval of the current issue's reviewed change set automatically
   authorizes the local commit, non-fast-forward merge into local `main`,
-  post-merge validation, and safe removal of that issue's worktree and local
-  branch. Follow `.agents/skills/issue-finalization/SKILL.md`; do not ask for
-  another confirmation for those local steps. If approval, scope, or repository
-  state is ambiguous, stop and clarify. Any material change after review needs
-  a fresh approval.
+  post-merge validation, shutdown of that issue's dev server, and safe removal
+  of that issue's worktree and local branch. Follow
+  `.agents/skills/issue-finalization/SKILL.md`; do not ask for another
+  confirmation for those local steps. If approval, scope, or repository state
+  is ambiguous, stop and clarify. Any material change after review needs a
+  fresh approval.
 - Approval never authorizes a push. Push only after the user explicitly names
   the branch and remote. Issue closure and epic closure also require separate
   explicit authorization; a local merge does not change GitHub issue state.

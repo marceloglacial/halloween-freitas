@@ -67,21 +67,36 @@ untrusted client value as `x-real-ip`.
 
 ### Issue worktrees
 
-Keep the development-only `.env.local` in the main worktree. When creating an
-issue worktree, follow the environment provisioning procedure in the
-[issue-workflow skill](../.agents/skills/issue-workflow/SKILL.md): discover the
-main worktree using `git worktree list --porcelain`, resolve its absolute path,
-and link the issue worktree's `.env.local` to the main worktree file when it
-exists. The workflow verifies the file is untracked and ignored by Git and
-that the link resolves.
-An existing target is preserved; missing source configuration is reported
-without copying or creating secrets. Set up the main worktree file using
-development-only credentials before application development. Never link
-production credentials into an agent worktree.
+Keep local development credentials at the canonical checkout's `.env.local`;
+this is the only local environment entry currently used by the project. It
+must resolve to a regular file containing development-only credentials for a
+non-production database. Never inspect or print its values to establish that
+status; use the owner-configured development environment described above. If
+its status is unknown, leave it unlinked and stop before application work.
 
-Approved issue finalization removes the issue worktree normally, which removes
-its symlink. It preserves the main worktree's source file. Never delete or
-modify that source as part of worktree cleanup.
+From a dedicated issue worktree, run `node scripts/link-issue-env.mjs`. The
+helper resolves the canonical checkout from Git's worktree list, so checkout
+paths do not depend on a fixed parent directory. It creates an absolute
+`.env.local` symlink only after verifying that the source resolves to a regular
+file, the source entry and any in-checkout target are untracked, and both are
+ignored by Git. It leaves an already-correct symlink in place and stops without
+changing any conflicting target. A missing source or unsafe Git state is an
+actionable setup error; configure the development environment in the canonical
+checkout and rerun the helper. The `.env*` ignore rule keeps
+both the source and worktree symlink out of commits. Never copy credentials or
+add the helper's allowlisted environment files to Git.
+
+After an issue's checks pass, start the actual package `dev` script from its
+worktree and keep that process running for review. Use the package manager and
+script declared in `package.json`; let the server report its actual port. If a
+port is occupied, use an available port without stopping the existing
+listener. Confirm the reported URL responds before handing it to the user.
+Keep the worktree's `.next` output in place while the server runs.
+
+After approval, finalization stops only the dev server started for that issue,
+then removes the issue worktree normally. Removing the worktree removes its
+symlink and generated files; it preserves the canonical `.env.local`. Never
+delete or modify that source during worktree cleanup.
 
 ## Database lifecycle
 
@@ -155,10 +170,14 @@ Check CLI support with `codex --version` and `codex debug prompt-input` before
 depending on custom agents. Custom agents are optional; the primary Codex
 session must be able to continue when they are unavailable.
 
-Documentation-only harness work needs no application secrets, database, or
-running web server. For application changes, use the relevant application
-prerequisites and validation below. See the [AI harness validation
-record](ai-harness-validation.md) for a smoke-test example and its limits.
+Documentation-only edits and checks do not read application credentials or
+connect to the database. The issue handoff nevertheless starts the dev server
+for manual review, so worktree setup requires the development-only `.env.local`
+described above. If it is unavailable, report the setup error and do not claim
+that a local review server is ready. For application changes, use the relevant
+application prerequisites and validation below. See the [AI harness
+validation record](ai-harness-validation.md) for workflow smoke tests and
+their limits.
 
 Next.js bundles version-matched documentation under
 `node_modules/next/dist/docs/`. The managed block in `AGENTS.md` directs agents
