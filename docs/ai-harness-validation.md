@@ -95,20 +95,25 @@ snapshot-based result as live confirmation.
 
 The workflow contract is: implementation handoff stays uncommitted; approval
 of exactly the current reviewed issue change set authorizes local commit,
-non-fast-forward merge to local `main`, post-merge validation, and safe removal
-of that issue worktree and local branch. Push, PR creation/merge, issue
-closure, epic closure, and deployment remain separate and are never implied.
+non-fast-forward merge to local `main`, post-merge validation, closure of the
+exact issue as completed, and safe removal of that issue worktree and local
+branch. Push, PR creation/merge, epic closure, and deployment remain separate
+and are never implied.
 
 | Scenario                                             | Required behavior                                            | Validation method                                                              |
 | ---------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
 | No approval yet                                      | No commit, merge, or cleanup                                 | Isolated simulation: main ref unchanged and issue worktree remains uncommitted |
+| Issue closure called without approval flag           | Do not contact GitHub or close the issue                     | `close-merged-issue.test.mjs` without `--approved`                             |
 | Current implementation approved                      | Run local commit and local merge automatically               | Workflow rule review                                                           |
-| Merge and validation pass                            | Remove only the clean issue worktree and merged local branch | Isolated Git simulation                                                        |
+| Merge and validation pass                            | Close the linked issue as completed before cleanup           | `close-merged-issue.test.mjs` with a fake GitHub CLI                           |
+| Issue closure succeeds                               | Remove only the clean issue worktree and merged local branch | Isolated Git simulation                                                        |
 | Approval / “continue development”                    | No push                                                      | Workflow rule review; no remote in fixture                                     |
 | Explicit `push main to origin`                       | Authorize only that branch/remote push                       | Policy review only; no push executed                                           |
 | Merge conflict                                       | Stop and retain issue branch/worktree                        | Isolated `merge-tree` conflict simulation                                      |
 | Another worktree has uncommitted changes             | Preserve it unchanged                                        | Isolated Git simulation                                                        |
 | Post-merge validation fails                          | Stop cleanup; preserve issue worktree/branch for recovery    | Isolated Git simulation                                                        |
+| GitHub issue closure attempted before merge          | Refuse to call GitHub and leave the issue open               | `close-merged-issue.test.mjs` with an unmerged branch                          |
+| GitHub rejects issue closure                         | Stop before server/worktree/branch cleanup                   | `close-merged-issue.test.mjs` with a failing fake GitHub CLI                   |
 | GitHub issue closed, commit absent from local `main` | Flag the mismatch; do not count it as integrated             | Isolated ancestry check                                                        |
 | Epic children closed, final validation missing       | Report gate; do not close the epic                           | Workflow rule review                                                           |
 | Earlier push authorization exists                    | Do not reuse it                                              | Workflow rule review                                                           |
@@ -120,8 +125,14 @@ issue worktree/branch after simulated post-merge validation failure, and an
 issue commit that is not an ancestor of local `main`. The fixture had no remote
 and was deleted after the run. No command touched this project repository's
 Git history, no external push was performed, and no worktree here was removed.
-The policy-only rows were checked against the authoritative workflow text;
-they are not automated authorization tests.
+The issue-close helper's automated test uses a temporary Git repository and a
+fake `gh` executable. It verifies that the helper requires the registered
+`main` worktree, an issue-prefixed matching branch, clean `main` and issue
+worktrees, and ancestry in local `main`; it requires `--approved`, then sends
+`gh issue close <n> --reason completed` and verifies the returned closed state. A GitHub failure
+or an unmerged/mismatched branch prevents progression. The fake CLI never
+contacts GitHub. Approval interpretation and the later server/worktree cleanup
+remain workflow checks; they are not automated authorization tests.
 
 The Codex CLI prompt simulation can run in a network-restricted sandbox. If
 that isolated process cannot reach GitHub, it must report the limitation;

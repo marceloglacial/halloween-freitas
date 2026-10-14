@@ -1,6 +1,6 @@
 ---
 name: issue-finalization
-description: After explicit approval of the current reviewed issue change set, automatically commit locally, merge into local main, validate, and safely remove that issue's worktree and local branch. Push, GitHub issue/epic closure, PRs, and deployment are separate operations and never inferred.
+description: After explicit approval of the current reviewed issue change set, commit locally, merge into local main, validate, close the exact completed GitHub issue, and safely remove its worktree and local branch. Push, epic closure, PRs, and deployment are separate operations and never inferred.
 ---
 
 # Issue finalization
@@ -13,11 +13,12 @@ approval target is ambiguous, the diff changed materially after review, or
 repository state differs from the handoff, stop and ask for clarification or a
 new review.
 
-This is a local-only workflow. It never fetches, pulls, pushes, creates or
-merges a PR, closes an issue or epic, or deploys. Push requires a separate user
-request naming the target branch and remote. Issue and epic closure also
-require separate explicit requests. The primary agent owns finalization;
-read-only reviewer agents never perform these operations.
+This workflow never fetches, pulls, pushes, creates or merges a PR, closes an
+epic, or deploys. Approval of this issue's reviewed change set authorizes
+closing only the exact linked issue, and only after local merge and validation
+succeed. Push requires a separate user request naming the target branch and
+remote. Epic closure requires separate explicit approval. The primary agent
+owns finalization; read-only reviewer agents never perform these operations.
 
 Follow [repository instructions](../../../AGENTS.md) and the [AI workflow
 guide](../../../docs/ai-workflow.md). Never use force, reset, stash, clean, or
@@ -62,7 +63,19 @@ discard another worktree's changes.
    only changes use `pnpm check:docs`. Check for unexpected files and a clean
    `main` worktree. If validation fails, do not roll back or clean up; preserve
    the issue branch/worktree and report the failure for recovery.
-7. **Stop the issue dev server and clean up only after successful validation.**
+7. **Close the exact issue after integration.** From the clean local `main`
+   worktree, after post-merge validation passes, run
+   `node scripts/close-merged-issue.mjs <issue-number> <issue-branch> --approved`.
+   This explicit approval flag is required. The
+   helper verifies that it is running in the registered `main` worktree, both
+   `main` and the associated issue worktree are clean, the branch name matches
+   the issue number, and the branch is an ancestor of local `main`. It closes
+   that issue with reason `completed` and reads it back to verify the result.
+   If GitHub is unavailable, the issue is mismatched, or closure cannot be
+   verified, stop and preserve the issue worktree and branch. Report the local
+   merge and validation as complete but issue closure and cleanup as
+   incomplete. Do not close another issue or an epic.
+8. **Stop the issue dev server and clean up only after successful closure.**
    Stop the exact process/session handle recorded at startup, using its
    terminal's graceful interrupt, and confirm it exited. Never stop a process
    based only on its port or kill an unrelated listener. If the recorded
@@ -73,15 +86,17 @@ discard another worktree's changes.
    verify they target the canonical checkout's development-only sources;
    ordinary worktree removal removes only those links and generated files.
    Never alter or delete source environment files. Remove the issue worktree
-   without force, then delete the local branch using normal merged-branch
-   deletion. Never remove another worktree or a branch that is not verified
-   merged. If either cleanup step fails, stop and report the remaining recovery
-   state; do not retry destructively.
-8. **Report local completion.** Provide issue number/title, commit and merge
-   SHAs, validation results, worktree and local branch cleanup, final local
-   status, and whether `main` contains unpushed commits. State clearly that the
-   issue has not been pushed or closed. Do not begin another issue until the
-   current work is integrated locally or safely isolated.
+   with `git worktree remove <path>` without force. Run `git worktree prune`
+   only when stale metadata remains, then delete the local branch using normal
+   merged-branch deletion. Never remove another worktree or a branch that is
+   not verified merged. If server shutdown, worktree removal, pruning, or
+   branch deletion fails, stop and report exactly which steps succeeded and
+   what remains; do not retry destructively.
+9. **Report completion.** Provide issue number/title, commit and merge SHAs,
+   validation results, verified issue state/reason, worktree and branch
+   cleanup, final local status, and whether `main` contains unpushed commits.
+   State clearly that no push occurred. Do not begin another issue until this
+   issue is integrated locally or safely isolated.
 
 ## Separate operations
 
@@ -89,10 +104,11 @@ discard another worktree's changes.
   and remote. Inspect local/remote tracking state and pending commits with
   read-only checks first. If the target is unclear, history diverged, or a
   force push would be needed, stop. Never reuse earlier push authorization.
-- **Issue closure:** perform only after the user explicitly requests closure
-  of the identified issue. Verify that its approved commit is integrated into
-  local `main`; a local merge does not update GitHub. Do not close an epic as a
-  side effect.
+- **Issue closure:** approval of the exact issue change set authorizes closing
+  that linked issue as completed only after its approved commit is integrated
+  into local `main` and post-merge validation passes. Use the helper above;
+  never infer an issue number from a branch name without verifying the
+  association. Do not close another issue or an epic as a side effect.
 - **Epic closure:** only after the epic completion criteria in `docs/ai-workflow.md`
   are met and the user explicitly approves closing that named epic. This never
   authorizes a push.
@@ -103,8 +119,8 @@ discard another worktree's changes.
 ## Failure handling
 
 Stop at the first failed verification, commit, conflict check, merge,
-validation, or cleanup step. Preserve uncommitted work and all remaining issue
-branches/worktrees. Do not retry with force, reset, stash, clean, or rollback.
-Report the exact local state and the safe recovery point. If a worktree was
-already removed before a later branch-cleanup failure, leave the merged local
-branch intact; do not recreate or delete state automatically.
+validation, GitHub closure, server shutdown, or cleanup step. Preserve
+uncommitted work and all remaining issue branches/worktrees. Do not retry with
+force, reset, stash, clean, or rollback. Report the exact local and GitHub
+state and the safe recovery point. If the issue closed successfully but later
+cleanup fails, leave the remaining merged branch/worktree intact for recovery.

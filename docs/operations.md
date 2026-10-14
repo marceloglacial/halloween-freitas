@@ -150,12 +150,17 @@ the release notes.
 
 Issue implementation changes remain uncommitted for review. After approval of
 the reviewed change set, the harness performs the issue-referenced local
-commit, local `main` merge, validation, and issue worktree/local branch cleanup
-as documented in the [AI workflow](ai-workflow.md). This does not contact a
-remote, push, create a PR, close an issue or epic, or deploy. Push requires a
-separate explicit request naming the branch and remote. Issue and epic closure
-also require separate explicit requests. Deployment always requires its own
-explicit authorization.
+commit, local `main` merge, and validation. It then closes the exact linked
+GitHub issue as completed with `scripts/close-merged-issue.mjs` and its
+explicit `--approved` flag, verifies the result, stops that issue's server,
+and removes its clean worktree and merged
+local branch as documented in the [AI workflow](ai-workflow.md). The close
+helper requires the associated issue branch to be merged into local `main`
+and both worktrees to be clean; GitHub failure stops cleanup. This workflow
+does not fetch, push, create a PR, close an epic, or deploy. Push requires a
+separate explicit request naming the branch and remote. Epic closure requires
+separate explicit approval. Deployment always requires its own explicit
+authorization.
 
 ## AI agent tooling
 

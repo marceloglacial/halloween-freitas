@@ -77,15 +77,17 @@ live GitHub inspection, and epic-completion gates are defined in
   uncommitted for human review.
 - Explicit approval of the current issue's reviewed change set automatically
   authorizes the local commit, non-fast-forward merge into local `main`,
-  post-merge validation, shutdown of that issue's dev server, and safe removal
-  of that issue's worktree and local branch. Follow
+  post-merge validation, closure of that exact GitHub issue as completed,
+  shutdown of that issue's dev server, and safe removal of that issue's
+  worktree and local branch. Close it with
+  `node scripts/close-merged-issue.mjs <issue-number> <issue-branch> --approved`
+  only after validation passes. Follow
   `.agents/skills/issue-finalization/SKILL.md`; do not ask for another
   confirmation for those local steps. If approval, scope, or repository state
   is ambiguous, stop and clarify. Any material change after review needs a
   fresh approval.
 - Approval never authorizes a push. Push only after the user explicitly names
-  the branch and remote. Issue closure and epic closure also require separate
-  explicit authorization; a local merge does not change GitHub issue state.
+  the branch and remote. Epic closure requires separate explicit approval.
 - Never mark or close an epic automatically. Verify its implementation, branch
   integration, validation, regressions, and cross-feature criteria, then wait
   for the user's explicit approval of epic completion and closure.
