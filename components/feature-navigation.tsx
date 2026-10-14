@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
+import LogoutButton from "@/components/logout-button";
 import {
   FeatureNavigationItem,
   getFeatureNavigationItems,
@@ -14,10 +16,14 @@ function NavigationItems({
   items,
   pathname,
   mobile = false,
+  loading = false,
+  clerkEnabled,
 }: {
   items: FeatureNavigationItem[];
   pathname: string;
   mobile?: boolean;
+  loading?: boolean;
+  clerkEnabled: boolean;
 }) {
   return (
     <ul
@@ -27,6 +33,11 @@ function NavigationItems({
           : "flex flex-wrap items-center justify-end gap-x-5 gap-y-2"
       }
     >
+      {loading && (
+        <li className="px-3 py-2 text-sm text-orange-100" role="status">
+          Carregando navegação…
+        </li>
+      )}
       {items.map((item) => (
         <li key={item.key}>
           {"href" in item ? (
@@ -54,11 +65,28 @@ function NavigationItems({
           )}
         </li>
       ))}
+      {clerkEnabled && <SignedInNavigationItem />}
     </ul>
   );
 }
 
-export default function FeatureNavigation() {
+function SignedInNavigationItem() {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  if (!isLoaded || !isSignedIn) return null;
+
+  return (
+    <li>
+      <LogoutButton className="block rounded-lg px-3 py-2 text-left text-sm text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-orange-300 disabled:cursor-wait disabled:opacity-60" />
+    </li>
+  );
+}
+
+export default function FeatureNavigation({
+  clerkEnabled,
+}: {
+  clerkEnabled: boolean;
+}) {
   const pathname = usePathname();
   const menuRef = useRef<HTMLDetailsElement>(null);
   const [event, setEvent] = useState<HalloweenEvent | null>(null);
@@ -127,13 +155,17 @@ export default function FeatureNavigation() {
         </p>
         <nav aria-label="Navegação principal">
           <div className="hidden md:block">
-            {loaded && <NavigationItems items={items} pathname={pathname} />}
+            <NavigationItems
+              items={loaded ? items : []}
+              pathname={pathname}
+              clerkEnabled={clerkEnabled}
+            />
           </div>
           <details
             ref={menuRef}
             className="relative md:hidden"
             onClick={(clickEvent) => {
-              if ((clickEvent.target as HTMLElement).closest("a")) {
+              if ((clickEvent.target as HTMLElement).closest("a, button")) {
                 menuRef.current?.removeAttribute("open");
               }
             }}
@@ -142,16 +174,13 @@ export default function FeatureNavigation() {
               Menu <span aria-hidden="true">☰</span>
             </summary>
             <div className="absolute top-12 right-0">
-              {loaded ? (
-                <NavigationItems items={items} pathname={pathname} mobile />
-              ) : (
-                <p
-                  className="min-w-64 rounded-xl border border-white/15 bg-zinc-900 p-4 text-sm text-orange-100"
-                  role="status"
-                >
-                  Carregando navegação…
-                </p>
-              )}
+              <NavigationItems
+                items={loaded ? items : []}
+                pathname={pathname}
+                mobile
+                loading={!loaded}
+                clerkEnabled={clerkEnabled}
+              />
             </div>
           </details>
         </nav>
