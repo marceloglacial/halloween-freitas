@@ -16,6 +16,10 @@ const event: HalloweenEvent = {
 };
 
 describe("feature navigation galleries", () => {
+  it("has no event-dependent links when there is no active edition", () => {
+    expect(getFeatureNavigationItems(null)).toEqual([]);
+  });
+
   it("keeps contestant photos separate and links to the selected party album", () => {
     const items = getFeatureNavigationItems(event);
 

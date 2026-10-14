@@ -65,6 +65,15 @@ export async function getCurrentEvent(): Promise<HalloweenEvent | null> {
   return latest ? serializeEvent(latest) : null;
 }
 
+/** Returns the active edition only; unlike getCurrentEvent, this has no historical fallback. */
+export async function getActiveEvent(): Promise<HalloweenEvent | null> {
+  const db = await getDb();
+  const active = await db
+    .collection<EventDocument>("events")
+    .findOne({ status: "active" }, { sort: { year: -1, _id: 1 } });
+  return active ? serializeEvent(active) : null;
+}
+
 export async function getEventBySlug(
   slug: string,
 ): Promise<HalloweenEvent | null> {

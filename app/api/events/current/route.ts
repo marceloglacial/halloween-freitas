@@ -1,9 +1,9 @@
-import { getCurrentEvent, getEventPhase } from "@/lib/events";
+import { getActiveEvent, getEventPhase } from "@/lib/events";
 import { errorResponse, logServerError } from "@/lib/http";
 
 export async function GET() {
   try {
-    const event = await getCurrentEvent();
+    const event = await getActiveEvent();
     if (!event) return errorResponse("Evento não encontrado", 404);
     return Response.json({ ...event, phase: getEventPhase(event) });
   } catch (error) {

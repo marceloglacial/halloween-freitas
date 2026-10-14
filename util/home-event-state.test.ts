@@ -15,6 +15,12 @@ const event: HalloweenEvent = {
 };
 
 describe("homepage event state", () => {
+  it("shows the waiting state when no edition exists", () => {
+    expect(getHomeEventState(null, new Date("2026-10-31T23:59:59.999Z"))).toBe(
+      "waiting",
+    );
+  });
+
   it("keeps the registration homepage before the event starts", () => {
     expect(getHomeEventState(event, new Date("2026-10-31T23:59:59.999Z"))).toBe(
       "pre_event",

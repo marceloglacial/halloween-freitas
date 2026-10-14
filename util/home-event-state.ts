@@ -1,11 +1,17 @@
 export type HomeEventState =
-  "pre_event" | "voting_soon" | "voting_open" | "voting_ended" | "post_event";
+  | "waiting"
+  | "pre_event"
+  | "voting_soon"
+  | "voting_open"
+  | "voting_ended"
+  | "post_event";
 
 export function getHomeEventState(
   event: HalloweenEvent | null,
   now = new Date(),
 ): HomeEventState {
-  if (!event || event.status === "archived") return "post_event";
+  if (!event) return "waiting";
+  if (event.status === "archived") return "post_event";
   if (event.votingStatus === "ended" && event.resultsPublished) {
     return "post_event";
   }
