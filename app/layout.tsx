@@ -32,7 +32,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const app = (
     <>
-      <FeatureNavigation />
+      <FeatureNavigation
+        clerkEnabled={Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)}
+      />
       {children}
     </>
   );
