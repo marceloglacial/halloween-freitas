@@ -1,12 +1,13 @@
 # QA-01 Release QA report
 
-**Status:** Incomplete. Automated checks pass, and the isolated 2026 QA edition
-verified the contestant, voting, results, reopening, and party-photo lifecycles.
-Ballot submission, duplicate prevention, publication/revocation, and ballot
-preservation after reopening passed. One candidate per eligible category was
-available, so a multi-candidate runoff/tie and cross-edition authenticated ballot
-flows remain unverified. The 2027 party gallery remains unverified until its
-scheduled event start. E05 is not ready to close.
+**Status:** Incomplete. Automated checks pass, and the isolated QA editions
+verified contestant, voting, results, reopening, and party-photo lifecycles.
+The tie and runoff lifecycle passed with two candidates, but only one guest
+submitted ballots through the browser; the second guest's ballots were fixture
+seeded because a second verified development identity was unavailable. Full
+cross-edition contestant, ballot, and result checks remain unverified. The 2027
+party gallery remains unverified until its scheduled event start. E05 is not
+ready to close.
 
 ## Automated checks
 
@@ -192,17 +193,54 @@ party-photo cleanup jobs remain.
 
 ## Remaining release gates
 
-1. With at least two verified guest identities and multiple eligible candidates,
-   exercise a tied tally, runoff creation and voting, round reopening, and
-   duplicate-tab behavior. The isolated fixture had one eligible candidate per
-   voted category, so it could not produce a runoff.
+1. Repeat the tied-primary/runoff scenario with two verified guest identities
+   submitting ballots through the browser. Current QA exercised one guest's
+   primary and runoff ballots through the UI and seeded the other guest's two
+   ballots in the isolated fixture.
 2. Repeat cross-edition contestant, ballot, and result checks with signed-in
    accounts. Existing checks cover public 2026/2027 result and gallery isolation,
-   plus a fresh 2027 RSVP before guest access.
+   plus the authenticated fresh 2027 RSVP and guest-profile access below.
 3. After the 2027 event starts on October 12, 2027, verify its party upload,
    publication, post-publication upload, unpublish, individual removal,
    Cloudinary cleanup, and isolation. Its date was preserved and not backdated.
 
-QA-01 and E05 remain open until the runoff/tie and additional cross-edition
-checks pass. The 2027 party-gallery scenario cannot be completed before its
-scheduled event start.
+QA-01 and E05 remain open until the two-browser-voter and additional
+cross-edition checks pass. The 2027 party-gallery scenario cannot be completed
+before its scheduled event start.
+
+## Isolated runoff and fresh RSVP rerun — October 14, 2026
+
+The #81 worktree used a new isolated database, `hf_qa_issue81_20261014_c`.
+The fixture was confirmed absent before indexes and synthetic records were
+created. It used a synthetic 2026 event and future 2027 event; only the 2027
+RSVP opening was set to the current test window. The 2027 event start stayed
+October 12, 2027. The 2027 event was activated only in this isolated database.
+
+- Two eligible frozen candidates produced a tied 1–1 primary tally. The
+  authenticated guest submitted their primary and runoff ballots in the
+  browser. The second RSVP's primary and runoff ballots were inserted directly
+  into the isolated fixture in guarded transactions; no second verified Clerk
+  identity was available for a browser-submitted ballot.
+- Ending the tied primary created one runoff containing both candidates.
+  Ending the tied runoff produced two tied co-winners and no third round.
+  Public results stayed private before publication and after reopening voting.
+  Reopening retained all four ballots, rejected a duplicate vote, and a
+  subsequent end-and-publish restored the public tie result.
+- Before the second synthetic RSVP was created, the signed-in 2026 guest's
+  2027 guest-profile request returned `403 unlinked`. After the same verified
+  account submitted a fresh 2027 RSVP through the public UI, its 2027 guest
+  profile returned `200`; the profile request for its existing 2026 RSVP also
+  returned `200`. This confirms the RSVP gate across editions, but does not
+  cover cross-edition contestant, ballot, or result flows.
+- The 2027 dashboard showed RSVP and contestant registration open while voting
+  remained unavailable before the 2027 event start. The test preserved that
+  future start date. Activating 2027 archived the synthetic 2026 edition in
+  this isolated database; no existing development edition or schedule was
+  changed.
+- Next.js compilation diagnostics returned no issues. The isolated database
+  remains intact as QA evidence.
+
+The cross-edition RSVP gate and runoff lifecycle are now covered, with the
+two-browser-voter gap and cross-edition contestant/ballot/results scenarios
+still open. The 2027 party-gallery scenario remains gated on its scheduled
+event start.
