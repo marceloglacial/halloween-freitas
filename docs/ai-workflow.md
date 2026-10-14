@@ -185,8 +185,12 @@ completion and closure.
    criteria, checks/results, risks, worktree/branch, and working local URL.
    Leave work uncommitted and ready for human review. Explicit approval then
    authorizes local finalization under
-   [issue-finalization](../.agents/skills/issue-finalization/SKILL.md), which
-   stops that issue's dev server after validation and before worktree removal.
+   [issue-finalization](../.agents/skills/issue-finalization/SKILL.md). After
+   local commit, merge, and post-merge validation, close the exact linked issue
+   as completed using `scripts/close-merged-issue.mjs`; only after verified
+   closure stop that issue's dev server and remove its clean worktree and
+   merged local branch. A closure or cleanup failure stops later cleanup and
+   must be reported with the remaining recovery state.
 
 ## Git, database, and release boundaries
 
@@ -201,9 +205,11 @@ never transfers to another issue, an epic, or a changed diff.
 
 Push is a separate operation and is forbidden until the user explicitly names
 the branch and remote. Finalization does not fetch, pull, push, create or merge
-a PR, close an issue, close an epic, or deploy. GitHub issue closure and epic
-closure require separate explicit requests; epic closure additionally requires
-the documented completion criteria. If remote branch policy later requires a
+a PR, close an epic, or deploy. Approval of the exact issue change set
+authorizes closure of that associated issue as completed after local merge and
+validation. Epic closure still requires the documented completion criteria
+and the user's explicit approval of its completion and closure. If remote
+branch policy later requires a
 PR, stop before remote publication and report that requirement; do not create
 or merge a PR automatically.
 
