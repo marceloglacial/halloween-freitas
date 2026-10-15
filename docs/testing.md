@@ -105,6 +105,15 @@ pending, denied, and published/private states. Check keyboard access and
 Portuguese messages. For runtime-sensitive changes, follow the
 [Next.js development loop](../.agents/skills/next-dev-loop/SKILL.md).
 
+For persistent navigation, verify the floating desktop pill over the homepage
+hero and in-flow placement on internal routes. At tablet widths, exercise the
+right-side drawer; on phones, exercise the bottom-inset menu panel. Open and
+close each with its button, overlay, Escape, and a route link; verify focus
+returns to the menu button, background scrolling is locked while open, reduced
+motion is respected, and active routes are announced.
+Confirm unavailable lifecycle actions remain noninteractive, contestant
+photos and party album stay separate, and Sair appears only for signed-in users.
+
 For application code changes, run `pnpm test`, `pnpm lint`, and `pnpm build`.
 For documentation-only changes, check Markdown formatting and local links.
 Never point a test at a production database or run a destructive database

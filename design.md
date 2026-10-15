@@ -155,16 +155,24 @@ results publication checks.
 
 ### Persistent feature navigation
 
-Keep a compact, dark navigation bar at the top of every screen. On wide screens,
-show the feature links inline; on narrow screens, place them in a keyboard
-accessible disclosure menu. Include the Halloween dos Freitas home link and
-contextual actions for RSVP, Meu Halloween, voting, published results, and
-participant photos. RSVP and voting show a short unavailable state when their
-event lifecycle does not allow the action. Voting and portal links pass through
-the event access flow with the selected event ID in the return path. Results
-appear as a link only after publication. Photo and result links retain the
-selected edition so archived years remain browsable. Keep the homepage sections
-and their order unchanged.
+At wide desktop widths, keep a centered pill sticky to the top of the viewport,
+including while scrolling the homepage. Use a glossy dark-glass gradient,
+rounded controls, orange edge glow, and readable icon-and-label links. At tablet widths, use a
+compact brand header and a right-side modal drawer. On narrow phones, present
+the same menu as a bottom-inset panel matching the mobile reference. Both
+layouts use a labeled menu button, close button, overlay dismissal, Escape
+handling, focus management, and reduced-motion support. Keep safe-area insets
+clear.
+
+Include Início and contextual actions for RSVP, Meu Halloween, voting,
+published results, contestant photos, and the party album as separate
+destinations. RSVP and voting show a short unavailable state when their event
+lifecycle does not allow the action. Voting and portal links pass through the
+event access flow with the selected event ID in the return path. Results appear
+as a link only after publication. Photo and result links retain the selected
+edition so archived years remain browsable. Show Sair only to signed-in users
+and use Clerk's existing sign-out action. Keep the homepage sections and their
+order unchanged.
 
 ### Voting
 
