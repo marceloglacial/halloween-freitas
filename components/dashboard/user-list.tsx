@@ -59,7 +59,7 @@ export default function UserList({
           </button>
           <Link
             href={`/resultados?event=${event.slug}`}
-            className="cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-400"
+            className="cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
           >
             Resultados
           </Link>

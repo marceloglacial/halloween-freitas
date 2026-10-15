@@ -96,6 +96,17 @@ Use stable contestant IDs for ballots. Administrative corrections after first
 opening preserve IDs and ballots, and append an audit record. Never implement a
 contestant addition/deletion as an edit to a frozen candidate.
 
+## Admin event command center
+
+The admin shell resolves the requested year against stored editions. The year
+is a navigation key; server-side reads and writes use the resolved `eventId`.
+The overview is a server-owned, event-scoped projection of RSVP, contestant,
+vote, category, and album data. Its lifecycle status and contextual links are
+derived from that selected edition. Links navigate to feature routes; each
+page action and `/api/admin/*` handler independently enforces administrator
+authorization and its lifecycle preconditions. With no edition, the overview
+shows first-edition setup and does not request event metrics.
+
 ## Photo and publication boundaries
 
 Contest photos and party photos are different domain assets with different

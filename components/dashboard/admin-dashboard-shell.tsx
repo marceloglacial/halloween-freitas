@@ -225,7 +225,7 @@ export default function AdminDashboardShell({
       <div className="min-w-0">
         <header className="border-b border-white/10 bg-zinc-950/90 px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex w-full items-center justify-start gap-4">
-            <h1 className="mr-auto hidden text-left text-lg font-semibold sm:text-xl lg:block">
+            <h1 className="sr-only text-lg font-semibold lg:not-sr-only lg:mr-auto lg:text-left lg:text-xl">
               {currentSection}
             </h1>
             <EditionSelection

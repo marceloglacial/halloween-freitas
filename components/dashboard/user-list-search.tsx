@@ -19,7 +19,7 @@ export const UserListSearch: React.FC<UserListSearchProps> = ({
       value={search}
       onChange={handleChange}
       placeholder="Buscar convidados por nome ou email…"
-      className="w-full rounded-lg border border-gray-300 bg-white/20 px-4 py-2 text-white placeholder:text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+      className="w-full rounded-lg border border-gray-300 bg-white/20 px-4 py-2 text-white placeholder:text-white focus-visible:ring-2 focus-visible:ring-orange-300"
     />
   );
 };

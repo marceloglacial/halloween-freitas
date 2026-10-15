@@ -16,7 +16,10 @@ const Form: FC = (): JSX.Element => {
         <p>
           Não precisa entrar nem verificar seu email para confirmar presença.
         </p>
-        <Link href="/votacao" className="text-orange-300 underline">
+        <Link
+          href="/votacao"
+          className="text-orange-300 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+        >
           Acessar votação quando estiver aberta
         </Link>
       </div>
@@ -33,7 +36,7 @@ const Form: FC = (): JSX.Element => {
           name="fullName"
           aria-label="Nome e sobrenome"
           required
-          className="rounded-xl border border-orange-500 bg-transparent p-5 text-white placeholder:text-white focus:ring-0 focus:outline-none"
+          className="rounded-xl border border-orange-500 bg-transparent p-5 text-white placeholder:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300"
           placeholder="Nome e Sobrenome"
           disabled={loading}
         />
@@ -44,14 +47,14 @@ const Form: FC = (): JSX.Element => {
           name="email"
           aria-label="Email"
           required
-          className="rounded-xl border border-orange-500 bg-transparent p-5 text-white placeholder:text-white focus:ring-0 focus:outline-none"
+          className="rounded-xl border border-orange-500 bg-transparent p-5 text-white placeholder:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300"
           placeholder="Email"
           disabled={loading}
         />
       </label>
       <button
         type="submit"
-        className="rounded-xl bg-orange-500 px-4 py-4 text-lg font-medium text-black transition hover:bg-orange-600"
+        className="rounded-xl bg-orange-500 px-4 py-4 text-lg font-medium text-black transition hover:bg-orange-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300 motion-reduce:transition-none"
         disabled={loading}
       >
         {loading ? "Enviando..." : "Enviar"}

@@ -195,7 +195,7 @@ export default function AdminResults({
           type="button"
           onClick={refreshTally}
           disabled={loading}
-          className="rounded-lg border border-white/30 px-4 py-2 disabled:opacity-50"
+          className="rounded-lg border border-white/30 px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
         >
           {loading ? "Atualizando…" : "Atualizar contagem"}
         </button>

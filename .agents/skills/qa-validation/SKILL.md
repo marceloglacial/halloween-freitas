@@ -30,6 +30,9 @@ not touch production data or perform an unapproved external mutation.
    `pnpm build`. Use isolated fixtures rather than a live database.
 4. For UI changes, follow the relevant runtime-verification skill and inspect
    affected responsive, pending, empty, error, denied, and success states.
+   For admin dashboard changes, use the lifecycle matrix in
+   `docs/testing.md`; verify selected-edition links and ensure contextual
+   actions do not advertise a transition rejected by the server.
 5. Distinguish a passing check from a coverage gap or an unavailable check. Do
    not claim behavior verified by a build alone.
 

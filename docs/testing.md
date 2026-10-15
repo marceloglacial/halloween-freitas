@@ -121,6 +121,39 @@ same eligible links, while direct album and voting routes continue to enforce
 their server-side publication and lifecycle checks. Contestant photos and the
 party album stay separate, and Sair appears only for signed-in users.
 
+### Admin dashboard lifecycle matrix
+
+Use fixed event fixtures and an injected `now` for `/dashboard`. The overview
+must use the selected edition's data and offer links only to relevant
+administration sections. API authorization and lifecycle guards remain the
+source of truth for mutations.
+
+| Fixture state                         | Expected overview state and action                                                                                                  | Must not suggest                                       |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| No edition                            | Explain that no edition exists and link to settings to create the first one                                                         | KPIs, event dates, or lifecycle actions                |
+| Before registration start             | Show upcoming confirmations and their localized start; offer edition setup                                                          | Open RSVP or voting actions                            |
+| Registration available                | Show confirmations open and link to guest management                                                                                | Voting before event start and contestant-entry closure |
+| Event started, contest entries open   | Show the next action to close contest entries and preserve RSVP availability                                                        | First-vote action before the contestant set is frozen  |
+| Event started, contest entries closed | Show voting ready for the administrator; offer first-vote controls for the active edition                                           | A first-vote action for an archived edition            |
+| Voting open                           | Show voting in progress and link to voting administration                                                                           | Results publication                                    |
+| Voting ended, results private         | Show results awaiting publication and link to publication controls                                                                  | Public results                                         |
+| Voting ended, results published       | Identify publication and retain links to historical results and album administration                                                | A second publish action                                |
+| Archived edition                      | Identify archived state, keep selected-year links and historical reads; preserve server-supported result/album publication controls | RSVP creation or first voting opening                  |
+
+Automated coverage for the overview matrix belongs in
+`components/dashboard/admin-event-overview.test.tsx`; route tests cover no
+edition, selected archived edition, legacy deep links, authorization denial,
+and aggregate failure. Keep dates fixed at or around the relevant instant so
+boundary expectations do not depend on wall-clock time.
+
+For dashboard manual review, check desktop and narrow mobile widths, keyboard
+focus visibility, active navigation announcement, year switching and browser
+back, and the native mobile drawer's Escape, overlay, route-link, and focus
+restoration behavior. Verify overview errors and empty states, then visit each
+linked route using an active edition and an archived edition. Confirm every
+mutation is still rejected by the server when authorization or lifecycle
+preconditions fail; a hidden or disabled control is not authorization.
+
 For application code changes, run `pnpm test`, `pnpm lint`, and `pnpm build`.
 For documentation-only changes, check Markdown formatting and local links.
 Never point a test at a production database or run a destructive database

@@ -215,7 +215,7 @@ export default function AdminEventContests({
                 setError(null);
                 void loadCategories();
               }}
-              className="mt-3 rounded-lg border border-white/30 px-4 py-2"
+              className="mt-3 rounded-lg border border-white/30 px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
             >
               Tentar novamente
             </button>
@@ -245,7 +245,7 @@ export default function AdminEventContests({
                       onChange={(e) =>
                         updateCategory(index, { title: e.target.value })
                       }
-                      className="rounded border border-white/20 bg-white/10 px-3 py-2 disabled:opacity-60"
+                      className="rounded border border-white/20 bg-white/10 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-60"
                     />
                   </label>
                   <label className="grid gap-1 text-sm">
@@ -257,7 +257,7 @@ export default function AdminEventContests({
                       onChange={(e) =>
                         updateCategory(index, { icon: e.target.value })
                       }
-                      className="rounded border border-white/20 bg-white/10 px-3 py-2 disabled:opacity-60"
+                      className="rounded border border-white/20 bg-white/10 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-60"
                     />
                   </label>
                   <label className="grid gap-1 text-sm">
@@ -271,7 +271,7 @@ export default function AdminEventContests({
                             .value as EventCategoryInput["eligibility"],
                         })
                       }
-                      className="rounded border border-white/20 bg-black px-3 py-2 disabled:opacity-60"
+                      className="rounded border border-white/20 bg-black px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-60"
                     >
                       <option value="all">Todas as entradas</option>
                       <option value="group">Grupos ou duplas</option>
@@ -284,7 +284,7 @@ export default function AdminEventContests({
                       aria-label={`Mover ${category.title || `categoria ${index + 1}`} para cima`}
                       disabled={locked || saving || index === 0}
                       onClick={() => moveCategory(index, -1)}
-                      className="rounded bg-gray-700 px-3 py-2 disabled:opacity-50"
+                      className="rounded bg-gray-700 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
                     >
                       ↑
                     </button>
@@ -295,7 +295,7 @@ export default function AdminEventContests({
                         locked || saving || index === categories.length - 1
                       }
                       onClick={() => moveCategory(index, 1)}
-                      className="rounded bg-gray-700 px-3 py-2 disabled:opacity-50"
+                      className="rounded bg-gray-700 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
                     >
                       ↓
                     </button>
@@ -309,7 +309,7 @@ export default function AdminEventContests({
                             .map((item, order) => ({ ...item, order })),
                         )
                       }
-                      className="rounded bg-gray-700 px-3 py-2 disabled:opacity-50"
+                      className="rounded bg-gray-700 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
                     >
                       Remover
                     </button>
@@ -346,7 +346,7 @@ export default function AdminEventContests({
                       },
                     ])
                   }
-                  className="rounded border border-white/30 px-3 py-2 disabled:opacity-50"
+                  className="rounded border border-white/30 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
                 >
                   Adicionar categoria
                 </button>
@@ -354,7 +354,7 @@ export default function AdminEventContests({
                   type="button"
                   disabled={saving || loading || categories.length === 0}
                   onClick={() => void saveCategories()}
-                  className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black disabled:opacity-50"
+                  className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
                 >
                   {saving ? "Salvando…" : "Salvar categorias"}
                 </button>

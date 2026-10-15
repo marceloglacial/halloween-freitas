@@ -110,24 +110,24 @@ they are not currently implemented.
 
 ## Screens and journeys
 
-| Screen                     | Purpose and layout                                                   | Important states                                                                 |
-| -------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `/`                        | Hero, countdown, party information, program, registration, footer    | Pre-event, registration upcoming/open/closed, voting soon/open/ended, post-event |
-| `/votacao`                 | Verified Google/email-code access for registered guests              | Entering, rejected email or connection error, voting unavailable                 |
-| `/votacao/categories`      | Category tiles with guest greeting                                   | Available category, already voted, guest session unavailable                     |
-| `/votacao/categories/[id]` | Candidate search, selectable photo grid, floating vote action        | No matches, selected candidate, submitting, vote success or failure              |
-| `/meu-halloween?eventId=…` | Linked guest portal for one selected edition                         | RSVP/profile, owned entries/statuses, photo upload/replacement and voting state  |
-| `/perfil?eventId=...`      | Selected-edition RSVP confirmation and editable guest name           | Loading, denied/unlinked, validation, saving, saved, archived edition            |
-| `/resultados`              | Published category tiles and event navigation                        | Published results, no published results                                          |
-| `/resultados/[id]`         | Prominent first place and remaining ranked participants              | Vote counts and percentages, category with no votes                              |
-| `/fotos`                   | Contestant photo gallery with event navigation, search, and viewer   | No photos or matches, selected photo                                             |
-| `/album-da-festa`          | Published party-photo album with annual archive selection            | Waiting for publication, empty published album, selected photo                   |
-| `/dashboard`               | Admin overview route                                                 | Authenticated admin, selected edition, explicit overview placeholder             |
-| `/dashboard/convidados`    | Selected-edition guest management                                    | Guest list and editing, archived-edition inspection                              |
-| `/dashboard/concursos`     | Contest administration                                               | Honest planned-state message until contest module is implemented                 |
-| `/dashboard/votacao`       | Voting controls and results publication                              | Manual voting state, publication, archived-edition inspection                    |
-| `/dashboard/galeria`       | Selected-edition party album management                              | Album publication and photos, separate from contestant images                    |
-| `/dashboard/configuracoes` | Event schedule, settings, category settings, annual edition creation | Selected edition, validation, active or archived state                           |
+| Screen                     | Purpose and layout                                                                     | Important states                                                                       |
+| -------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `/`                        | Hero, countdown, party information, program, registration, footer                      | Pre-event, registration upcoming/open/closed, voting soon/open/ended, post-event       |
+| `/votacao`                 | Verified Google/email-code access for registered guests                                | Entering, rejected email or connection error, voting unavailable                       |
+| `/votacao/categories`      | Category tiles with guest greeting                                                     | Available category, already voted, guest session unavailable                           |
+| `/votacao/categories/[id]` | Candidate search, selectable photo grid, floating vote action                          | No matches, selected candidate, submitting, vote success or failure                    |
+| `/meu-halloween?eventId=…` | Linked guest portal for one selected edition                                           | RSVP/profile, owned entries/statuses, photo upload/replacement and voting state        |
+| `/perfil?eventId=...`      | Selected-edition RSVP confirmation and editable guest name                             | Loading, denied/unlinked, validation, saving, saved, archived edition                  |
+| `/resultados`              | Published category tiles and event navigation                                          | Published results, no published results                                                |
+| `/resultados/[id]`         | Prominent first place and remaining ranked participants                                | Vote counts and percentages, category with no votes                                    |
+| `/fotos`                   | Contestant photo gallery with event navigation, search, and viewer                     | No photos or matches, selected photo                                                   |
+| `/album-da-festa`          | Published party-photo album with annual archive selection                              | Waiting for publication, empty published album, selected photo                         |
+| `/dashboard`               | Admin overview with event KPIs, readiness checklist, milestone, and valid next actions | No edition, selected active or archived edition, lifecycle phases, metrics unavailable |
+| `/dashboard/convidados`    | Selected-edition guest management                                                      | Guest list and editing, archived-edition inspection                                    |
+| `/dashboard/concursos`     | Selected-edition contest categories, entries, and enrollment status                    | Loading, empty, error, enrollment open/closed/frozen, archived edition                 |
+| `/dashboard/votacao`       | Voting controls and results publication                                                | Manual voting state, publication, archived-edition inspection                          |
+| `/dashboard/galeria`       | Selected-edition party album management                                                | Album publication and photos, separate from contestant images                          |
+| `/dashboard/configuracoes` | Event schedule, settings, category settings, annual edition creation                   | Selected edition, validation, active or archived state                                 |
 
 ### Homepage and registration
 
@@ -284,9 +284,12 @@ settings. Legacy `/dashboard?tab=settings|guests` links redirect to their
 settings or guest routes while retaining the requested year.
 
 Guest management, voting/results, gallery, and settings routes reuse the
-existing edition-scoped controls. The overview and contest routes remain clear
-placeholders until their dedicated modules are implemented; do not present
-planned controls as operational. Event settings show the timezone and the
+existing edition-scoped controls. The overview aggregates the exact selected
+edition, labels its current lifecycle state, and links to relevant modules.
+When no edition exists, explain how to create the first one. Archived editions
+remain available for historical reads and server-supported publication work;
+never suggest opening RSVP creation or the first voting round for an archived
+edition. Do not present planned controls as operational. Event settings show the timezone and the
 scheduled RSVP and event starts. Keep RSVP availability, manual contestant
 entry controls, voting round controls, results publication, and party album
 publication visibly distinct. Disabled controls and explanatory text
@@ -331,15 +334,19 @@ where one exists.
 
 Existing support includes accessible names for inputs and photo controls,
 participant image alternatives, selected-candidate `aria-pressed`, disabled
-category semantics, named dialogs, and polite live status in the voting lifecycle
-panel. These features do not establish full accessibility compliance.
+category semantics, a native modal dialog for the admin drawer, and polite live
+status in the voting lifecycle panel. Checklist completion uses text in addition
+to its visual icon. These features do not establish full accessibility
+compliance.
 
 Recommended improvements for future UI work:
 
-- Provide visible keyboard focus throughout. Some registration inputs currently
-  remove outlines and focus rings without a replacement.
-- Contain keyboard focus inside modal dialogs and consistently restore it on
-  close. Current dialogs do not implement a focus trap.
+- Continue checking visible keyboard focus and contrast on every route.
+  Registration fields, admin category controls, guest editor fields, and the
+  guest search now have explicit focus indicators.
+- Keep custom dialogs contained and restore focus on close. The admin drawer uses
+  the browser's native modal-dialog behavior; verify its Escape, overlay, and
+  route-link paths at mobile widths.
 - Verify contrast for every text/action combination, especially white text on
   orange, and supplement color or opacity with meaningful text or semantics.
 - The decorative hero video is hidden when reduced motion is requested; the
