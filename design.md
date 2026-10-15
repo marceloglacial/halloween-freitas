@@ -160,9 +160,11 @@ results publication checks.
 
 ### Persistent feature navigation
 
-At wide desktop widths, keep a centered pill sticky to the top of the viewport,
-including while scrolling the homepage. Use a glossy dark-glass gradient,
-rounded controls, orange edge glow, and readable icon-and-label links. At tablet widths, use a
+At wide desktop widths, keep a centered pill sticky to the top of the viewport
+and overlay it on the homepage hero so no empty background band precedes the
+image. Use a glossy translucent glass surface with a light and orange sheen, no
+dark fill, rounded controls, orange edge glow, and readable icon-and-label links.
+Preserve normal top spacing on internal pages. At tablet widths, use a
 compact brand header and a right-side modal drawer. On narrow phones, present
 the same menu as a bottom-inset panel matching the mobile reference. Both
 layouts use a labeled menu button, close button, overlay dismissal, Escape

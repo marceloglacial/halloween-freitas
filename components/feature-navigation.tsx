@@ -265,8 +265,10 @@ function PublicFeatureNavigation({ clerkEnabled }: { clerkEnabled: boolean }) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 hidden w-full justify-center pt-[max(1rem,env(safe-area-inset-top))] pb-4 xl:flex">
-        <div className="pointer-events-auto mx-auto flex w-max max-w-[calc(100vw-2rem)] items-center justify-between gap-4 overflow-x-auto rounded-[2rem] border border-orange-200/65 bg-[linear-gradient(145deg,rgba(255,255,255,0.17),rgba(24,18,17,0.78)_24%,rgba(6,10,17,0.88)_72%,rgba(249,115,22,0.2))] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.38),0_0_10px_rgba(251,146,60,0.58),0_0_30px_rgba(251,146,60,0.24),0_12px_40px_rgba(0,0,0,0.58)] backdrop-blur-2xl">
+      <header
+        className={`sticky top-0 z-50 hidden w-full justify-center pt-[max(1rem,env(safe-area-inset-top))] pb-4 xl:flex ${pathname === "/" ? "-mb-[5.625rem]" : ""}`}
+      >
+        <div className="pointer-events-auto mx-auto flex w-max max-w-[calc(100vw-2rem)] items-center justify-between gap-4 overflow-x-auto rounded-[2rem] border border-orange-200/65 bg-[linear-gradient(145deg,rgba(255,255,255,0.2),rgba(255,255,255,0.05)_24%,rgba(255,255,255,0.08)_72%,rgba(249,115,22,0.18))] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.38),0_0_10px_rgba(251,146,60,0.58),0_0_30px_rgba(251,146,60,0.24),0_12px_40px_rgba(0,0,0,0.58)] backdrop-blur-2xl">
           <p className="sr-only" aria-live="polite" aria-atomic="true">
             {editionAnnouncement}
           </p>
