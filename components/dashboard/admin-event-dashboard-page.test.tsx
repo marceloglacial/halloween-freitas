@@ -5,7 +5,6 @@ const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   isAdmin: vi.fn(),
   getEvents: vi.fn(),
-  getCategories: vi.fn(),
   dashboard: vi.fn(),
   guestsPage: vi.fn(),
   denied: vi.fn(),
@@ -14,9 +13,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@clerk/nextjs/server", () => ({ auth: mocks.auth }));
 vi.mock("@/lib/auth/admin", () => ({ isAdmin: mocks.isAdmin }));
 vi.mock("@/lib/events", () => ({ getEvents: mocks.getEvents }));
-vi.mock("@/util/get-categories", () => ({
-  getCategories: mocks.getCategories,
-}));
 vi.mock("@/components/dashboard/event-dashboard", () => ({
   default: mocks.dashboard,
 }));
@@ -61,7 +57,6 @@ describe("admin event dashboard route data", () => {
       returnBackUrl: "/dashboard/convidados",
     });
 
-    expect(mocks.getCategories).not.toHaveBeenCalled();
     expect(result).toMatchObject({ props: { event: archivedEvent } });
     expect(result.type).toBe(mocks.guestsPage);
   });
@@ -77,11 +72,12 @@ describe("admin event dashboard route data", () => {
       returnBackUrl: "/dashboard/convidados",
     });
 
-    expect(renderToStaticMarkup(result)).toContain("Nenhuma edição selecionada");
-    expect(mocks.getCategories).not.toHaveBeenCalled();
+    expect(renderToStaticMarkup(result)).toContain(
+      "Nenhuma edição selecionada",
+    );
   });
 
-  it("loads categories only for the selected settings edition", async () => {
+  it("resolves the selected edition for settings without loading contest categories", async () => {
     const event = {
       _id: "event-id",
       year: 2026,
@@ -98,7 +94,6 @@ describe("admin event dashboard route data", () => {
     mocks.auth.mockResolvedValue({ userId: "admin-user" });
     mocks.isAdmin.mockResolvedValue(true);
     mocks.getEvents.mockResolvedValue([event]);
-    mocks.getCategories.mockResolvedValue([]);
 
     const result = await AdminEventDashboardPage({
       searchParams: Promise.resolve({ year: "2026" }),
@@ -106,8 +101,7 @@ describe("admin event dashboard route data", () => {
       returnBackUrl: "/dashboard/configuracoes",
     });
 
-    expect(mocks.getCategories).toHaveBeenCalledWith(event._id);
-    expect(result.props.initialTab).toBe("settings");
+    expect(result.props.initialEvents).toEqual([event]);
     expect(result.props.initialYear).toBe(2026);
     expect(result.key).toBe(`${event._id}-settings`);
   });
@@ -124,6 +118,5 @@ describe("admin event dashboard route data", () => {
 
     expect(result.type).toBe(mocks.denied);
     expect(mocks.getEvents).not.toHaveBeenCalled();
-    expect(mocks.getCategories).not.toHaveBeenCalled();
   });
 });

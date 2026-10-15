@@ -5,13 +5,6 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }),
 }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
-vi.mock("@/components/logout-button", () => ({ default: () => null }));
-vi.mock("@/components/dashboard/admin-results", () => ({
-  default: () => null,
-}));
-vi.mock("@/components/dashboard/admin-party-album", () => ({
-  default: () => <div>Gerenciamento do álbum</div>,
-}));
 
 import EventDashboard from "@/components/dashboard/event-dashboard";
 
@@ -29,30 +22,21 @@ const event: HalloweenEvent = {
   status: "active",
 };
 
-function renderDashboard(
-  selectedEvent: HalloweenEvent,
-  now: string,
-  tab: "settings" | "results" | "photos" = "settings",
-  initialCategories: Category[] = [],
-) {
+function renderDashboard(selectedEvent: HalloweenEvent) {
   return renderToStaticMarkup(
     <EventDashboard
       initialEvents={[selectedEvent]}
-      initialCategories={initialCategories}
       initialYear={selectedEvent.year}
-      initialTab={tab}
-      initialNow={now}
+      initialNow="2026-09-15T00:00:00.000Z"
     />,
   );
 }
 
-describe("admin event dashboard enrollment states", () => {
-  it("previews all seven default categories when creating an event", () => {
+describe("event settings route", () => {
+  it("previews default categories when creating an annual edition", () => {
     const markup = renderToStaticMarkup(
       <EventDashboard
         initialEvents={[]}
-        initialCategories={[]}
-        initialTab="settings"
         initialNow="2026-10-15T12:00:00.000Z"
       />,
     );
@@ -69,71 +53,21 @@ describe("admin event dashboard enrollment states", () => {
     expect(markup).not.toContain("Adicionar categoria");
   });
 
-  it("groups edition details, schedule, advanced controls and dangerous actions", () => {
-    const markup = renderDashboard(event, "2026-09-15T00:00:00.000Z");
+  it("keeps event details, schedule, and archive controls on settings", () => {
+    const markup = renderDashboard(event);
 
     expect(markup).toContain("Detalhes da edição");
     expect(markup).toContain("Agenda");
-    expect(markup).toContain("Opções avançadas");
     expect(markup).toContain("Zona de perigo");
     expect(markup).toContain("Criar próxima edição");
-    expect(markup).not.toContain('id="event-year"');
-    expect(markup).not.toContain("Navegação administrativa");
+    expect(markup).not.toContain("Opções avançadas");
+    expect(markup).not.toContain("Categorias");
+    expect(markup).not.toContain("Iniciar votação");
   });
 
-  it("shows the selected event's stored categories in its settings", () => {
-    const storedCategory: Category = {
-      _id: "category-1",
-      eventId: event._id,
-      title: "Categoria revisada",
-      icon: "🦇",
-      order: 0,
-      eligibility: "all",
-    };
-    const markup = renderDashboard(
-      event,
-      "2026-09-15T00:00:00.000Z",
-      "settings",
-      [storedCategory],
+  it("preserves archive activation actions on the settings page", () => {
+    expect(renderDashboard({ ...event, status: "archived" })).toContain(
+      "Ativar edição",
     );
-
-    expect(markup).toContain("Categoria revisada");
-    expect(markup).toContain("🦇");
-  });
-
-  it("shows RSVP open while contestant entry is closed", () => {
-    const markup = renderDashboard(event, "2026-09-15T00:00:00.000Z");
-
-    expect(markup).toContain("RSVP aberto");
-    expect(markup).toContain("As inscrições do concurso estão fechadas.");
-    expect(markup).toContain(
-      "Fechar as inscrições do concurso mantém as confirmações de presença abertas.",
-    );
-  });
-
-  it("shows RSVP as scheduled before its start time", () => {
-    const markup = renderDashboard(event, "2026-08-31T00:00:00.000Z");
-
-    expect(markup).toContain("RSVP agendado");
-    expect(markup).toContain("America/Toronto");
-  });
-
-  it("explains the permanent RSVP and participant cutoff after voting opens", () => {
-    const markup = renderDashboard(
-      { ...event, votingStatus: "open" },
-      "2026-11-01T01:00:00.000Z",
-    );
-
-    expect(markup).toContain("RSVP encerrado");
-    expect(markup).toContain("permanentemente");
-    expect(markup).toContain("As inscrições não podem ser alteradas");
-  });
-});
-
-describe("admin party album dashboard navigation", () => {
-  it("opens the album management section for the selected edition", () => {
-    const markup = renderDashboard(event, "2026-10-31T20:00:00.000Z", "photos");
-
-    expect(markup).toContain("Gerenciamento do álbum");
   });
 });

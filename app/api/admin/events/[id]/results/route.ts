@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { isAdmin } from "@/lib/auth/admin";
+import { getDb } from "@/lib/db";
 import { getCategories } from "@/util/get-categories";
 import { getEventById } from "@/lib/events";
 import { errorResponse, logServerError } from "@/lib/http";
@@ -38,6 +39,7 @@ export async function GET(
             categoryId: category._id,
             title: category.title,
             icon: category.icon,
+            roundId: null,
             roundType: null,
             roundStatus: null,
             totalVotes: 0,
@@ -54,6 +56,7 @@ export async function GET(
           categoryId: category._id,
           title: category.title,
           icon: category.icon,
+          roundId: round._id.toString(),
           roundType: round.type,
           roundStatus: round.status,
           totalVotes: tally.totalVotes,
@@ -65,13 +68,35 @@ export async function GET(
         };
       }),
     );
+    const displayedRoundIds = [
+      ...new Set(
+        results
+          .map((result) => result.roundId)
+          .filter((roundId): roundId is string => roundId !== null),
+      ),
+    ].map((roundId) => new ObjectId(roundId));
+    const participants = displayedRoundIds.length
+      ? await (await getDb()).collection("votes").distinct("voterRsvpId", {
+          eventId: new ObjectId(event._id),
+          roundId: { $in: displayedRoundIds },
+        })
+      : [];
 
     return Response.json(
       {
         eventId: event._id,
         votingStatus: event.votingStatus,
         resultsPublished: event.resultsPublished,
-        categories: results,
+        participantCount: participants.length,
+        categories: results.map((category) => ({
+          categoryId: category.categoryId,
+          title: category.title,
+          icon: category.icon,
+          roundType: category.roundType,
+          roundStatus: category.roundStatus,
+          totalVotes: category.totalVotes,
+          users: category.users,
+        })),
       },
       { headers: { "Cache-Control": "private, no-store" } },
     );

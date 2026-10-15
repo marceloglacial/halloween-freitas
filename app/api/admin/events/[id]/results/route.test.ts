@@ -8,9 +8,15 @@ const mocks = vi.hoisted(() => ({
   getOpenVotingRound: vi.fn(),
   getFinalVotingRoundForCategory: vi.fn(),
   getCategoryResults: vi.fn(),
+  distinctVoters: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/admin", () => ({ isAdmin: mocks.isAdmin }));
+vi.mock("@/lib/db", () => ({
+  getDb: vi.fn().mockResolvedValue({
+    collection: () => ({ distinct: mocks.distinctVoters }),
+  }),
+}));
 vi.mock("@/lib/events", () => ({ getEventById: mocks.getEventById }));
 vi.mock("@/util/get-categories", () => ({
   getCategories: mocks.getCategories,
@@ -48,10 +54,15 @@ describe("private admin event results", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.isAdmin.mockResolvedValue(true);
+    mocks.distinctVoters.mockResolvedValue([
+      new ObjectId("507f1f77bcf86cd799439021"),
+      new ObjectId("507f1f77bcf86cd799439022"),
+    ]);
     mocks.getEventById.mockResolvedValue({
       _id: eventId,
       votingStatus: "open",
       resultsPublished: false,
+      participantCount: 2,
     });
     mocks.getCategories.mockResolvedValue([
       { _id: firstCategoryId, title: "Fantasia", icon: "🎃" },
@@ -109,6 +120,7 @@ describe("private admin event results", () => {
       eventId,
       votingStatus: "open",
       resultsPublished: false,
+      participantCount: 2,
       categories: [
         {
           categoryId: firstCategoryId,
@@ -148,6 +160,10 @@ describe("private admin event results", () => {
       eventId,
       secondCategoryId,
     );
+    expect(mocks.distinctVoters).toHaveBeenCalledWith("voterRsvpId", {
+      eventId: new ObjectId(eventId),
+      roundId: { $in: [openRoundId, finalRoundId] },
+    });
   });
 
   it("returns empty categories with no round or ballots and exposes no candidate metadata", async () => {
@@ -155,6 +171,7 @@ describe("private admin event results", () => {
     mocks.getFinalVotingRoundForCategory.mockResolvedValue(null);
     const response = await request();
     const body = await response.json();
+    expect(body.participantCount).toBe(0);
     expect(body.categories).toEqual([
       expect.objectContaining({ totalVotes: 0, users: [], roundType: null }),
       expect.objectContaining({ totalVotes: 0, users: [], roundType: null }),

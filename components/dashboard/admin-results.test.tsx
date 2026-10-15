@@ -11,6 +11,7 @@ describe("private admin tally presentation", () => {
           eventId: "event-a",
           votingStatus: "ended",
           resultsPublished: false,
+          participantCount: 3,
           categories: [
             {
               categoryId: "category-a",
@@ -43,6 +44,7 @@ describe("private admin tally presentation", () => {
           eventId: "event-a",
           votingStatus: "ended",
           resultsPublished: false,
+          participantCount: 0,
           categories: [
             {
               categoryId: "category-a",

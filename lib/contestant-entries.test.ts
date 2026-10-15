@@ -4,6 +4,7 @@ import {
   contestantEntriesForRsvpQuery,
   contestantOwnership,
   createContestantEntry,
+  getAdminContestantEntriesForEvent,
   getContestantEntriesForRsvp,
   getVotingCandidatesForCategory,
   isContestantEntryType,
@@ -19,6 +20,7 @@ const dbMocks = vi.hoisted(() => ({
   findOne: vi.fn(),
   sort: vi.fn(),
   toArray: vi.fn(),
+  getCategories: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -31,6 +33,9 @@ vi.mock("@/lib/db", () => ({
 }));
 vi.mock("@/lib/contestant-photos", () => ({
   contestPhotoPreviewUrl: vi.fn(() => "https://private.example/temporary"),
+}));
+vi.mock("@/util/get-categories", () => ({
+  getCategories: dbMocks.getCategories,
 }));
 
 describe("contestant entry schema and ownership", () => {
@@ -188,6 +193,99 @@ describe("contestant entry schema and ownership", () => {
       },
     );
     expect(dbMocks.sort).toHaveBeenCalledWith({ createdAt: 1, _id: 1 });
+  });
+
+  it("lists admin contestant entries only for the edition and omits private ownership and asset fields", async () => {
+    const secondCategoryId = new ObjectId("507f1f77bcf86cd799439017");
+    const entries = {
+      toArray: vi.fn().mockResolvedValue([
+        {
+          _id: new ObjectId("507f1f77bcf86cd799439018"),
+          eventId,
+          categoryId: secondCategoryId,
+          entryType: "group",
+          displayName: "Freitas",
+          costumeTitle: "Vampiros",
+          status: "ready",
+          ownerRsvpId: rsvpId,
+          contestPhoto: {
+            assetId: "private-asset",
+            publicId: "private-cloudinary-id",
+            consentAt: new Date("2026-10-01T00:00:00.000Z"),
+            consentByRsvpId: rsvpId.toString(),
+          },
+          createdAt: new Date("2026-10-02T00:00:00.000Z"),
+        },
+        {
+          _id: new ObjectId("507f1f77bcf86cd799439019"),
+          eventId,
+          categoryId,
+          entryType: "individual",
+          displayName: "Ana",
+          status: "draft",
+          ownerRsvpId: rsvpId,
+          createdAt: new Date("2026-10-03T00:00:00.000Z"),
+        },
+      ]),
+    };
+    dbMocks.find.mockReturnValue(entries);
+    dbMocks.getCategories.mockResolvedValue([
+      {
+        _id: secondCategoryId.toString(),
+        eventId: eventId.toString(),
+        title: "Grupo",
+        icon: "👯",
+        order: 1,
+        eligibility: "group",
+      },
+      {
+        _id: categoryId.toString(),
+        eventId: eventId.toString(),
+        title: "Individual",
+        icon: "🎃",
+        order: 0,
+        eligibility: "all",
+      },
+    ]);
+
+    const entriesForAdmin = await getAdminContestantEntriesForEvent(
+      eventId.toString(),
+    );
+
+    expect(entriesForAdmin.map((entry) => entry.displayName)).toEqual([
+      "Ana",
+      "Freitas",
+    ]);
+    expect(entriesForAdmin[0]).toMatchObject({
+      categoryTitle: "Individual",
+      status: "draft",
+      hasPhoto: false,
+    });
+    expect(entriesForAdmin[1]).toMatchObject({
+      categoryTitle: "Grupo",
+      status: "ready",
+      hasPhoto: true,
+    });
+    expect(dbMocks.find).toHaveBeenCalledWith(
+      { eventId },
+      {
+        projection: {
+          _id: 1,
+          categoryId: 1,
+          entryType: 1,
+          displayName: 1,
+          costumeTitle: 1,
+          status: 1,
+          contestPhoto: 1,
+          createdAt: 1,
+        },
+      },
+    );
+    expect(JSON.stringify(entriesForAdmin)).not.toContain("ownerRsvpId");
+    expect(JSON.stringify(entriesForAdmin)).not.toContain("private-asset");
+    expect(JSON.stringify(entriesForAdmin)).not.toContain(
+      "private-cloudinary-id",
+    );
   });
 
   it("keeps drafts and withdrawn entries out of public candidate output", () => {
