@@ -1,18 +1,11 @@
-import AdminEventDashboardPage from "@/components/dashboard/admin-event-dashboard-page";
+import AdminEventFeaturePage from "@/components/dashboard/admin-event-feature-page";
 
 export default function GalleryPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    year?: string | string[];
-    [key: string]: string | string[] | undefined;
-  }>;
+  searchParams: Promise<{ year?: string | string[] }>;
 }) {
   return (
-    <AdminEventDashboardPage
-      searchParams={searchParams}
-      initialTab="photos"
-      returnBackUrl="/dashboard/galeria"
-    />
+    <AdminEventFeaturePage searchParams={searchParams} feature="gallery" />
   );
 }

@@ -38,7 +38,8 @@ function formatSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function AdminPartyAlbum({ eventId }: { eventId: string }) {
+export default function AdminPartyAlbum({ event }: { event: HalloweenEvent }) {
+  const eventId = event._id;
   const [album, setAlbum] = useState<AlbumData | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -185,13 +186,26 @@ export default function AdminPartyAlbum({ eventId }: { eventId: string }) {
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-2">
+          <p className="text-xs font-semibold tracking-[0.2em] text-orange-300 uppercase">
+            Galeria · edição {event.year}
+          </p>
           <h1 id="party-album-heading" className="text-2xl font-bold">
-            Álbum de fotos da festa
+            {event.title} · fotos da festa
           </h1>
           <p className="max-w-2xl text-sm text-gray-300">
             Os envios ficam privados até a publicação. Publicar mostra todas as
             fotos mantidas nesta edição e também os próximos envios.
           </p>
+          <p className="max-w-2xl text-sm text-gray-400">
+            Esta área administra o álbum da festa. Fotos de fantasias e
+            inscrições do concurso ficam em Concursos.
+          </p>
+          {event.status === "archived" && (
+            <p className="rounded-lg border border-amber-300/20 bg-amber-300/5 p-3 text-sm text-amber-100">
+              Edição arquivada. O álbum histórico continua disponível e pode ser
+              ocultado pelo administrador desta edição.
+            </p>
+          )}
           {album && (
             <p role="status" className="text-sm">
               Álbum {album.published ? "publicado" : "privado"}

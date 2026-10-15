@@ -6,6 +6,7 @@ type AdminTally = {
   eventId: string;
   votingStatus: "not_started" | "open" | "ended";
   resultsPublished: boolean;
+  participantCount: number;
   categories: {
     categoryId: string;
     title: string;
@@ -94,7 +95,13 @@ export function AdminTallyContent({ tally }: { tally: AdminTally }) {
   );
 }
 
-export default function AdminResults({ eventId }: { eventId: string }) {
+export default function AdminResults({
+  eventId,
+  refreshKey = 0,
+}: {
+  eventId: string;
+  refreshKey?: number;
+}) {
   const [tally, setTally] = useState<AdminTally | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -136,7 +143,7 @@ export default function AdminResults({ eventId }: { eventId: string }) {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [loadTally]);
+  }, [loadTally, refreshKey]);
 
   function refreshTally() {
     setLoading(true);
@@ -168,11 +175,20 @@ export default function AdminResults({ eventId }: { eventId: string }) {
             categoria.
           </p>
           {visibleTally && (
-            <p className="mt-2 text-xs text-gray-400">
-              {visibleTally.resultsPublished
-                ? "Resultados publicados"
-                : "Resultados privados"}
-            </p>
+            <div className="mt-2 space-y-1 text-sm text-gray-300">
+              <p>
+                {visibleTally.resultsPublished
+                  ? "Resultados publicados"
+                  : "Resultados privados"}
+              </p>
+              <p>
+                {visibleTally.participantCount}{" "}
+                {visibleTally.participantCount === 1
+                  ? "participante votou"
+                  : "participantes votaram"}{" "}
+                em pelo menos uma categoria exibida.
+              </p>
+            </div>
           )}
         </div>
         <button

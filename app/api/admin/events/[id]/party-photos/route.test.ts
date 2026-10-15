@@ -128,6 +128,20 @@ describe("admin party album API", () => {
     expect(JSON.stringify(body)).not.toContain("party-photos/private-photo");
   });
 
+  it("returns an explicit private empty album state when no album model exists yet", async () => {
+    mocks.getPartyAlbumForAdmin.mockResolvedValue({ album: null, photos: [] });
+
+    const response = await GET(new Request("http://localhost"), context());
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      published: false,
+      publishedAt: null,
+      updatedAt: null,
+      photos: [],
+    });
+  });
+
   it("rejects malformed publication state without writing", async () => {
     const response = await PATCH(request("yes"), context());
 
