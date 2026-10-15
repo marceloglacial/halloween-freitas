@@ -15,6 +15,7 @@ import LogoutButton from "@/components/logout-button";
 import {
   type FeatureNavigationIcon,
   type FeatureNavigationItem,
+  type PartyAlbumNavigationEvent,
   getFeatureNavigationItems,
   isFeatureNavigationItemActive,
 } from "@/util/feature-navigation";
@@ -179,30 +180,29 @@ export default function FeatureNavigation({
   const drawerRef = useRef<HTMLDialogElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [event, setEvent] = useState<HalloweenEvent | null>(null);
+  const [partyAlbumEvent, setPartyAlbumEvent] =
+    useState<PartyAlbumNavigationEvent | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [updatedAt, setUpdatedAt] = useState(() => new Date());
-  const items = getFeatureNavigationItems(event, updatedAt);
+  const items = getFeatureNavigationItems(event, updatedAt, partyAlbumEvent);
 
   useEffect(() => {
     let active = true;
 
     async function refreshEvent() {
       try {
-        const response = await fetch("/api/events/current", {
+        const response = await fetch("/api/feature-navigation", {
           cache: "no-store",
         });
-        if (response.status === 404) {
-          if (active) {
-            setEvent(null);
-            setUpdatedAt(new Date());
-          }
-          return;
-        }
         if (!response.ok) return;
-        const currentEvent = (await response.json()) as HalloweenEvent;
+        const navigation = (await response.json()) as {
+          event: HalloweenEvent | null;
+          partyAlbumEvent: PartyAlbumNavigationEvent | null;
+        };
         if (active) {
-          setEvent(currentEvent);
+          setEvent(navigation.event);
+          setPartyAlbumEvent(navigation.partyAlbumEvent);
           setUpdatedAt(new Date());
         }
       } catch {

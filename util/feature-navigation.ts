@@ -25,6 +25,11 @@ export type FeatureNavigationIcon =
   | "gallery"
   | "party-gallery";
 
+export type PartyAlbumNavigationEvent = Pick<
+  HalloweenEvent,
+  "slug" | "title" | "year"
+>;
+
 export function isFeatureNavigationItemActive(
   item: FeatureNavigationItem,
   pathname: string,
@@ -48,6 +53,7 @@ export function isFeatureNavigationItemActive(
 export function getFeatureNavigationItems(
   event: HalloweenEvent | null,
   now = new Date(),
+  partyAlbumEvent: PartyAlbumNavigationEvent | null = null,
 ): FeatureNavigationItem[] {
   const items: FeatureNavigationItem[] = [
     {
@@ -58,97 +64,78 @@ export function getFeatureNavigationItems(
       pathname: "/",
     },
   ];
-  if (!event) return items;
+  if (event) {
+    const eventContext = new URLSearchParams({ eventId: event._id }).toString();
+    const resultsArePublic =
+      event.votingStatus === "ended" && event.resultsPublished;
+    const registrationState = getRegistrationState(event, now);
 
-  const eventContext = new URLSearchParams({ eventId: event._id }).toString();
-  const resultsArePublic =
-    event.votingStatus === "ended" && event.resultsPublished;
-  const registrationState = getRegistrationState(event, now);
+    if (registrationState === "open") {
+      items.push({
+        key: "rsvp",
+        icon: "rsvp",
+        label: "Confirmar presença",
+        href: "/#confirmacao",
+        pathname: "/",
+      });
+    } else {
+      items.push({
+        key: "rsvp",
+        icon: "rsvp",
+        label: "Presença",
+        status:
+          registrationState === "upcoming"
+            ? "RSVP abre em breve"
+            : "RSVP encerrado",
+      });
+    }
 
-  if (registrationState === "open") {
     items.push({
-      key: "rsvp",
-      icon: "rsvp",
-      label: "Confirmar presença",
-      href: "/#confirmacao",
-      pathname: "/",
+      key: "portal",
+      icon: "portal",
+      label: "Meu Halloween",
+      href: guestAccessUrl(event._id, `/meu-halloween?${eventContext}`),
+      pathname: "/meu-halloween",
     });
-  } else {
-    items.push({
-      key: "rsvp",
-      icon: "rsvp",
-      label: "Presença",
-      status:
-        registrationState === "upcoming"
-          ? "RSVP abre em breve"
-          : "RSVP encerrado",
-    });
-  }
 
-  items.push({
-    key: "portal",
-    icon: "portal",
-    label: "Meu Halloween",
-    href: guestAccessUrl(event._id, `/meu-halloween?${eventContext}`),
-    pathname: "/meu-halloween",
-  });
+    if (event.status === "active" && event.votingStatus === "open") {
+      items.push({
+        key: "voting",
+        icon: "voting",
+        label: "Votação",
+        href: guestAccessUrl(event._id, `/votacao/categories?${eventContext}`),
+        pathname: "/votacao",
+      });
+    }
 
-  if (event.status === "active" && event.votingStatus === "open") {
-    items.push({
-      key: "voting",
-      icon: "voting",
-      label: "Votar agora",
-      href: guestAccessUrl(event._id, `/votacao/categories?${eventContext}`),
-      pathname: "/votacao",
-    });
-  } else if (event.votingStatus === "ended" && !resultsArePublic) {
-    items.push({
-      key: "voting",
-      icon: "voting",
-      label: "Votação encerrada",
-      status: "Esta edição não aceita mais votos",
-    });
-  } else if (!resultsArePublic) {
-    items.push({
-      key: "voting",
-      icon: "voting",
-      label: "Votação",
-      status: "Votação em breve",
-    });
-  }
+    if (resultsArePublic) {
+      items.push({
+        key: "results",
+        icon: "results",
+        label: "Resultados",
+        href: `/resultados?event=${encodeURIComponent(event.slug)}`,
+        pathname: "/resultados",
+      });
+    }
 
-  if (resultsArePublic) {
     items.push({
-      key: "results",
-      icon: "results",
-      label: "Resultados",
-      href: `/resultados?event=${encodeURIComponent(event.slug)}`,
-      pathname: "/resultados",
-    });
-  } else if (event.votingStatus === "ended") {
-    items.push({
-      key: "results",
-      icon: "results",
-      label: "Resultados",
-      status: "Aguardando publicação",
+      key: "gallery",
+      icon: "gallery",
+      label: "Fotos dos participantes",
+      href: `/fotos?event=${encodeURIComponent(event.slug)}`,
+      pathname: "/fotos",
     });
   }
 
-  items.push({
-    key: "gallery",
-    icon: "gallery",
-    label: "Fotos dos participantes",
-    href: `/fotos?event=${encodeURIComponent(event.slug)}`,
-    pathname: "/fotos",
-  });
-
-  items.push({
-    key: "party-gallery",
-    icon: "party-gallery",
-    label: "Álbum da festa",
-    href: `/album-da-festa?event=${encodeURIComponent(event.slug)}`,
-    pathname: "/album-da-festa",
-  });
+  if (partyAlbumEvent) {
+    items.push({
+      key: "party-gallery",
+      icon: "party-gallery",
+      label: "Álbum da festa",
+      href: `/album-da-festa?event=${encodeURIComponent(partyAlbumEvent.slug)}`,
+      pathname: "/album-da-festa",
+    });
+  }
 
   return items;
 }
