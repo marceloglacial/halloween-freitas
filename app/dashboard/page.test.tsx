@@ -3,6 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
   isAdmin: vi.fn(),
+  getEvents: vi.fn(),
+  getOverview: vi.fn(),
+  overview: vi.fn(() => "AdminEventOverview"),
   redirect: vi.fn((path: string) => {
     throw new Error(`redirect:${path}`);
   }),
@@ -15,8 +18,12 @@ vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/components/dashboard/admin-access-denied", () => ({
   default: mocks.denied,
 }));
-vi.mock("@/components/dashboard/admin-section-placeholder", () => ({
-  default: () => "AdminSectionPlaceholder",
+vi.mock("@/lib/events", () => ({ getEvents: mocks.getEvents }));
+vi.mock("@/lib/admin-event-overview", () => ({
+  getAdminEventOverview: mocks.getOverview,
+}));
+vi.mock("@/components/dashboard/admin-event-overview", () => ({
+  default: mocks.overview,
 }));
 
 import DashboardPage from "@/app/dashboard/page";
@@ -63,5 +70,48 @@ describe("admin dashboard overview route", () => {
         searchParams: Promise.resolve({ year: "2024", tab: "guests" }),
       }),
     ).rejects.toThrow("redirect:/dashboard/convidados?year=2024");
+  });
+  it("loads metrics for the selected archived edition", async () => {
+    const active = {
+      _id: "active-id",
+      year: 2026,
+      title: "Halloween 2026",
+      status: "active",
+    };
+    const archived = {
+      ...active,
+      _id: "archived-id",
+      year: 2025,
+      title: "Halloween 2025",
+      status: "archived",
+    };
+    mocks.auth.mockResolvedValue({ userId: "admin-user" });
+    mocks.isAdmin.mockResolvedValue(true);
+    mocks.getEvents.mockResolvedValue([active, archived]);
+    mocks.getOverview.mockResolvedValue({ confirmedRsvps: 4 });
+
+    const result = await DashboardPage({
+      searchParams: Promise.resolve({ year: "2025" }),
+    });
+
+    expect(mocks.getOverview).toHaveBeenCalledWith("archived-id");
+    expect(result.type).toBe(mocks.overview);
+    expect(result.props.event).toBe(archived);
+  });
+
+  it("shows a truthful error state when overview metrics fail", async () => {
+    const active = {
+      _id: "active-id",
+      year: 2026,
+      title: "Halloween 2026",
+      status: "active",
+    };
+    mocks.auth.mockResolvedValue({ userId: "admin-user" });
+    mocks.isAdmin.mockResolvedValue(true);
+    mocks.getEvents.mockResolvedValue([active]);
+    mocks.getOverview.mockRejectedValue(new Error("database unavailable"));
+
+    const result = await DashboardPage({ searchParams: Promise.resolve({}) });
+    expect(result.props.role).toBe("alert");
   });
 });
