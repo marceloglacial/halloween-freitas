@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ObjectId } from "mongodb";
+import { DEFAULT_EVENT_CATEGORIES } from "@/lib/event-categories";
 
 const mocks = vi.hoisted(() => ({
   isAdmin: vi.fn(),
@@ -77,7 +78,7 @@ describe("admin events API", () => {
     expect(await response.json()).toEqual([{ year: 2026 }]);
   });
 
-  it("rejects event creation without category configuration", async () => {
+  it("rejects custom categories during creation so new events use the defaults", async () => {
     const response = await POST(
       new Request("http://localhost/api/admin/events", {
         method: "POST",
@@ -88,6 +89,9 @@ describe("admin events API", () => {
           timezone: "America/Toronto",
           registrationStartsAt: "2026-09-01T00:00",
           eventStartsAt: "2026-10-31T20:00",
+          categories: [
+            { title: "Custom", icon: "🎃", order: 0, eligibility: "all" },
+          ],
         }),
       }),
     );
@@ -118,7 +122,29 @@ describe("admin events API", () => {
     expect(mocks.insertOne).not.toHaveBeenCalled();
   });
 
-  it("creates a first edition with BSON dates and event-scoped categories", async () => {
+  it("does not seed another category set when the event year already exists", async () => {
+    mocks.findOne.mockResolvedValueOnce({ _id: new ObjectId(), year: 2026 });
+
+    const response = await POST(
+      new Request("http://localhost/api/admin/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          year: 2026,
+          title: "Halloween 2026",
+          timezone: "America/Toronto",
+          registrationStartsAt: "2026-09-01T00:00",
+          eventStartsAt: "2026-10-31T20:00",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    expect(mocks.insertOne).not.toHaveBeenCalled();
+    expect(mocks.insertMany).not.toHaveBeenCalled();
+  });
+
+  it("creates a first edition and seeds the seven defaults atomically", async () => {
     const insertedId = new ObjectId();
     mocks.insertOne.mockResolvedValue({ insertedId });
 
@@ -132,15 +158,6 @@ describe("admin events API", () => {
           timezone: "America/Toronto",
           registrationStartsAt: "2026-09-01T00:00",
           eventStartsAt: "2026-10-31T20:00",
-          categories: [
-            { title: "Geral", icon: "🎃", order: 0, eligibility: "all" },
-            {
-              title: "Infantil",
-              icon: "👻",
-              order: 1,
-              eligibility: "junior",
-            },
-          ],
         }),
       }),
     );
@@ -160,12 +177,13 @@ describe("admin events API", () => {
       new Date("2026-11-01T00:00:00.000Z"),
     );
     expect(mocks.insertMany).toHaveBeenCalledWith(
-      [
-        expect.objectContaining({ title: "Geral", eventId: insertedId }),
-        expect.objectContaining({ title: "Infantil", eventId: insertedId }),
-      ],
+      DEFAULT_EVENT_CATEGORIES.map((category) => ({
+        ...category,
+        eventId: insertedId,
+      })),
       expect.objectContaining({ session: expect.any(Object) }),
     );
+    expect(mocks.insertMany.mock.calls[0][0]).toHaveLength(7);
     expect(mocks.withTransaction).toHaveBeenCalledOnce();
     expect(mocks.endSession).toHaveBeenCalledOnce();
   });

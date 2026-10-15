@@ -34,11 +34,12 @@ function renderDashboard(
   selectedEvent: HalloweenEvent,
   now: string,
   tab: "settings" | "guests" | "results" | "photos" = "settings",
+  initialCategories: Category[] = [],
 ) {
   return renderToStaticMarkup(
     <EventDashboard
       initialEvents={[selectedEvent]}
-      initialCategories={[]}
+      initialCategories={initialCategories}
       initialYear={selectedEvent.year}
       initialTab={tab}
       initialNow={now}
@@ -47,6 +48,47 @@ function renderDashboard(
 }
 
 describe("admin event dashboard enrollment states", () => {
+  it("previews all seven default categories when creating an event", () => {
+    const markup = renderToStaticMarkup(
+      <EventDashboard
+        initialEvents={[]}
+        initialCategories={[]}
+        initialTab="settings"
+        initialNow="2026-10-15T12:00:00.000Z"
+      />,
+    );
+
+    expect(markup).toContain("Categorias padrão");
+    expect(markup).toContain("🏆 Melhor Fantasia");
+    expect(markup).toContain("💩 Pior Fantasia");
+    expect(markup).toContain("🧟 Fantasia Mais Assustadora");
+    expect(markup).toContain("🤡 Fantasia Mais Engraçada");
+    expect(markup).toContain("👯‍♀️ Melhor Fantasia de Grupo ou Dupla");
+    expect(markup).toContain("🧒 Melhor Fantasia Infantil");
+    expect(markup).toContain("🔥 Fantasia Mais Sexy");
+    expect(markup).not.toContain("Adicionar categoria");
+  });
+
+  it("shows the selected event's stored categories in its settings", () => {
+    const storedCategory: Category = {
+      _id: "category-1",
+      eventId: event._id,
+      title: "Categoria revisada",
+      icon: "🦇",
+      order: 0,
+      eligibility: "all",
+    };
+    const markup = renderDashboard(
+      event,
+      "2026-09-15T00:00:00.000Z",
+      "settings",
+      [storedCategory],
+    );
+
+    expect(markup).toContain("Categoria revisada");
+    expect(markup).toContain("🦇");
+  });
+
   it("shows RSVP open while contestant entry is closed", () => {
     const markup = renderDashboard(event, "2026-09-15T00:00:00.000Z");
 

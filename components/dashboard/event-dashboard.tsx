@@ -16,7 +16,10 @@ import {
   scheduleCollisionMessage,
   shiftEventSchedule,
 } from "@/lib/event-schedule";
-import type { EventCategoryInput } from "@/lib/event-categories";
+import {
+  DEFAULT_EVENT_CATEGORIES,
+  type EventCategoryInput,
+} from "@/lib/event-categories";
 import { getAdminEnrollmentControls } from "@/util/admin-enrollment-controls";
 import UserList from "./user-list";
 import LogoutButton from "@/components/logout-button";
@@ -485,7 +488,6 @@ export default function EventDashboard({
       : newEventForm(nextYear);
     setCreating(true);
     setDraft(nextDraft);
-    setCategoryDraft([{ title: "", icon: "", order: 0, eligibility: "all" }]);
   }
 
   async function createEvent(event: FormEvent) {
@@ -500,11 +502,7 @@ export default function EventDashboard({
       const response = await fetch("/api/admin/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          selected
-            ? { ...draft, templateEventId: selected._id }
-            : { ...draft, categories: categoryDraft },
-        ),
+        body: JSON.stringify(draft),
       });
       if (!response.ok) throw new Error(await responseError(response));
       const created = (await response.json()) as HalloweenEvent;
@@ -518,11 +516,7 @@ export default function EventDashboard({
       setYear(created.year);
       setTab("settings");
       router.replace(`/dashboard?year=${created.year}&tab=settings`);
-      toast.success(
-        selected
-          ? "Evento criado com as categorias do ano anterior"
-          : "Evento e categorias criados",
-      );
+      toast.success("Evento e categorias padrão criados");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro inesperado");
     } finally {
@@ -632,8 +626,8 @@ export default function EventDashboard({
             </h1>
             <p className="mt-1 text-sm text-gray-300">
               {selected
-                ? `Revise o cronograma. As categorias serão copiadas de ${selected.year}.`
-                : "Defina o cronograma e configure as categorias desta edição."}
+                ? "Revise o cronograma. As categorias padrão serão incluídas nesta edição."
+                : "Defina o cronograma. As categorias padrão serão criadas automaticamente."}
             </p>
           </div>
           <EventForm
@@ -644,115 +638,22 @@ export default function EventDashboard({
             collisions={collisions}
             onDateChange={updateEventDate}
           />
-          {!selected && (
-            <section className="space-y-4 rounded-xl border border-white/20 p-4">
-              <div>
-                <h2 className="text-xl font-semibold">Categorias</h2>
-                <p className="text-sm text-gray-300">
-                  Configure as categorias que pertencem a esta edição.
-                </p>
-              </div>
-              {categoryDraft.map((category, index) => (
-                <div
-                  key={index}
-                  className="grid gap-3 md:grid-cols-[1fr_7rem_1fr_auto]"
-                >
-                  <label className="grid gap-1 text-sm">
-                    Nome
-                    <input
-                      required
-                      minLength={2}
-                      maxLength={80}
-                      value={category.title}
-                      onChange={(event) =>
-                        setCategoryDraft((current) =>
-                          current.map((item, itemIndex) =>
-                            itemIndex === index
-                              ? { ...item, title: event.target.value }
-                              : item,
-                          ),
-                        )
-                      }
-                      className="rounded border border-white/20 bg-white/10 px-3 py-2"
-                    />
-                  </label>
-                  <label className="grid gap-1 text-sm">
-                    Ícone
-                    <input
-                      maxLength={16}
-                      value={category.icon}
-                      onChange={(event) =>
-                        setCategoryDraft((current) =>
-                          current.map((item, itemIndex) =>
-                            itemIndex === index
-                              ? { ...item, icon: event.target.value }
-                              : item,
-                          ),
-                        )
-                      }
-                      className="rounded border border-white/20 bg-white/10 px-3 py-2"
-                    />
-                  </label>
-                  <label className="grid gap-1 text-sm">
-                    Elegibilidade
-                    <select
-                      value={category.eligibility}
-                      onChange={(event) =>
-                        setCategoryDraft((current) =>
-                          current.map((item, itemIndex) =>
-                            itemIndex === index
-                              ? {
-                                  ...item,
-                                  eligibility: event.target
-                                    .value as EventCategoryInput["eligibility"],
-                                }
-                              : item,
-                          ),
-                        )
-                      }
-                      className="rounded border border-white/20 bg-black px-3 py-2"
-                    >
-                      <option value="all">Todas</option>
-                      <option value="group">Grupos</option>
-                      <option value="junior">Infantil</option>
-                    </select>
-                  </label>
-                  <button
-                    type="button"
-                    disabled={categoryDraft.length === 1}
-                    onClick={() =>
-                      setCategoryDraft((current) =>
-                        current
-                          .filter((_, itemIndex) => itemIndex !== index)
-                          .map((item, order) => ({ ...item, order })),
-                      )
-                    }
-                    className="self-end rounded bg-gray-700 px-3 py-2 disabled:opacity-50"
-                  >
-                    Remover
-                  </button>
-                </div>
+          <section className="space-y-3 rounded-xl border border-white/20 p-4">
+            <div>
+              <h2 className="text-xl font-semibold">Categorias padrão</h2>
+              <p className="text-sm text-gray-300">
+                Estas categorias serão criadas nesta edição e poderão ser
+                revisadas ou editadas nas configurações após a criação.
+              </p>
+            </div>
+            <ol className="grid gap-2">
+              {DEFAULT_EVENT_CATEGORIES.map((category) => (
+                <li key={category.order}>
+                  {category.icon} {category.title}
+                </li>
               ))}
-              <button
-                type="button"
-                disabled={categoryDraft.length >= 30}
-                onClick={() =>
-                  setCategoryDraft((current) => [
-                    ...current,
-                    {
-                      title: "",
-                      icon: "",
-                      order: current.length,
-                      eligibility: "all",
-                    },
-                  ])
-                }
-                className="rounded border border-white/30 px-3 py-2 disabled:opacity-50"
-              >
-                Adicionar categoria
-              </button>
-            </section>
-          )}
+            </ol>
+          </section>
           <div className="flex justify-end gap-2">
             <button
               type="button"

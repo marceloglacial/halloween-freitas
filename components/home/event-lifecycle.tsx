@@ -5,6 +5,7 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { secondaryFont } from "@/util/fonts";
 import { getHomeEventState, HomeEventState } from "@/util/home-event-state";
+import { HomeCategoriesProvider } from "@/components/home/home-categories-context";
 
 const POLL_INTERVAL_MS = 10_000;
 
@@ -74,6 +75,7 @@ function VotingPanel({
 
 export default function EventLifecycle({
   initialEvent,
+  initialCategories,
   initialNow,
   preEventContent,
   postEventContent,
@@ -81,6 +83,7 @@ export default function EventLifecycle({
   footerContent,
 }: {
   initialEvent: HalloweenEvent | null;
+  initialCategories: Category[];
   initialNow: string;
   preEventContent: ReactNode;
   postEventContent: ReactNode;
@@ -90,6 +93,7 @@ export default function EventLifecycle({
   const router = useRouter();
   const currentEventKey = useRef(initialEvent?._id ?? null);
   const [event, setEvent] = useState(initialEvent);
+  const [categories, setCategories] = useState(initialCategories);
   const [observedAt, setObservedAt] = useState(() => new Date(initialNow));
 
   useEffect(() => {
@@ -104,6 +108,7 @@ export default function EventLifecycle({
         if (response.status === 404) {
           if (active) {
             setEvent(null);
+            setCategories([]);
             if (currentEventKey.current !== null) {
               currentEventKey.current = null;
               router.refresh();
@@ -114,9 +119,11 @@ export default function EventLifecycle({
         if (!response.ok) return;
         const currentEvent = (await response.json()) as HalloweenEvent & {
           phase: EventPhase;
+          categories: Category[];
         };
         if (active) {
           setEvent(currentEvent);
+          setCategories(currentEvent.categories);
           if (currentEventKey.current !== currentEvent._id) {
             currentEventKey.current = currentEvent._id;
             router.refresh();
@@ -138,6 +145,11 @@ export default function EventLifecycle({
   }, [router]);
 
   const state = getHomeEventState(event, observedAt);
+  const eventContent = (
+    <HomeCategoriesProvider categories={categories}>
+      {preEventContent}
+    </HomeCategoriesProvider>
+  );
   if (state === "waiting") {
     return (
       <>
@@ -162,7 +174,7 @@ export default function EventLifecycle({
     return (
       <>
         {heroContent}
-        {preEventContent}
+        {eventContent}
         {footerContent}
       </>
     );
@@ -178,7 +190,7 @@ export default function EventLifecycle({
     return (
       <>
         {heroContent}
-        {preEventContent}
+        {eventContent}
         <VotingPanel state={state} />
         {footerContent}
       </>
