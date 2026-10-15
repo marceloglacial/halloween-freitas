@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getFeatureNavigationItems,
   isFeatureNavigationItemActive,
+  type FeatureNavigationState,
 } from "@/util/feature-navigation";
 
 const event: HalloweenEvent = {
@@ -14,147 +15,96 @@ const event: HalloweenEvent = {
   eventStartsAt: "2026-10-31T20:00:00.000Z",
   status: "active",
   contestEntryStatus: "closed",
-  votingStatus: "ended",
-  resultsPublished: true,
+  votingStatus: "not_started",
+  resultsPublished: false,
 };
 
-describe("feature navigation galleries", () => {
-  it("keeps the home link available when there is no active edition", () => {
-    expect(getFeatureNavigationItems(null)).toEqual([
-      {
-        key: "home",
-        icon: "home",
-        label: "Início",
-        href: "/",
-        pathname: "/",
-      },
+const base: FeatureNavigationState = {
+  event,
+  phase: "event",
+  rsvpAvailable: true,
+  resultsAvailable: false,
+  partyAlbumEvent: null,
+  olderEditionsAvailable: false,
+};
+
+describe("lifecycle-aware feature navigation", () => {
+  it("shows the ordered public sections and RSVP while registration is available", () => {
+    expect(getFeatureNavigationItems(base).map(({ label }) => label)).toEqual([
+      "Início",
+      "Informações",
+      "Programação",
+      "Confirme sua presença",
     ]);
   });
 
-  it("keeps contestant photos separate and links to the available album edition", () => {
-    const albumEvent = {
-      slug: "halloween-2025",
-      title: "Halloween 2025",
-      year: 2025,
-    };
-    const items = getFeatureNavigationItems(event, new Date(), albumEvent);
-
-    expect(items.find((item) => item.key === "gallery")).toEqual({
-      key: "gallery",
-      icon: "gallery",
-      label: "Fotos dos participantes",
-      href: "/fotos?event=halloween-2026",
-      pathname: "/fotos",
-    });
-    expect(items.find((item) => item.key === "party-gallery")).toEqual({
-      key: "party-gallery",
-      icon: "party-gallery",
-      label: "Álbum da festa",
-      href: "/album-da-festa?event=halloween-2025",
-      pathname: "/album-da-festa",
-    });
-  });
-
-  it("omits the party album when there is no published accessible album", () => {
+  it("omits RSVP once the authoritative state says registration is unavailable", () => {
     expect(
-      getFeatureNavigationItems(event).some(
-        (item) => item.key === "party-gallery",
+      getFeatureNavigationItems({ ...base, rsvpAvailable: false }).map(
+        ({ label }) => label,
       ),
-    ).toBe(false);
+    ).toEqual(["Início", "Informações", "Programação"]);
   });
 
-  it("keeps a published archive link even when there is no active edition", () => {
-    const archive = {
-      slug: "halloween-2025",
-      title: "Halloween 2025",
-      year: 2025,
+  it("shows only currently accessible post-event destinations in the specified order", () => {
+    const archive: FeatureNavigationState = {
+      ...base,
+      phase: "post-event",
+      rsvpAvailable: false,
+      resultsAvailable: true,
+      partyAlbumEvent: {
+        slug: "halloween-2025",
+        title: "Halloween 2025",
+        year: 2025,
+      },
+      olderEditionsAvailable: true,
     };
-
-    expect(getFeatureNavigationItems(null, new Date(), archive)).toEqual([
-      {
-        key: "home",
-        icon: "home",
-        label: "Início",
-        href: "/",
-        pathname: "/",
-      },
-      {
-        key: "party-gallery",
-        icon: "party-gallery",
-        label: "Álbum da festa",
-        href: "/album-da-festa?event=halloween-2025",
-        pathname: "/album-da-festa",
-      },
+    expect(getFeatureNavigationItems(archive).map(({ label }) => label)).toEqual([
+      "Início",
+      "Vencedores",
+      "Galeria de fotos",
+      "Edições anteriores",
+    ]);
+    expect(getFeatureNavigationItems(archive).map(({ href }) => href)).toEqual([
+      "/#inicio",
+      "/resultados?event=halloween-2026",
+      "/album-da-festa?event=halloween-2025",
+      "/edicoes-anteriores?exclude=halloween-2026",
     ]);
   });
 
-  it("shows voting only for the active edition while its voting state is open", () => {
-    const openItems = getFeatureNavigationItems(
-      { ...event, votingStatus: "open", resultsPublished: false },
-    );
-    const closedItems = getFeatureNavigationItems({
-      ...event,
-      votingStatus: "ended",
-      resultsPublished: false,
+  it("omits unpublished results, empty albums, and inaccessible archive options", () => {
+    const items = getFeatureNavigationItems({
+      ...base,
+      phase: "post-event",
+      rsvpAvailable: false,
     });
-    const upcomingItems = getFeatureNavigationItems({
-      ...event,
-      votingStatus: "not_started",
-      resultsPublished: false,
-    });
-    const archivedItems = getFeatureNavigationItems({
-      ...event,
-      status: "archived",
-      votingStatus: "open",
-      resultsPublished: false,
-    });
-
-    const openVoting = openItems.find((item) => item.key === "voting");
-    expect(openVoting).toMatchObject({ label: "Votação" });
-    expect("href" in openVoting! ? openVoting.href : "").toContain(
-      "returnTo=%2Fvotacao%2Fcategories",
-    );
-    for (const items of [closedItems, upcomingItems, archivedItems]) {
-      expect(items.some((item) => item.key === "voting")).toBe(false);
-    }
-    expect(
-      [...closedItems, ...upcomingItems].some((item) =>
-        "status" in item ? item.status.includes("Votação") : false,
-      ),
-    ).toBe(false);
+    expect(items.map(({ label }) => label)).toEqual(["Início"]);
   });
 
-  it("keeps voting hidden after the party starts until voting is opened", () => {
-    const eventAfterPartyStarts = {
-      ...event,
-      eventStartsAt: "2026-10-01T20:00:00.000Z",
-      votingStatus: "not_started" as const,
-      resultsPublished: false,
-    };
-
+  it("preserves the waiting state with only the home destination", () => {
     expect(
-      getFeatureNavigationItems(eventAfterPartyStarts).some(
-        (item) => item.key === "voting",
-      ),
-    ).toBe(false);
+      getFeatureNavigationItems({
+        ...base,
+        event: null,
+        phase: "waiting",
+        rsvpAvailable: false,
+      }).map(({ label }) => label),
+    ).toEqual(["Início"]);
   });
 
-  it("marks nested routes and the active RSVP anchor", () => {
-    const items = getFeatureNavigationItems(event);
-    const portal = items.find((item) => item.key === "portal");
-    const openRsvp = getFeatureNavigationItems(
-      { ...event, votingStatus: "not_started", resultsPublished: false },
-      new Date("2026-10-15T12:00:00.000Z"),
-    ).find((item) => item.key === "rsvp");
-
-    expect(portal).toBeDefined();
-    expect(
-      isFeatureNavigationItemActive(portal!, "/meu-halloween/entradas"),
-    ).toBe(true);
-    expect(openRsvp).toBeDefined();
-    expect(isFeatureNavigationItemActive(openRsvp!, "/", "#confirmacao")).toBe(
+  it("marks section and RSVP anchors active only at their own hashes", () => {
+    const items = getFeatureNavigationItems(base);
+    const schedule = items.find((item) => item.key === "schedule")!;
+    const rsvp = items.find((item) => item.key === "rsvp")!;
+    expect(isFeatureNavigationItemActive(schedule, "/", "#programacao")).toBe(
       true,
     );
-    expect(isFeatureNavigationItemActive(openRsvp!, "/")).toBe(false);
+    expect(isFeatureNavigationItemActive(schedule, "/", "#confirmacao")).toBe(
+      false,
+    );
+    expect(isFeatureNavigationItemActive(rsvp, "/", "#confirmacao")).toBe(
+      true,
+    );
   });
 });
