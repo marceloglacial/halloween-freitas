@@ -1,13 +1,13 @@
-import EventDashboard from "@/components/dashboard/event-dashboard";
-import { auth } from "@clerk/nextjs/server";
-import { isAdmin } from "@/lib/auth/admin";
-import { getEvents } from "@/lib/events";
-import { Metadata } from "next";
-import FeatureUnavailable from "@/components/feature-unavailable";
-import { getCategories } from "@/util/get-categories";
+import { redirect } from "next/navigation";
+import AdminAccessDenied from "@/components/dashboard/admin-access-denied";
+import AdminSectionPlaceholder from "@/components/dashboard/admin-section-placeholder";
+import { authorizeAdminPage } from "@/lib/auth/admin-page";
 
-export const metadata: Metadata = {
-  title: "Dashboard - Halloween dos Freitas",
+const legacyTabRoutes: Record<string, string> = {
+  settings: "/dashboard/configuracoes",
+  guests: "/dashboard/convidados",
+  results: "/dashboard/votacao",
+  photos: "/dashboard/galeria",
 };
 
 export const dynamic = "force-dynamic";
@@ -15,43 +15,30 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; tab?: string }>;
+  searchParams: Promise<{
+    year?: string | string[];
+    tab?: string | string[];
+  }>;
 }) {
-  const { userId, redirectToSignIn } = await auth();
-  if (!userId) redirectToSignIn({ returnBackUrl: "/dashboard" });
-  if (!(await isAdmin(userId)))
-    return (
-      <FeatureUnavailable
-        title="Acesso restrito"
-        message="Esta área é reservada aos administradores. Sua sessão de convidado continua ativa."
-      />
-    );
+  if (!(await authorizeAdminPage())) {
+    return <AdminAccessDenied />;
+  }
 
-  const [events, query] = await Promise.all([getEvents(), searchParams]);
-  const requestedYear = Number(query.year);
-  const selected =
-    events.find((event) => event.year === requestedYear) ??
-    events.find((event) => event.status === "active") ??
-    events[0];
-  const initialCategories = selected ? await getCategories(selected._id) : [];
+  const query = await searchParams;
+  const legacyTab = Array.isArray(query.tab) ? query.tab[0] : query.tab;
+  const year = Array.isArray(query.year) ? query.year[0] : query.year;
+  const destination = legacyTab && legacyTabRoutes[legacyTab];
+  if (destination) {
+    const params = new URLSearchParams();
+    if (year) params.set("year", year);
+    const suffix = params.size > 0 ? `?${params.toString()}` : "";
+    redirect(`${destination}${suffix}`);
+  }
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 md:px-8 md:py-12">
-      <EventDashboard
-        initialEvents={events}
-        initialCategories={initialCategories}
-        initialYear={selected?.year}
-        initialTab={
-          query.tab === "settings"
-            ? "settings"
-            : query.tab === "results"
-              ? "results"
-              : query.tab === "photos"
-                ? "photos"
-                : "guests"
-        }
-        initialNow={new Date().toISOString()}
-      />
-    </main>
+    <AdminSectionPlaceholder
+      title="Visão geral"
+      message="O resumo do evento e as ações prioritárias serão apresentados aqui. Enquanto isso, acesse os módulos disponíveis pela navegação."
+    />
   );
 }

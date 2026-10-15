@@ -145,7 +145,9 @@ function NavigationItems({
   onNavigate?: () => void;
 }) {
   return (
-    <ul className={mobile ? "grid gap-1" : "flex items-center gap-1.5 2xl:gap-2"}>
+    <ul
+      className={mobile ? "grid gap-1" : "flex items-center gap-1.5 2xl:gap-2"}
+    >
       {items.map((item) => {
         const active = isFeatureNavigationItemActive(item, pathname, hash);
         const itemClass = `flex min-h-11 items-center justify-center gap-2 rounded-full border px-3 py-2 text-sm transition-all motion-reduce:transition-none ${active ? "border-orange-500/90 bg-gradient-to-b from-orange-400/20 to-orange-600/5 text-orange-200 shadow-[inset_0_1px_0_rgba(255,220,180,0.22),0_0_12px_rgba(249,115,22,0.26)]" : "border-transparent text-white hover:bg-white/10 hover:text-orange-100 hover:shadow-[0_0_14px_rgba(249,115,22,0.16)]"} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300`;
@@ -172,11 +174,7 @@ function NavigationItems({
   );
 }
 
-export default function FeatureNavigation({
-  clerkEnabled,
-}: {
-  clerkEnabled: boolean;
-}) {
+function PublicFeatureNavigation({ clerkEnabled }: { clerkEnabled: boolean }) {
   const pathname = usePathname();
   const hash = useSyncExternalStore(subscribeToHash, getHash, () => "");
   const drawerRef = useRef<HTMLDialogElement>(null);
@@ -295,7 +293,9 @@ export default function FeatureNavigation({
             href="/#inicio"
             className="flex min-w-0 items-center gap-2 rounded-full text-sm font-semibold text-orange-200 focus-visible:outline-2 focus-visible:outline-orange-300"
           >
-            <span aria-hidden="true" className="text-xl">🎃</span>
+            <span aria-hidden="true" className="text-xl">
+              🎃
+            </span>
             <span className="truncate">Halloween dos Freitas</span>
           </Link>
           <p className="sr-only" aria-live="polite" aria-atomic="true">
@@ -310,7 +310,14 @@ export default function FeatureNavigation({
             onClick={() => setDrawerOpen(true)}
             className="grid size-10 shrink-0 place-items-center rounded-full border border-orange-200/55 bg-[linear-gradient(145deg,rgba(255,255,255,0.14),rgba(0,0,0,0.52))] text-orange-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_0_14px_rgba(249,115,22,0.3)] transition-colors hover:bg-orange-500/10 focus-visible:outline-2 focus-visible:outline-orange-300 motion-reduce:transition-none"
           >
-            <svg aria-hidden="true" className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <svg
+              aria-hidden="true"
+              className="size-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
@@ -334,8 +341,12 @@ export default function FeatureNavigation({
         <div className="flex h-full flex-col overflow-y-auto px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="mb-7 flex items-center justify-between gap-3 border-b border-orange-200/20 pb-5">
             <div className="flex min-w-0 items-center gap-3">
-              <span aria-hidden="true" className="text-2xl">🎃</span>
-              <span className="truncate text-sm font-semibold text-orange-200">Halloween dos Freitas</span>
+              <span aria-hidden="true" className="text-2xl">
+                🎃
+              </span>
+              <span className="truncate text-sm font-semibold text-orange-200">
+                Halloween dos Freitas
+              </span>
             </div>
             <button
               type="button"
@@ -347,7 +358,14 @@ export default function FeatureNavigation({
               }}
               className="grid size-10 shrink-0 place-items-center rounded-full border border-orange-200/30 text-white shadow-[0_0_12px_rgba(249,115,22,0.16)] hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-orange-300"
             >
-              <svg aria-hidden="true" className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <svg
+                aria-hidden="true"
+                className="size-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path strokeLinecap="round" d="m6 6 12 12M18 6 6 18" />
               </svg>
             </button>
@@ -370,4 +388,15 @@ export default function FeatureNavigation({
       </dialog>
     </>
   );
+}
+
+export default function FeatureNavigation({
+  clerkEnabled,
+}: {
+  clerkEnabled: boolean;
+}) {
+  const pathname = usePathname();
+  if (pathname.startsWith("/dashboard")) return null;
+
+  return <PublicFeatureNavigation clerkEnabled={clerkEnabled} />;
 }
