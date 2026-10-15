@@ -105,14 +105,21 @@ pending, denied, and published/private states. Check keyboard access and
 Portuguese messages. For runtime-sensitive changes, follow the
 [Next.js development loop](../.agents/skills/next-dev-loop/SKILL.md).
 
-For persistent navigation, verify the floating desktop pill over the homepage
-hero and in-flow placement on internal routes. At tablet widths, exercise the
+For persistent navigation, verify the floating desktop pill stays at the top of
+the viewport on the homepage and internal routes. At tablet widths, exercise the
 right-side drawer; on phones, exercise the bottom-inset menu panel. Open and
 close each with its button, overlay, Escape, and a route link; verify focus
 returns to the menu button, background scrolling is locked while open, reduced
 motion is respected, and active routes are announced.
-Confirm unavailable lifecycle actions remain noninteractive, contestant
-photos and party album stay separate, and Sair appears only for signed-in users.
+Confirm voting is absent before it opens and after it closes, with no
+placeholder label; it appears only for an active edition whose authoritative
+voting state is open. Confirm party album navigation is absent for missing,
+empty, private, or unpublished albums, prefers a published active-edition
+album, and falls back to the newest published archive (including when there is
+no active edition). Verify the desktop navigation and mobile drawer show the
+same eligible links, while direct album and voting routes continue to enforce
+their server-side publication and lifecycle checks. Contestant photos and the
+party album stay separate, and Sair appears only for signed-in users.
 
 For application code changes, run `pnpm test`, `pnpm lint`, and `pnpm build`.
 For documentation-only changes, check Markdown formatting and local links.

@@ -196,7 +196,20 @@ export async function getPublishedPartyAlbumEventIds(db: Db) {
     .find({ published: true }, { projection: { _id: 0, eventId: 1 } })
     .toArray();
 
-  return new Set(albums.map((album) => album.eventId.toString()));
+  if (albums.length === 0) return new Set<string>();
+
+  const photos = await db
+    .collection<PartyPhotoDocument>("partyPhotos")
+    .find(
+      {
+        eventId: { $in: albums.map((album) => album.eventId) },
+        removedAt: { $exists: false },
+      },
+      { projection: { _id: 0, eventId: 1 } },
+    )
+    .toArray();
+
+  return new Set(photos.map((photo) => photo.eventId.toString()));
 }
 
 export async function setPartyAlbumPublication(

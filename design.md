@@ -166,13 +166,16 @@ clear.
 
 Include Início and contextual actions for RSVP, Meu Halloween, voting,
 published results, contestant photos, and the party album as separate
-destinations. RSVP and voting show a short unavailable state when their event
-lifecycle does not allow the action. Voting and portal links pass through the
-event access flow with the selected event ID in the return path. Results appear
-as a link only after publication. Photo and result links retain the selected
-edition so archived years remain browsable. Show Sair only to signed-in users
-and use Clerk's existing sign-out action. Keep the homepage sections and their
-order unchanged.
+destinations. RSVP keeps a short unavailable state when its lifecycle does not
+allow registration. Show voting only while the active edition's authoritative
+voting state is open; omit it at all other times. Voting and portal links pass
+through the event access flow with the selected event ID in the return path.
+Results appear only after publication. Show the party album only when a
+published edition has at least one accessible photo; prefer the active edition
+when it has one, otherwise link to the newest published archive. Photo and
+result links retain the selected edition so archived years remain browsable.
+Show Sair only to signed-in users and use Clerk's existing sign-out action.
+Keep the homepage sections and their order unchanged.
 
 ### Voting
 

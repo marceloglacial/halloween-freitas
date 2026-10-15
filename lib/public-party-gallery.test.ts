@@ -13,28 +13,37 @@ function fakeDb({
   published,
   photos = [],
   publishedIds = [],
+  photoEventIds = [],
 }: {
   published: boolean;
   photos?: unknown[];
   publishedIds?: ObjectId[];
+  photoEventIds?: ObjectId[];
 }) {
   const findOne = vi
     .fn()
     .mockResolvedValue(published ? { _id: new ObjectId() } : null);
   const toArray = vi.fn().mockResolvedValue(photos);
   const sort = vi.fn().mockReturnValue({ toArray });
-  const find = vi.fn().mockReturnValue({
+  const albumFind = vi.fn().mockReturnValue({
+    toArray: vi.fn().mockResolvedValue(
+      publishedIds.map((id) => ({ eventId: id })),
+    ),
+  });
+  const photoFind = vi.fn().mockReturnValue({
     sort,
-    toArray: vi
-      .fn()
-      .mockResolvedValue(publishedIds.map((id) => ({ eventId: id }))),
+    toArray: vi.fn().mockResolvedValue(
+      photoEventIds.map((id) => ({ eventId: id })),
+    ),
   });
   const db = {
     collection: vi.fn((name: string) =>
-      name === "partyAlbums" ? { findOne, find } : { find },
+      name === "partyAlbums"
+        ? { findOne, find: albumFind }
+        : { find: photoFind },
     ),
   } as unknown as Db;
-  return { db, findOne, find, sort, toArray };
+  return { db, findOne, albumFind, photoFind, sort, toArray };
 }
 
 describe("public party album reads", () => {
@@ -49,7 +58,7 @@ describe("public party album reads", () => {
       { eventId, published: true },
       { projection: { _id: 1 } },
     );
-    expect(mock.find).not.toHaveBeenCalled();
+    expect(mock.albumFind).not.toHaveBeenCalled();
   });
 
   it("only selects active photos for the requested edition", async () => {
@@ -69,7 +78,7 @@ describe("public party album reads", () => {
 
     expect(album.published).toBe(true);
     expect(album.photos).toEqual([photo]);
-    expect(mock.find).toHaveBeenCalledWith(
+    expect(mock.photoFind).toHaveBeenCalledWith(
       { eventId, removedAt: { $exists: false } },
       {
         projection: {
@@ -84,17 +93,38 @@ describe("public party album reads", () => {
     expect(mock.sort).toHaveBeenCalledWith({ uploadedAt: -1, _id: -1 });
   });
 
-  it("returns only IDs of editions with published albums", async () => {
+  it("returns only published albums with at least one accessible photo", async () => {
     const oldEvent = new ObjectId();
-    const currentEvent = new ObjectId();
+    const emptyEvent = new ObjectId();
     const mock = fakeDb({
       published: false,
-      publishedIds: [oldEvent, currentEvent],
+      publishedIds: [oldEvent, emptyEvent],
+      photoEventIds: [oldEvent, oldEvent],
     });
 
     await expect(getPublishedPartyAlbumEventIds(mock.db)).resolves.toEqual(
-      new Set([oldEvent.toString(), currentEvent.toString()]),
+      new Set([oldEvent.toString()]),
     );
+    expect(mock.albumFind).toHaveBeenCalledWith(
+      { published: true },
+      { projection: { _id: 0, eventId: 1 } },
+    );
+    expect(mock.photoFind).toHaveBeenCalledWith(
+      {
+        eventId: { $in: [oldEvent, emptyEvent] },
+        removedAt: { $exists: false },
+      },
+      { projection: { _id: 0, eventId: 1 } },
+    );
+  });
+
+  it("skips the photo lookup when no album is published", async () => {
+    const mock = fakeDb({ published: false });
+
+    await expect(getPublishedPartyAlbumEventIds(mock.db)).resolves.toEqual(
+      new Set(),
+    );
+    expect(mock.photoFind).not.toHaveBeenCalled();
   });
 
   it("builds app image paths without exposing Cloudinary asset identifiers", () => {
