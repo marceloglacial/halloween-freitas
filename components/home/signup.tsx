@@ -23,7 +23,7 @@ const SignUp: FC<{
   return (
     <section
       id="confirmacao"
-      className="relative grid justify-center bg-zinc-800 px-6 pt-16 pb-24 lg:p-6"
+      className="scroll-mt-24 relative grid justify-center bg-zinc-800 px-6 pt-16 pb-24 lg:p-6"
     >
       <div className="relative grid max-w-4xl text-center">
         <div className="relative grid gap-12 lg:-top-24">

@@ -15,7 +15,7 @@ const Hero: FC<HeroProps> = ({
   initialNow,
 }): JSX.Element => {
   return (
-    <div className="relative flex items-center justify-center lg:min-h-screen 2xl:min-h-[900px]">
+    <div id="inicio" className="scroll-mt-24 relative flex items-center justify-center lg:min-h-screen 2xl:min-h-[900px]">
       <BackgroundVideo />
       <div className="hero-content text-neutral-content relative text-center">
         <div className="flex max-w-2xl flex-col items-center gap-16 py-12 lg:gap-4 lg:p-0">

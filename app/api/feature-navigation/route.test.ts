@@ -3,11 +3,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   getDb: vi.fn(),
   getEvents: vi.fn(),
+  getRegistrationState: vi.fn(),
+  resultsArePublic: vi.fn(),
   getPublishedPartyAlbumEventIds: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({ getDb: mocks.getDb }));
-vi.mock("@/lib/events", () => ({ getEvents: mocks.getEvents }));
+vi.mock("@/lib/events", () => ({
+  getEvents: mocks.getEvents,
+  getRegistrationState: mocks.getRegistrationState,
+  resultsArePublic: mocks.resultsArePublic,
+}));
 vi.mock("@/lib/party-photo-writes", () => ({
   getPublishedPartyAlbumEventIds: mocks.getPublishedPartyAlbumEventIds,
 }));
@@ -56,15 +62,24 @@ describe("feature navigation endpoint", () => {
       archivedEvent,
       olderArchivedEvent,
     ]);
+    mocks.getRegistrationState.mockReturnValue("open");
+    mocks.resultsArePublic.mockImplementation(
+      (event: HalloweenEvent) =>
+        event.votingStatus === "ended" && event.resultsPublished,
+    );
     mocks.getPublishedPartyAlbumEventIds.mockResolvedValue(new Set());
   });
 
-  it("returns the authoritative active edition and no album when none is public", async () => {
+  it("returns the authoritative event phase and no album when none is public", async () => {
     const response = await GET();
 
     await expect(response.json()).resolves.toEqual({
       event: activeEvent,
+      phase: "event",
+      rsvpAvailable: true,
+      resultsAvailable: false,
       partyAlbumEvent: null,
+      olderEditionsAvailable: true,
     });
     expect(response.headers.get("Cache-Control")).toBe("no-store");
   });
@@ -102,7 +117,7 @@ describe("feature navigation endpoint", () => {
     });
   });
 
-  it("keeps published archives available when there is no active edition", async () => {
+  it("selects the newest archive when there is no active edition", async () => {
     mocks.getEvents.mockResolvedValue([archivedEvent]);
     mocks.getPublishedPartyAlbumEventIds.mockResolvedValue(
       new Set([archivedEvent._id]),
@@ -111,7 +126,10 @@ describe("feature navigation endpoint", () => {
     const response = await GET();
 
     await expect(response.json()).resolves.toMatchObject({
-      event: null,
+      event: archivedEvent,
+      phase: "post-event",
+      rsvpAvailable: false,
+      resultsAvailable: true,
       partyAlbumEvent: {
         slug: archivedEvent.slug,
         title: archivedEvent.title,

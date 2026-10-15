@@ -141,13 +141,13 @@ server rejection, and connection failure produce error toasts.
 The selected-edition registration section also links guests to their profile;
 the page requires a verified sign-in linked to an RSVP for that edition.
 
-At the event start, the homepage lifecycle area can replace pre-event content
-with a centered panel for “Votação em breve”, “Votação aberta”, or “Votação
-encerrada”. Only the open state offers an active link to vote. First opening
-voting also ends new RSVP and contestant membership changes permanently, while
-previously registered guests can still authenticate. Keep this behavior inside
-the existing homepage section layout. The lifecycle area reflects server-backed
-state and retains its established visual treatment.
+At the event start, keep event information, the program, and the RSVP status
+visible so the persistent navigation's section links remain useful. Follow them
+with a centered lifecycle panel for “Votação em breve”, “Votação aberta”, or
+“Votação encerrada”. Only the open state offers an active link to vote. First
+opening voting also ends new RSVP and contestant membership changes permanently,
+while previously registered guests can still authenticate. The lifecycle area
+reflects server-backed state and retains its established visual treatment.
 
 Published results after voting ends, an archived event, or no current event show
 the post-event cards linking to results and photos. Those links do not bypass
@@ -164,18 +164,22 @@ layouts use a labeled menu button, close button, overlay dismissal, Escape
 handling, focus management, and reduced-motion support. Keep safe-area insets
 clear.
 
-Include Início and contextual actions for RSVP, Meu Halloween, voting,
-published results, contestant photos, and the party album as separate
-destinations. RSVP keeps a short unavailable state when its lifecycle does not
-allow registration. Show voting only while the active edition's authoritative
-voting state is open; omit it at all other times. Voting and portal links pass
-through the event access flow with the selected event ID in the return path.
-Results appear only after publication. Show the party album only when a
-published edition has at least one accessible photo; prefer the active edition
-when it has one, otherwise link to the newest published archive. Photo and
-result links retain the selected edition so archived years remain browsable.
-Show Sair only to signed-in users and use Clerk's existing sign-out action.
-Keep the homepage sections and their order unchanged.
+Before and during an active edition, show the ordered public links Início,
+Informações, Programação, and Confirme sua presença. Omit the RSVP link when
+the server says registration is unavailable. Keep Entrar separate and aligned
+to the desktop navigation's right edge; include it after the ordered links in
+the mobile menu. Once signed in, replace Entrar with the existing Sair action.
+Use the selected edition's server-backed lifecycle state, including RSVP
+availability, rather than a browser clock. Preserve the event information and
+program sections during voting so those links remain valid.
+
+After an edition ends, show Início followed only by available destinations:
+Vencedores when that edition's results are published, Galeria de fotos when a
+published party album has accessible photos, and Edições anteriores when an
+older edition has published results or a published album. Keep event slugs on
+result and album links and exclude the currently viewed edition from the
+previous-editions list. Show no disabled placeholders. With no edition, keep the
+existing waiting page and show no unpublished results or empty albums.
 
 ### Voting
 

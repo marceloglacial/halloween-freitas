@@ -186,7 +186,11 @@ export default function EventLifecycle({
         {footerContent}
       </>
     );
-  if (state === "voting_soon") {
+  if (
+    state === "voting_soon" ||
+    state === "voting_open" ||
+    state === "voting_ended"
+  ) {
     return (
       <>
         {heroContent}
@@ -196,11 +200,5 @@ export default function EventLifecycle({
       </>
     );
   }
-  return (
-    <>
-      {heroContent}
-      <VotingPanel state={state} />
-      {footerContent}
-    </>
-  );
+  return null;
 }
