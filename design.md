@@ -110,19 +110,24 @@ they are not currently implemented.
 
 ## Screens and journeys
 
-| Screen                     | Purpose and layout                                                 | Important states                                                                       |
-| -------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| `/`                        | Hero, countdown, party information, program, registration, footer  | Pre-event, registration upcoming/open/closed, voting soon/open/ended, post-event       |
-| `/votacao`                 | Verified Google/email-code access for registered guests            | Entering, rejected email or connection error, voting unavailable                       |
-| `/votacao/categories`      | Category tiles with guest greeting                                 | Available category, already voted, guest session unavailable                           |
-| `/votacao/categories/[id]` | Candidate search, selectable photo grid, floating vote action      | No matches, selected candidate, submitting, vote success or failure                    |
-| `/meu-halloween?eventId=…` | Linked guest portal for one selected edition                       | RSVP/profile, owned entries/statuses, photo upload/replacement and voting state        |
-| `/perfil?eventId=...`      | Selected-edition RSVP confirmation and editable guest name         | Loading, denied/unlinked, validation, saving, saved, archived edition                  |
-| `/resultados`              | Published category tiles and event navigation                      | Published results, no published results                                                |
-| `/resultados/[id]`         | Prominent first place and remaining ranked participants            | Vote counts and percentages, category with no votes                                    |
-| `/fotos`                   | Contestant photo gallery with event navigation, search, and viewer | No photos or matches, selected photo                                                   |
-| `/album-da-festa`          | Published party-photo album with annual archive selection          | Waiting for publication, empty published album, selected photo                         |
-| `/dashboard`               | Event selector, settings and participants, event creation          | Authentication/authorization, active or archived event, validation and pending actions |
+| Screen                     | Purpose and layout                                                   | Important states                                                                 |
+| -------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `/`                        | Hero, countdown, party information, program, registration, footer    | Pre-event, registration upcoming/open/closed, voting soon/open/ended, post-event |
+| `/votacao`                 | Verified Google/email-code access for registered guests              | Entering, rejected email or connection error, voting unavailable                 |
+| `/votacao/categories`      | Category tiles with guest greeting                                   | Available category, already voted, guest session unavailable                     |
+| `/votacao/categories/[id]` | Candidate search, selectable photo grid, floating vote action        | No matches, selected candidate, submitting, vote success or failure              |
+| `/meu-halloween?eventId=…` | Linked guest portal for one selected edition                         | RSVP/profile, owned entries/statuses, photo upload/replacement and voting state  |
+| `/perfil?eventId=...`      | Selected-edition RSVP confirmation and editable guest name           | Loading, denied/unlinked, validation, saving, saved, archived edition            |
+| `/resultados`              | Published category tiles and event navigation                        | Published results, no published results                                          |
+| `/resultados/[id]`         | Prominent first place and remaining ranked participants              | Vote counts and percentages, category with no votes                              |
+| `/fotos`                   | Contestant photo gallery with event navigation, search, and viewer   | No photos or matches, selected photo                                             |
+| `/album-da-festa`          | Published party-photo album with annual archive selection            | Waiting for publication, empty published album, selected photo                   |
+| `/dashboard`               | Admin overview route                                                 | Authenticated admin, selected edition, explicit overview placeholder             |
+| `/dashboard/convidados`    | Selected-edition guest management                                    | Guest list and editing, archived-edition inspection                              |
+| `/dashboard/concursos`     | Contest administration                                               | Honest planned-state message until contest module is implemented                 |
+| `/dashboard/votacao`       | Voting controls and results publication                              | Manual voting state, publication, archived-edition inspection                    |
+| `/dashboard/galeria`       | Selected-edition party album management                              | Album publication and photos, separate from contestant images                    |
+| `/dashboard/configuracoes` | Event schedule, settings, category settings, annual edition creation | Selected edition, validation, active or archived state                           |
 
 ### Homepage and registration
 
@@ -261,9 +266,28 @@ upload flow separate from contestant photo controls.
 
 ### Administration
 
-The dashboard provides event selection, status badges, settings and participant
-tabs, and a form to create a new edition. Event settings show the timezone and
-the scheduled RSVP and event starts. Keep RSVP availability, manual contestant
+The public feature navigation is hidden throughout `/dashboard`; the admin
+dashboard uses its own desktop sidebar and native modal drawer on mobile.
+Its main bar shows the current section and a right-aligned edition dropdown
+labeled “Selecionar edição”; choosing a year opens that edition's overview.
+Include the selected year in the sidebar brand and browser document title.
+Sign-out stays at the bottom of the desktop sidebar and mobile drawer. Mark the
+current navigation destination with `aria-current`; preserve the selected year
+in every section link. The mobile drawer uses native dialog focus containment,
+Escape handling, scroll locking, and focus restoration.
+
+Resolve a requested `?year=YYYY` to that edition. For an unknown year, show an
+explanation and fall back to the active edition or newest available edition.
+When no edition is active, identify the newest archived edition; when there are
+no editions, show an explicit empty state and keep first-edition creation under
+settings. Legacy `/dashboard?tab=settings|guests` links redirect to their
+settings or guest routes while retaining the requested year.
+
+Guest management, voting/results, gallery, and settings routes reuse the
+existing edition-scoped controls. The overview and contest routes remain clear
+placeholders until their dedicated modules are implemented; do not present
+planned controls as operational. Event settings show the timezone and the
+scheduled RSVP and event starts. Keep RSVP availability, manual contestant
 entry controls, voting round controls, results publication, and party album
 publication visibly distinct. Disabled controls and explanatory text
 communicate lifecycle restrictions; UI availability must match server rules.
@@ -280,15 +304,16 @@ The project uses mobile-first utilities and Tailwind's default breakpoints:
 `sm` at 640px, `md` at 768px, `lg` at 1024px, and `2xl` at 1536px are used across
 the UI.
 
-| Pattern                      | Small screens              | Larger screens                              |
-| ---------------------------- | -------------------------- | ------------------------------------------- |
-| Homepage information         | Stacked cards              | Three columns at `lg`                       |
-| Program and post-event links | One column                 | Two columns at `lg`                         |
-| Voting categories            | One column                 | Two columns at `lg`, first tile spans both  |
-| Candidate grid               | Two columns                | Three at `sm`, four at `lg`                 |
-| Results detail               | Stacked winner and ranking | Two columns at `lg`                         |
-| Photo grid                   | Two columns                | Three at `md`, six at `2xl`                 |
-| Dashboard fields/header      | Stacked                    | Paired fields and horizontal header at `md` |
+| Pattern                      | Small screens                  | Larger screens                                                     |
+| ---------------------------- | ------------------------------ | ------------------------------------------------------------------ |
+| Homepage information         | Stacked cards                  | Three columns at `lg`                                              |
+| Program and post-event links | One column                     | Two columns at `lg`                                                |
+| Voting categories            | One column                     | Two columns at `lg`, first tile spans both                         |
+| Candidate grid               | Two columns                    | Three at `sm`, four at `lg`                                        |
+| Results detail               | Stacked winner and ranking     | Two columns at `lg`                                                |
+| Photo grid                   | Two columns                    | Three at `md`, six at `2xl`                                        |
+| Admin dashboard shell        | Mobile header and modal drawer | Sidebar at `lg`, edition dropdown in main bar, sign-out in sidebar |
+| Dashboard fields             | Stacked                        | Paired fields and horizontal layout at `md`                        |
 
 Keep search and primary actions reachable while scrolling. Account for the fixed
 vote action and bottom-centered Sonner notifications, which are offset by

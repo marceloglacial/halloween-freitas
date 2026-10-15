@@ -26,7 +26,7 @@ import LogoutButton from "@/components/logout-button";
 import AdminResults from "@/components/dashboard/admin-results";
 import AdminPartyAlbum from "@/components/dashboard/admin-party-album";
 
-type DashboardTab = "settings" | "guests" | "results" | "photos";
+export type DashboardTab = "settings" | "guests" | "results" | "photos";
 type EditableCategory = EventCategoryInput & { _id?: string };
 
 const scheduleHelpText: Partial<Record<EventDateField, string>> = {
@@ -196,12 +196,14 @@ export default function EventDashboard({
   initialYear,
   initialTab,
   initialNow,
+  embedded = false,
 }: {
   initialEvents: HalloweenEvent[];
   initialCategories: Category[];
   initialYear?: number;
   initialTab: DashboardTab;
   initialNow: string;
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const [events, setEvents] = useState(initialEvents);
@@ -219,7 +221,9 @@ export default function EventDashboard({
   const [year, setYear] = useState(initialYear ?? initialEvents[0]?.year);
   const [tab, setTab] = useState<DashboardTab>(initialTab);
   const [busy, setBusy] = useState(false);
-  const [creating, setCreating] = useState(initialEvents.length === 0);
+  const [creating, setCreating] = useState(
+    initialEvents.length === 0 && initialTab === "settings",
+  );
   const selected = events.find((event) => event.year === year) ?? events[0];
   const enrollmentControls = selected
     ? getAdminEnrollmentControls(selected, new Date(initialNow))
@@ -369,6 +373,7 @@ export default function EventDashboard({
       if (!response.ok) throw new Error(await responseError(response));
       replaceEvent(await response.json());
       toast.success("Evento atualizado");
+      router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro inesperado");
     } finally {
@@ -515,7 +520,12 @@ export default function EventDashboard({
       setDraft(nextDraft);
       setYear(created.year);
       setTab("settings");
-      router.replace(`/dashboard?year=${created.year}&tab=settings`);
+      router.replace(
+        embedded
+          ? `/dashboard/configuracoes?year=${created.year}`
+          : `/dashboard?year=${created.year}&tab=settings`,
+      );
+      router.refresh();
       toast.success("Evento e categorias padrão criados");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro inesperado");
@@ -540,55 +550,63 @@ export default function EventDashboard({
     );
   }
 
+  if (!selected && !creating) {
+    return (
+      <section className="rounded-2xl border border-white/10 bg-stone-900/80 p-6 sm:p-8">
+        <h1 className="text-2xl font-semibold">Nenhuma edição disponível</h1>
+        <p className="mt-3 max-w-2xl text-gray-300">
+          Crie uma edição nas configurações para administrar esta área.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-4 rounded-xl bg-white/10 p-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          {selected ? (
-            <>
-              <label
-                htmlFor="event-year"
-                className="mb-1 block text-sm text-gray-300"
-              >
-                Ano do evento
-              </label>
-              <div className="flex items-center gap-3">
-                <select
-                  id="event-year"
-                  value={selected.year}
-                  onChange={(event) => selectEvent(Number(event.target.value))}
-                  className="rounded-lg border border-white/20 bg-black px-4 py-2 text-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+      {!embedded && (
+        <header className="flex flex-col gap-4 rounded-xl bg-white/10 p-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            {selected ? (
+              <>
+                <label
+                  htmlFor="event-year"
+                  className="mb-1 block text-sm text-gray-300"
                 >
-                  {events.map((event) => (
-                    <option key={event._id} value={event.year}>
-                      {event.year}
-                    </option>
-                  ))}
-                </select>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${selected.status === "active" ? "bg-green-600" : "bg-gray-600"}`}
-                >
-                  {selected.status === "active" ? "Ativo" : "Arquivado"}
-                </span>
-              </div>
-            </>
-          ) : (
-            <h1 className="text-2xl font-bold">Eventos</h1>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={openCreate}
-            className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
-          >
-            {selected ? "Novo ano" : "Criar primeiro evento"}
-          </button>
-          <LogoutButton />
-        </div>
-      </header>
+                  Ano do evento
+                </label>
+                <div className="flex items-center gap-3">
+                  <select
+                    id="event-year"
+                    value={selected.year}
+                    onChange={(event) =>
+                      selectEvent(Number(event.target.value))
+                    }
+                    className="rounded-lg border border-white/20 bg-black px-4 py-2 text-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400"
+                  >
+                    {events.map((event) => (
+                      <option key={event._id} value={event.year}>
+                        {event.year}
+                      </option>
+                    ))}
+                  </select>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${selected.status === "active" ? "bg-green-600" : "bg-gray-600"}`}
+                  >
+                    {selected.status === "active" ? "Ativo" : "Arquivado"}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <h1 className="text-2xl font-bold">Eventos</h1>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <LogoutButton />
+          </div>
+        </header>
+      )}
 
-      {selected && !creating && (
+      {!embedded && selected && !creating && (
         <nav
           aria-label="Seções do dashboard"
           className="flex gap-2 overflow-x-auto border-b border-white/20"
@@ -678,9 +696,18 @@ export default function EventDashboard({
           onSubmit={saveEvent}
           className="space-y-6 rounded-xl bg-white/10 p-6"
         >
-          <h1 className="text-3xl font-bold">
-            Configurações de {selected.year}
-          </h1>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-3xl font-bold">
+              Configurações de {selected.year}
+            </h1>
+            <button
+              type="button"
+              onClick={openCreate}
+              className="min-h-11 rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+            >
+              Novo ano
+            </button>
+          </div>
           <EventForm
             value={draft}
             setValue={setDraft}
@@ -689,7 +716,10 @@ export default function EventDashboard({
             collisions={collisions}
             onDateChange={updateEventDate}
           />
-          <section className="space-y-4 rounded-xl border border-white/20 p-4">
+          <section
+            id="categorias"
+            className="scroll-mt-24 space-y-4 rounded-xl border border-white/20 p-4"
+          >
             <div>
               <h2 className="text-xl font-semibold">Categorias</h2>
               <p className="text-sm text-gray-300">
