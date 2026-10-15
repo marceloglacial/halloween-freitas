@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
@@ -113,5 +114,19 @@ describe("admin dashboard overview route", () => {
 
     const result = await DashboardPage({ searchParams: Promise.resolve({}) });
     expect(result.props.role).toBe("alert");
+  });
+
+  it("shows first-edition setup when no event exists", async () => {
+    mocks.getOverview.mockClear();
+    mocks.auth.mockResolvedValue({ userId: "admin-user" });
+    mocks.isAdmin.mockResolvedValue(true);
+    mocks.getEvents.mockResolvedValue([]);
+
+    const result = await DashboardPage({ searchParams: Promise.resolve({}) });
+    const html = renderToStaticMarkup(result);
+
+    expect(html).toContain("Nenhuma edição cadastrada");
+    expect(html).toContain("Crie uma edição em Configurações");
+    expect(mocks.getOverview).not.toHaveBeenCalled();
   });
 });

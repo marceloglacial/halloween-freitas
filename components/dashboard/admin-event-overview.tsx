@@ -42,33 +42,62 @@ export default function AdminEventOverview({
   const year = event.year;
   const registration = getRegistrationState(event, now);
   const eventStarted = new Date(event.eventStartsAt) <= now;
+  const lifecycleStatus =
+    event.status === "archived"
+      ? "Edição arquivada"
+      : event.votingStatus === "open"
+        ? "Votação aberta"
+        : event.votingStatus === "ended"
+          ? event.resultsPublished
+            ? "Resultados publicados"
+            : "Votação encerrada · resultados privados"
+          : eventStarted
+            ? "Festa iniciada · votação não iniciada"
+            : registration === "upcoming"
+              ? "Confirmações ainda não abertas"
+              : registration === "open"
+                ? "Confirmações abertas"
+                : "Confirmações encerradas";
   const primaryAction =
-    event.votingStatus === "open"
-      ? { label: "Acompanhar votação", href: `/dashboard/votacao?year=${year}` }
-      : event.votingStatus === "ended" && !event.resultsPublished
+    event.status === "archived" && event.votingStatus === "not_started"
+      ? {
+          label: "Consultar edição",
+          href: `/dashboard/configuracoes?year=${year}`,
+        }
+      : event.votingStatus === "open"
         ? {
-            label: "Publicar resultados",
+            label: "Acompanhar votação",
             href: `/dashboard/votacao?year=${year}`,
           }
-        : event.votingStatus === "ended"
+        : event.votingStatus === "ended" && !event.resultsPublished
           ? {
-              label: "Gerenciar álbum da festa",
-              href: `/dashboard/galeria?year=${year}`,
+              label: "Publicar resultados",
+              href: `/dashboard/votacao?year=${year}`,
             }
-          : eventStarted
+          : event.votingStatus === "ended"
             ? {
-                label: "Preparar votação",
-                href: `/dashboard/votacao?year=${year}`,
+                label: "Gerenciar álbum da festa",
+                href: `/dashboard/galeria?year=${year}`,
               }
-            : registration === "open"
-              ? {
-                  label: "Acompanhar confirmações",
-                  href: `/dashboard/convidados?year=${year}`,
-                }
-              : {
-                  label: "Configurar edição",
-                  href: `/dashboard/configuracoes?year=${year}`,
-                };
+            : eventStarted && event.status === "active"
+              ? event.contestEntryStatus === "closed"
+                ? {
+                    label: "Iniciar votação",
+                    href: `/dashboard/votacao?year=${year}`,
+                  }
+                : {
+                    label: "Fechar inscrições do concurso",
+                    href: `/dashboard/concursos?year=${year}`,
+                  }
+              : registration === "open"
+                ? {
+                    label: "Acompanhar confirmações",
+                    href: `/dashboard/convidados?year=${year}`,
+                  }
+                : {
+                    label: "Configurar edição",
+                    href: `/dashboard/configuracoes?year=${year}`,
+                  };
   const milestone =
     event.votingStatus === "open"
       ? { title: "Encerrar a votação", at: null as string | null }
@@ -76,12 +105,18 @@ export default function AdminEventOverview({
         ? { title: "Publicar os resultados", at: null }
         : event.votingStatus === "ended"
           ? { title: "Edição concluída", at: null }
-          : registration === "upcoming"
-            ? {
-                title: "Abertura das confirmações",
-                at: event.registrationStartsAt,
-              }
-            : { title: "Início da festa", at: event.eventStartsAt };
+          : event.status === "archived"
+            ? { title: "Edição arquivada", at: null }
+            : registration === "upcoming"
+              ? {
+                  title: "Abertura das confirmações",
+                  at: event.registrationStartsAt,
+                }
+              : !eventStarted
+                ? { title: "Início da festa", at: event.eventStartsAt }
+                : event.contestEntryStatus === "closed"
+                  ? { title: "Iniciar votação", at: null }
+                  : { title: "Fechar inscrições do concurso", at: null };
 
   const checklist = [
     {
@@ -110,13 +145,15 @@ export default function AdminEventOverview({
     {
       label: "Votação",
       detail:
-        event.votingStatus === "open"
-          ? "Em andamento"
-          : event.votingStatus === "ended"
-            ? "Encerrada"
-            : eventStarted
-              ? "Pronta para abertura pelo administrador"
-              : `Festa em ${dateLabel(event.eventStartsAt, event.timezone)}`,
+        event.status === "archived" && event.votingStatus === "not_started"
+          ? "Edição arquivada; a votação não pode ser iniciada"
+          : event.votingStatus === "open"
+            ? "Em andamento"
+            : event.votingStatus === "ended"
+              ? "Encerrada"
+              : eventStarted
+                ? "Pronta para abertura pelo administrador"
+                : `Festa em ${dateLabel(event.eventStartsAt, event.timezone)}`,
       done: event.votingStatus !== "not_started",
       href: `/dashboard/votacao?year=${year}`,
     },
@@ -158,8 +195,22 @@ export default function AdminEventOverview({
           },
         ]
       : []),
-    ...(event.votingStatus === "not_started" && eventStarted
-      ? [{ label: "Preparar votação", href: `/dashboard/votacao?year=${year}` }]
+    ...(event.status === "active" &&
+    event.votingStatus === "not_started" &&
+    eventStarted
+      ? event.contestEntryStatus === "closed"
+        ? [
+            {
+              label: "Iniciar votação",
+              href: `/dashboard/votacao?year=${year}`,
+            },
+          ]
+        : [
+            {
+              label: "Fechar inscrições do concurso",
+              href: `/dashboard/concursos?year=${year}`,
+            },
+          ]
       : []),
     ...(event.votingStatus === "open"
       ? [
@@ -197,6 +248,9 @@ export default function AdminEventOverview({
         <h2 className="mt-3 text-2xl font-semibold sm:text-3xl">
           {event.title}
         </h2>
+        <p role="status" className="mt-2 text-sm font-medium text-orange-100">
+          Estado atual: {lifecycleStatus}
+        </p>
         <p className="mt-2 text-sm text-gray-300">
           Festa: {dateLabel(event.eventStartsAt, event.timezone)}{" "}
           <span className="text-gray-500">({event.timezone})</span>
@@ -255,10 +309,12 @@ export default function AdminEventOverview({
             {checklist.map((item) => (
               <li key={item.label} className="flex items-start gap-3 py-3">
                 <span
-                  aria-label={item.done ? "Concluído" : "Pendente"}
                   className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-sm ${item.done ? "bg-emerald-400/15 text-emerald-300" : "bg-amber-400/10 text-amber-200"}`}
                 >
-                  {item.done ? "✓" : "•"}
+                  <span aria-hidden="true">{item.done ? "✓" : "•"}</span>
+                  <span className="sr-only">
+                    {item.done ? "Concluído" : "Pendente"}
+                  </span>
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{item.label}</p>

@@ -96,7 +96,7 @@ export function UserEditModal({
             placeholder="Nome completo"
             required
             disabled={loading}
-            className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-white"
+            className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
           />
           <input
             aria-label="Email"
@@ -108,12 +108,13 @@ export function UserEditModal({
             placeholder="Email"
             required
             disabled={loading}
-            className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-white"
+            className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
           />
           <label className="flex items-center gap-2">
             <input
               type="checkbox"
               checked={!!modalUser.group}
+              className="size-4 accent-orange-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
               onChange={(e) =>
                 setModalUser({ ...modalUser, group: e.target.checked })
               }
@@ -125,6 +126,7 @@ export function UserEditModal({
             <input
               type="checkbox"
               checked={!!modalUser.junior}
+              className="size-4 accent-orange-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
               onChange={(e) =>
                 setModalUser({ ...modalUser, junior: e.target.checked })
               }
@@ -152,7 +154,7 @@ export function UserEditModal({
           ) : (
             <CldUploadButton
               uploadPreset="halloween-freitas"
-              className="cursor-pointer rounded bg-blue-600 px-4 py-2 text-white hover:bg-orange-700"
+              className="cursor-pointer rounded bg-blue-600 px-4 py-2 text-white hover:bg-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
               onSuccess={(e) => {
                 // @ts-expect-error next-cloudinary returns info with public_id
                 setModalUser((prev) => ({
@@ -168,14 +170,14 @@ export function UserEditModal({
           <div className="flex justify-end gap-2">
             <button
               type="button"
-              className="cursor-pointer rounded bg-gray-700 px-4 py-2 text-white"
+              className="cursor-pointer rounded bg-gray-700 px-4 py-2 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
               onClick={closeModal}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="cursor-pointer rounded bg-orange-600 px-4 py-2 text-white hover:bg-orange-700"
+              className="cursor-pointer rounded bg-orange-600 px-4 py-2 text-white hover:bg-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
               disabled={loading}
             >
               {isEdit
@@ -199,7 +201,7 @@ export function UserEditModal({
               type="button"
               disabled={loading}
               onClick={() => handleResetAccess(modalUser)}
-              className="rounded-lg border border-orange-400 px-4 py-2 text-orange-300 disabled:opacity-50"
+              className="rounded-lg border border-orange-400 px-4 py-2 text-orange-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
             >
               Redefinir vínculo de acesso
             </button>

@@ -82,7 +82,7 @@ function EventForm({
             onChange={(event) =>
               setValue({ ...value, year: Number(event.target.value) })
             }
-            className="rounded border border-white/20 bg-white/10 px-3 py-2 disabled:opacity-60"
+            className="rounded border border-white/20 bg-white/10 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-60"
           />
         </label>
         <label className="grid gap-1 text-sm">
@@ -96,7 +96,7 @@ function EventForm({
             onChange={(event) =>
               setValue({ ...value, title: event.target.value })
             }
-            className="rounded border border-white/20 bg-white/10 px-3 py-2"
+            className="rounded border border-white/20 bg-white/10 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
           />
         </label>
         <label className="grid gap-1 text-sm md:col-span-2">
@@ -109,7 +109,7 @@ function EventForm({
               setValue({ ...value, timezone: event.target.value })
             }
             placeholder="America/Toronto"
-            className="rounded border border-white/20 bg-white/10 px-3 py-2"
+            className="rounded border border-white/20 bg-white/10 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
           />
         </label>
       </fieldset>
@@ -152,7 +152,7 @@ function EventForm({
                 aria-invalid={fieldCollisions.length > 0 || undefined}
                 aria-describedby={describedBy || undefined}
                 onChange={(event) => onDateChange(field, event.target.value)}
-                className={`rounded border bg-white/10 px-3 py-2 read-only:cursor-not-allowed read-only:opacity-70 ${
+                className={`rounded border bg-white/10 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 read-only:cursor-not-allowed read-only:opacity-70 ${
                   fieldCollisions.length > 0
                     ? "border-red-500 ring-1 ring-red-500"
                     : "border-white/20"
@@ -351,7 +351,7 @@ export default function EventDashboard({
         <button
           type="button"
           onClick={openCreate}
-          className="mt-4 rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black"
+          className="mt-4 rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
         >
           Criar primeiro evento
         </button>
@@ -452,14 +452,14 @@ export default function EventDashboard({
                 setCreating(false);
                 setDraft(eventForm(selected));
               }}
-              className="rounded-lg bg-gray-700 px-4 py-2"
+              className="rounded-lg bg-gray-700 px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
             >
               Cancelar
             </button>
           )}
           <button
             disabled={busy || collisions.length > 0}
-            className="rounded-lg bg-blue-600 px-4 py-2 font-semibold disabled:opacity-50"
+            className="rounded-lg bg-blue-600 px-4 py-2 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
           >
             {busy
               ? creating
