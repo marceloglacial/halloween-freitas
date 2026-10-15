@@ -7,8 +7,10 @@ import { toast } from "sonner";
 
 export default function LogoutButton({
   className = "rounded-lg bg-red-700 px-4 py-2 hover:bg-red-600 disabled:cursor-wait disabled:opacity-60",
+  onClick,
 }: {
   className?: string;
+  onClick?: () => void;
 }) {
   const { signOut } = useClerk();
   const router = useRouter();
@@ -17,6 +19,7 @@ export default function LogoutButton({
   async function handleLogout() {
     if (loading) return;
     setLoading(true);
+    onClick?.();
     try {
       await signOut();
       router.replace("/");
