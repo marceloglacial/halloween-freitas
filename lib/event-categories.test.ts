@@ -1,7 +1,47 @@
 import { describe, expect, it } from "vitest";
-import { parseEventCategories } from "@/lib/event-categories";
+import {
+  DEFAULT_EVENT_CATEGORIES,
+  parseEventCategories,
+} from "@/lib/event-categories";
 
 describe("event category configuration", () => {
+  it("defines the seven ordered Brazilian Portuguese default categories", () => {
+    expect(DEFAULT_EVENT_CATEGORIES).toEqual([
+      { title: "Melhor Fantasia", icon: "🏆", order: 0, eligibility: "all" },
+      { title: "Pior Fantasia", icon: "💩", order: 1, eligibility: "all" },
+      {
+        title: "Fantasia Mais Assustadora",
+        icon: "🧟",
+        order: 2,
+        eligibility: "all",
+      },
+      {
+        title: "Fantasia Mais Engraçada",
+        icon: "🤡",
+        order: 3,
+        eligibility: "all",
+      },
+      {
+        title: "Melhor Fantasia de Grupo ou Dupla",
+        icon: "👯‍♀️",
+        order: 4,
+        eligibility: "group",
+      },
+      {
+        title: "Melhor Fantasia Infantil",
+        icon: "🧒",
+        order: 5,
+        eligibility: "junior",
+      },
+      {
+        title: "Fantasia Mais Sexy",
+        icon: "🔥",
+        order: 6,
+        eligibility: "all",
+      },
+    ]);
+  });
+
   it("normalizes labels and sorts the configured order", () => {
     expect(
       parseEventCategories([

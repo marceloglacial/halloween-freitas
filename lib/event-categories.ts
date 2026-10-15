@@ -3,6 +3,41 @@ export type EventCategoryInput = Pick<
   "title" | "icon" | "order" | "eligibility"
 >;
 
+export const DEFAULT_EVENT_CATEGORIES = [
+  { title: "Melhor Fantasia", icon: "🏆", order: 0, eligibility: "all" },
+  { title: "Pior Fantasia", icon: "💩", order: 1, eligibility: "all" },
+  {
+    title: "Fantasia Mais Assustadora",
+    icon: "🧟",
+    order: 2,
+    eligibility: "all",
+  },
+  {
+    title: "Fantasia Mais Engraçada",
+    icon: "🤡",
+    order: 3,
+    eligibility: "all",
+  },
+  {
+    title: "Melhor Fantasia de Grupo ou Dupla",
+    icon: "👯‍♀️",
+    order: 4,
+    eligibility: "group",
+  },
+  {
+    title: "Melhor Fantasia Infantil",
+    icon: "🧒",
+    order: 5,
+    eligibility: "junior",
+  },
+  {
+    title: "Fantasia Mais Sexy",
+    icon: "🔥",
+    order: 6,
+    eligibility: "all",
+  },
+] satisfies readonly EventCategoryInput[];
+
 const eligibilityValues = ["all", "group", "junior"] as const;
 
 export function parseEventCategories(

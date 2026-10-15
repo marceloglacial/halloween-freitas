@@ -39,6 +39,10 @@ and is separate from contestant entries, contest photos, and voting candidates.
 
 ## Guest experience
 
+- The homepage's “Premiação para as Categorias” section uses the stored
+  categories of the active edition, preserving their configured names, icons,
+  and order. A homepage data refresh reflects category changes; without an
+  active edition, the waiting page omits the awards section.
 - Let an adult confirm attendance through an anonymous RSVP using their full
   name and email; the RSVP does not itself create a contestant entry or a
   Clerk account.
@@ -76,6 +80,12 @@ publication. All privileged decisions are enforced server-side and recorded in
 an audit history where specified by the lifecycle and architecture contracts.
 After voting first opens, an administrator may correct existing guest or
 contestant information and photos, but cannot add or delete contestant entries.
+Every newly created edition starts with these seven event-scoped costume
+categories in order: 🏆 Melhor Fantasia, 💩 Pior Fantasia, 🧟 Fantasia Mais
+Assustadora, 🤡 Fantasia Mais Engraçada, 👯‍♀️ Melhor Fantasia de Grupo ou
+Dupla, 🧒 Melhor Fantasia Infantil, and 🔥 Fantasia Mais Sexy. Administrators
+can review and edit the new edition's categories before voting opens. Creating
+an edition never changes categories belonging to an existing edition.
 
 ## Privacy and isolation
 

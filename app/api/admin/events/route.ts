@@ -1,15 +1,10 @@
-import { MongoServerError, ObjectId } from "mongodb";
+import { MongoServerError } from "mongodb";
 import { isAdmin } from "@/lib/auth/admin";
 import { getDb, getMongoClient } from "@/lib/db";
-import { parseEventCategories } from "@/lib/event-categories";
+import { DEFAULT_EVENT_CATEGORIES } from "@/lib/event-categories";
 import { parseEventInput } from "@/lib/event-schedule";
 import { getEventById, getEvents } from "@/lib/events";
 import { errorResponse, readJsonObject, logServerError } from "@/lib/http";
-
-type CategoryDocument = Pick<
-  Category,
-  "title" | "icon" | "order" | "eligibility"
-> & { eventId: ObjectId };
 
 export async function GET() {
   if (!(await isAdmin())) return errorResponse("Não autorizado", 401);
@@ -26,19 +21,11 @@ export async function POST(request: Request) {
   const body = await readJsonObject(request);
   const parsed = parseEventInput(body);
   if ("error" in parsed) return errorResponse(parsed.error, 400);
-  const templateId =
-    typeof body?.templateEventId === "string" &&
-    ObjectId.isValid(body.templateEventId)
-      ? new ObjectId(body.templateEventId)
-      : null;
-  if (body?.templateEventId !== undefined && !templateId) {
-    return errorResponse("Evento modelo inválido", 400);
-  }
-  const parsedCategories = templateId
-    ? null
-    : parseEventCategories(body?.categories);
-  if (parsedCategories && "error" in parsedCategories) {
-    return errorResponse(parsedCategories.error, 400);
+  if (body?.categories !== undefined || body?.templateEventId !== undefined) {
+    return errorResponse(
+      "As categorias padrão são criadas automaticamente; edite-as após criar o evento",
+      400,
+    );
   }
 
   const client = await getMongoClient();
@@ -46,27 +33,6 @@ export async function POST(request: Request) {
   const session = client.startSession();
   try {
     const createdId = await session.withTransaction(async () => {
-      let categoriesToCopy = parsedCategories?.value ?? [];
-      if (templateId) {
-        const template = await db
-          .collection("events")
-          .findOne({ _id: templateId }, { session });
-        if (!template) throw new Error("TEMPLATE_NOT_FOUND");
-        const templateCategories = await db
-          .collection<CategoryDocument>("categories")
-          .find({ eventId: templateId }, { session })
-          .toArray();
-        categoriesToCopy = templateCategories.map(
-          ({ title, icon, order, eligibility }) => ({
-            title,
-            icon,
-            order,
-            eligibility,
-          }),
-        );
-        if (!categoriesToCopy?.length)
-          throw new Error("TEMPLATE_HAS_NO_CATEGORIES");
-      }
       const duplicateYear = await db.collection("events").findOne(
         {
           $or: [
@@ -91,7 +57,7 @@ export async function POST(request: Request) {
         { session },
       );
       await db.collection("categories").insertMany(
-        categoriesToCopy!.map((category) => ({
+        DEFAULT_EVENT_CATEGORIES.map((category) => ({
           title: category.title,
           icon: category.icon,
           order: category.order,
@@ -111,15 +77,6 @@ export async function POST(request: Request) {
     }
     if (error instanceof Error && error.message === "DUPLICATE_YEAR") {
       return errorResponse("Já existe um evento para este ano", 409);
-    }
-    if (error instanceof Error && error.message === "TEMPLATE_NOT_FOUND") {
-      return errorResponse("Evento modelo não encontrado", 404);
-    }
-    if (
-      error instanceof Error &&
-      error.message === "TEMPLATE_HAS_NO_CATEGORIES"
-    ) {
-      return errorResponse("O evento modelo não possui categorias", 409);
     }
     logServerError("Admin event creation failed", error);
     return errorResponse("Não foi possível criar o evento", 500);

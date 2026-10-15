@@ -12,6 +12,14 @@ cross-edition isolation cases where they apply.
 
 ## Domain and schedule tests
 
+- Create a new edition and verify its transaction seeds exactly the seven
+  standard Portuguese categories, once, in the specified order and with
+  event-specific eligibility. Verify duplicate event creation does not create
+  another category set, and existing editions' category records are unchanged.
+- Render the homepage awards section from the active edition's stored category
+  names, icons, and ordering. After category changes, verify the next no-store
+  refresh reflects the changes; with no active edition, keep the waiting page
+  and omit the awards section.
 - Validate both scheduled starts, ordering, IANA timezones, malformed input,
   daylight-saving gaps, and the exact before/at/after behavior of each boundary.
 - Verify `rsvpOpen` derives from registration start, active edition, and the
