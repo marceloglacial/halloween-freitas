@@ -24,10 +24,16 @@ export default async function Home() {
         initialEvent={event}
         initialCategories={categories}
         initialNow={initialNow}
+        initialRsvpOpen={Boolean(
+          event && getRegistrationState(event, now) === "open",
+        )}
         heroContent={
           <Hero
             startsAt={event?.eventStartsAt}
             showCountdown={initialHomeState === "pre_event"}
+            showRsvpCta={Boolean(
+              event && getRegistrationState(event, now) === "open",
+            )}
             initialNow={initialNow}
           />
         }

@@ -77,6 +77,7 @@ export default function EventLifecycle({
   initialEvent,
   initialCategories,
   initialNow,
+  initialRsvpOpen,
   preEventContent,
   postEventContent,
   heroContent,
@@ -85,6 +86,7 @@ export default function EventLifecycle({
   initialEvent: HalloweenEvent | null;
   initialCategories: Category[];
   initialNow: string;
+  initialRsvpOpen: boolean;
   preEventContent: ReactNode;
   postEventContent: ReactNode;
   heroContent: ReactNode;
@@ -92,6 +94,7 @@ export default function EventLifecycle({
 }) {
   const router = useRouter();
   const currentEventKey = useRef(initialEvent?._id ?? null);
+  const currentRsvpOpen = useRef(initialRsvpOpen);
   const [event, setEvent] = useState(initialEvent);
   const [categories, setCategories] = useState(initialCategories);
   const [observedAt, setObservedAt] = useState(() => new Date(initialNow));
@@ -109,25 +112,33 @@ export default function EventLifecycle({
           if (active) {
             setEvent(null);
             setCategories([]);
-            if (currentEventKey.current !== null) {
+            const eventChanged = currentEventKey.current !== null;
+            const availabilityChanged = currentRsvpOpen.current;
+            currentRsvpOpen.current = false;
+            if (eventChanged) {
               currentEventKey.current = null;
-              router.refresh();
             }
+            if (eventChanged || availabilityChanged) router.refresh();
           }
           return;
         }
         if (!response.ok) return;
         const currentEvent = (await response.json()) as HalloweenEvent & {
           phase: EventPhase;
+          registrationState: RegistrationState;
           categories: Category[];
         };
         if (active) {
           setEvent(currentEvent);
           setCategories(currentEvent.categories);
-          if (currentEventKey.current !== currentEvent._id) {
+          const eventChanged = currentEventKey.current !== currentEvent._id;
+          const rsvpOpen = currentEvent.registrationState === "open";
+          const availabilityChanged = currentRsvpOpen.current !== rsvpOpen;
+          currentRsvpOpen.current = rsvpOpen;
+          if (eventChanged) {
             currentEventKey.current = currentEvent._id;
-            router.refresh();
           }
+          if (eventChanged || availabilityChanged) router.refresh();
         }
       } catch {
         // Keep the last valid state and retry on the next interval.

@@ -3,11 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   getActiveEvent: vi.fn(),
   getCategories: vi.fn(),
+  getRegistrationState: vi.fn(() => "open"),
 }));
 
 vi.mock("@/lib/events", () => ({
   getActiveEvent: mocks.getActiveEvent,
   getEventPhase: vi.fn(() => "registration"),
+}));
+vi.mock("@/util/registration-state", () => ({
+  getRegistrationState: mocks.getRegistrationState,
 }));
 vi.mock("@/util/get-categories", () => ({
   getCategories: mocks.getCategories,
@@ -19,6 +23,7 @@ describe("current active event endpoint", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.getCategories.mockResolvedValue([]);
+    mocks.getRegistrationState.mockReturnValue("open");
   });
 
   it("returns not found when the database has no active edition", async () => {
@@ -57,6 +62,7 @@ describe("current active event endpoint", () => {
     await expect(response.json()).resolves.toEqual({
       ...activeEvent,
       phase: "registration",
+      registrationState: "open",
       categories,
     });
     expect(response.headers.get("Cache-Control")).toBe("no-store");
