@@ -34,5 +34,9 @@ describe("admin dashboard shell", () => {
     );
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('href="/dashboard/convidados?year=2025"');
+    expect(html.match(/href="\/"/g)).toHaveLength(2);
+    expect(html.match(/target="_blank"/g)).toHaveLength(2);
+    expect(html.match(/rel="noreferrer"/g)).toHaveLength(2);
+    expect(html.match(/>Ver site<\/a>/g)).toHaveLength(2);
   });
 });

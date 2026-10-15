@@ -271,7 +271,9 @@ upload flow separate from contestant photo controls.
 The public feature navigation is hidden throughout `/dashboard`; the admin
 dashboard uses its own desktop sidebar and native modal drawer on mobile.
 Its main bar shows the current section and a right-aligned edition dropdown
-labeled “Selecionar edição”; choosing a year opens that edition's overview.
+labeled “Selecionar edição”, followed by a “Ver site” link to the public home;
+choosing a year opens that edition's overview. On mobile, keep the edition
+selector and public-site link together on a row below the brand and menu button.
 Include the selected year in the sidebar brand and browser document title.
 Sign-out stays at the bottom of the desktop sidebar and mobile drawer. Mark the
 current navigation destination with `aria-current`; preserve the selected year

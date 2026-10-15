@@ -81,7 +81,7 @@ function EditionSelection({
   return (
     <div
       aria-label="Seleção de edição"
-      className={`relative grid min-w-28 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 ${className}`}
+      className={`relative grid min-w-28 grid-cols-[auto_auto_auto] items-center gap-x-3 gap-y-1 ${className}`}
     >
       <span className="text-xs font-medium whitespace-nowrap text-gray-300">
         Selecionar edição
@@ -135,6 +135,14 @@ function EditionSelection({
           Nenhuma edição disponível
         </span>
       )}
+      <Link
+        href="/"
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex min-h-11 items-center justify-center rounded-lg border border-orange-400/40 bg-orange-500/10 px-3 py-2 text-sm font-semibold whitespace-nowrap text-orange-200 transition-colors hover:bg-orange-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 motion-reduce:transition-none"
+      >
+        Ver site
+      </Link>
       {selection.reason === "invalid-year" && selection.event && (
         <p
           role="status"
@@ -234,7 +242,7 @@ export default function AdminDashboardShell({
               onChange={changeYear}
               className="ml-auto hidden lg:grid"
             />
-            <div className="flex w-full items-center justify-between gap-3 lg:hidden">
+            <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 lg:hidden">
               <Link
                 href={pathWithYear("/dashboard", selection.event?.year)}
                 className="flex min-w-0 items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
@@ -249,7 +257,7 @@ export default function AdminDashboardShell({
                 events={events}
                 selection={selection}
                 onChange={changeYear}
-                className="ml-auto shrink-0"
+                className="col-span-2 min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] gap-x-2"
               />
               <button
                 ref={menuButtonRef}
@@ -258,7 +266,7 @@ export default function AdminDashboardShell({
                 aria-expanded={mobileOpen}
                 aria-label="Abrir menu de navegação"
                 onClick={() => setMobileOpen(true)}
-                className="grid size-11 place-items-center rounded-xl border border-orange-400/60 bg-white/5 text-xl text-orange-300 shadow-[0_0_16px_rgba(249,115,22,0.2)] transition hover:bg-orange-500/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 motion-reduce:transition-none"
+                className="col-start-2 row-start-1 grid size-11 place-items-center rounded-xl border border-orange-400/60 bg-white/5 text-xl text-orange-300 shadow-[0_0_16px_rgba(249,115,22,0.2)] transition hover:bg-orange-500/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 motion-reduce:transition-none"
               >
                 <span aria-hidden="true">☰</span>
               </button>
