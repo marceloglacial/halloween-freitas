@@ -15,6 +15,7 @@ describe("homepage event lifecycle", () => {
         initialEvent={null}
         initialCategories={[]}
         initialNow="2026-10-31T23:59:59.999Z"
+        initialRsvpOpen={false}
         heroContent={<h1>Halloween dos Freitas</h1>}
         footerContent={<footer>Footer</footer>}
         preEventContent={
@@ -59,6 +60,7 @@ describe("homepage event lifecycle", () => {
         }}
         initialCategories={[category]}
         initialNow="2026-10-14T12:00:00.000Z"
+        initialRsvpOpen={true}
         heroContent={<h1>Halloween dos Freitas</h1>}
         footerContent={<footer>Footer</footer>}
         preEventContent={<Schedule />}
