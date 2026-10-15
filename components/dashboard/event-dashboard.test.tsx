@@ -12,7 +12,6 @@ vi.mock("@/components/dashboard/admin-results", () => ({
 vi.mock("@/components/dashboard/admin-party-album", () => ({
   default: () => <div>Gerenciamento do álbum</div>,
 }));
-vi.mock("@/components/dashboard/user-list", () => ({ default: () => null }));
 
 import EventDashboard from "@/components/dashboard/event-dashboard";
 
@@ -33,7 +32,7 @@ const event: HalloweenEvent = {
 function renderDashboard(
   selectedEvent: HalloweenEvent,
   now: string,
-  tab: "settings" | "guests" | "results" | "photos" = "settings",
+  tab: "settings" | "results" | "photos" = "settings",
   initialCategories: Category[] = [],
 ) {
   return renderToStaticMarkup(
@@ -59,6 +58,7 @@ describe("admin event dashboard enrollment states", () => {
     );
 
     expect(markup).toContain("Categorias padrão");
+    expect(markup).toContain("Criar primeira edição");
     expect(markup).toContain("🏆 Melhor Fantasia");
     expect(markup).toContain("💩 Pior Fantasia");
     expect(markup).toContain("🧟 Fantasia Mais Assustadora");
@@ -67,6 +67,18 @@ describe("admin event dashboard enrollment states", () => {
     expect(markup).toContain("🧒 Melhor Fantasia Infantil");
     expect(markup).toContain("🔥 Fantasia Mais Sexy");
     expect(markup).not.toContain("Adicionar categoria");
+  });
+
+  it("groups edition details, schedule, advanced controls and dangerous actions", () => {
+    const markup = renderDashboard(event, "2026-09-15T00:00:00.000Z");
+
+    expect(markup).toContain("Detalhes da edição");
+    expect(markup).toContain("Agenda");
+    expect(markup).toContain("Opções avançadas");
+    expect(markup).toContain("Zona de perigo");
+    expect(markup).toContain("Criar próxima edição");
+    expect(markup).not.toContain('id="event-year"');
+    expect(markup).not.toContain("Navegação administrativa");
   });
 
   it("shows the selected event's stored categories in its settings", () => {
@@ -122,7 +134,6 @@ describe("admin party album dashboard navigation", () => {
   it("opens the album management section for the selected edition", () => {
     const markup = renderDashboard(event, "2026-10-31T20:00:00.000Z", "photos");
 
-    expect(markup).toContain("Fotos da festa");
     expect(markup).toContain("Gerenciamento do álbum");
   });
 });

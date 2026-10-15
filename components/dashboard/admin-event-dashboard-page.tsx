@@ -1,6 +1,7 @@
 import EventDashboard, {
   type DashboardTab,
 } from "@/components/dashboard/event-dashboard";
+import AdminEventGuests from "@/components/dashboard/admin-event-guests";
 import AdminAccessDenied from "@/components/dashboard/admin-access-denied";
 import { authorizeAdminPage } from "@/lib/auth/admin-page";
 import { getEvents } from "@/lib/events";
@@ -12,13 +13,15 @@ type SearchParams = Promise<{
   [key: string]: string | string[] | undefined;
 }>;
 
+type AdminEventPageTab = DashboardTab | "guests";
+
 export default async function AdminEventDashboardPage({
   searchParams,
   initialTab,
   returnBackUrl,
 }: {
   searchParams: SearchParams;
-  initialTab: DashboardTab;
+  initialTab: AdminEventPageTab;
   returnBackUrl: string;
 }) {
   if (!(await authorizeAdminPage(returnBackUrl))) {
@@ -31,13 +34,30 @@ export default async function AdminEventDashboardPage({
   const selectedEvent = selection.event
     ? (events.find((event) => event.year === selection.event?.year) ?? null)
     : null;
-  const initialCategories = selectedEvent
-    ? await getCategories(selectedEvent._id)
-    : [];
+  if (initialTab === "guests") {
+    if (!selectedEvent) {
+      return (
+        <section className="rounded-2xl border border-white/10 bg-stone-950/80 p-6">
+          <h2 className="text-xl font-semibold">Nenhuma edição selecionada</h2>
+          <p className="mt-2 text-gray-300">
+            Crie uma edição em Configurações antes de gerenciar convidados.
+          </p>
+        </section>
+      );
+    }
+    return (
+      <AdminEventGuests event={selectedEvent} now={new Date().toISOString()} />
+    );
+  }
+
+  const initialCategories =
+    selectedEvent && initialTab === "settings"
+      ? await getCategories(selectedEvent._id)
+      : [];
 
   return (
     <EventDashboard
-      embedded
+      key={`${selectedEvent?._id ?? "none"}-${initialTab}`}
       initialEvents={events}
       initialCategories={initialCategories}
       initialYear={selectedEvent?.year}
