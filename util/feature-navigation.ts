@@ -8,6 +8,7 @@ export type FeatureNavigationItem = {
 
 export type FeatureNavigationIcon =
   | "home"
+  | "dashboard"
   | "info"
   | "schedule"
   | "rsvp"
