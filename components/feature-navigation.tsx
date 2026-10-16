@@ -10,7 +10,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import LogoutButton from "@/components/logout-button";
 import { guestAccessUrl } from "@/util/guest-access";
 import {
@@ -78,6 +78,14 @@ function NavigationIcon({ name }: { name: FeatureNavigationIcon }) {
         <path d="M10 16l4-4-4-4M14 12H3" />
       </>
     ),
+    dashboard: (
+      <>
+        <rect x="3" y="3" width="8" height="8" rx="1.5" />
+        <rect x="13" y="3" width="8" height="5" rx="1.5" />
+        <rect x="13" y="10" width="8" height="11" rx="1.5" />
+        <rect x="3" y="13" width="8" height="8" rx="1.5" />
+      </>
+    ),
   };
 
   return (
@@ -104,13 +112,26 @@ function SessionNavigationAction({
   onNavigate?: () => void;
 }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded: isUserLoaded, user } = useUser();
 
   if (isLoaded && isSignedIn) {
     return (
-      <LogoutButton
-        className="flex min-h-11 items-center justify-center gap-2 rounded-full border border-transparent px-4 py-2 text-sm text-white transition-colors hover:border-orange-300/40 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-orange-300 motion-reduce:transition-none"
-        onClick={onNavigate}
-      />
+      <div className="flex flex-wrap items-center gap-1">
+        {isUserLoaded && user?.publicMetadata?.role === "admin" && (
+          <Link
+            href="/dashboard"
+            onClick={onNavigate}
+            className="flex min-h-11 items-center justify-center gap-2 rounded-full border border-transparent px-4 py-2 text-sm text-white transition-colors hover:border-orange-300/40 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-orange-300 motion-reduce:transition-none"
+          >
+            <NavigationIcon name="dashboard" />
+            Dashboard
+          </Link>
+        )}
+        <LogoutButton
+          className="flex min-h-11 items-center justify-center gap-2 rounded-full border border-transparent px-4 py-2 text-sm text-white transition-colors hover:border-orange-300/40 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-orange-300 motion-reduce:transition-none"
+          onClick={onNavigate}
+        />
+      </div>
     );
   }
 

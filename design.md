@@ -176,6 +176,10 @@ Informações, Programação, and Confirme sua presença. Omit the RSVP link whe
 the server says registration is unavailable. Keep Entrar separate and aligned
 to the desktop navigation's right edge; include it after the ordered links in
 the mobile menu. Once signed in, replace Entrar with the existing Sair action.
+Show Dashboard beside Sair only after Clerk confirms the signed-in user's
+public role is admin; keep it hidden while the user or role is loading and for
+all other roles. The `/dashboard` route remains protected by server-side admin
+authorization.
 Use the selected edition's server-backed lifecycle state, including RSVP
 availability, rather than a browser clock. Preserve the event information and
 program sections during voting so those links remain valid.
