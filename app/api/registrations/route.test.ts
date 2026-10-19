@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   consumeRateLimit: vi.fn(),
   trustedClientAddress: vi.fn(),
   updateEvent: vi.fn(),
+  findUser: vi.fn(),
   insertUser: vi.fn(),
   withTransaction: vi.fn(),
   endSession: vi.fn(),
@@ -71,6 +72,7 @@ describe("public RSVP API", () => {
     mocks.getRegistrationState.mockReturnValue("open");
     mocks.withTransaction.mockImplementation(async (callback) => callback());
     mocks.updateEvent.mockResolvedValue({ matchedCount: 1 });
+    mocks.findUser.mockResolvedValue(null);
     mocks.insertUser.mockResolvedValue({ insertedId: new ObjectId() });
     mocks.startSession.mockReturnValue(session);
     mocks.consumeRateLimit.mockResolvedValue({
@@ -85,7 +87,7 @@ describe("public RSVP API", () => {
       collection: (name: string) =>
         name === "events"
           ? { updateOne: mocks.updateEvent }
-          : { insertOne: mocks.insertUser },
+          : { findOne: mocks.findUser, insertOne: mocks.insertUser },
     });
   });
 
@@ -259,17 +261,29 @@ describe("public RSVP API", () => {
     );
   });
 
-  it("returns the same success response for duplicate email without disclosing registration", async () => {
+  it("rejects a duplicate email instead of reporting a second RSVP as confirmed", async () => {
     mocks.insertUser.mockRejectedValue(
       new MongoServerError({ message: "duplicate key", code: 11000 }),
     );
 
     const response = await POST(registrationRequest());
 
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(409);
     expect(await response.json()).toEqual({
-      message: "Presença confirmada!",
+      error: "Este email já confirmou presença nesta edição",
     });
+  });
+
+  it("rejects a previously registered email even when the unique index is missing", async () => {
+    mocks.findUser.mockResolvedValue({ _id: new ObjectId() });
+
+    const response = await POST(registrationRequest());
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Este email já confirmou presença nesta edição",
+    });
+    expect(mocks.insertUser).not.toHaveBeenCalled();
   });
 
   it("returns a generic failure when the database write fails", async () => {

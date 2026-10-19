@@ -73,17 +73,27 @@ describe("admin users API", () => {
       contestEntryStatus: "open",
     });
     mocks.auth.mockResolvedValue({ userId: "admin_user" });
-    mocks.userFindOne.mockResolvedValue({
-      _id: "507f1f77bcf86cd799439012",
-      eventId,
-      fullName: "Nome anterior",
-      email: "old@example.com",
-      normalizedEmail: "old@example.com",
-      contestantName: "Nome anterior",
-      contestant: true,
-      group: false,
-      junior: false,
-      clerkUserId: "linked_owner",
+    mocks.userFindOne.mockImplementation((query: Record<string, unknown>) => {
+      if (
+        query._id &&
+        typeof query._id === "object" &&
+        "$ne" in query._id
+      ) {
+        return null;
+      }
+      if (!("_id" in query)) return null;
+      return {
+        _id: "507f1f77bcf86cd799439012",
+        eventId,
+        fullName: "Nome anterior",
+        email: "old@example.com",
+        normalizedEmail: "old@example.com",
+        contestantName: "Nome anterior",
+        contestant: true,
+        group: false,
+        junior: false,
+        clerkUserId: "linked_owner",
+      };
     });
   });
 
@@ -208,6 +218,30 @@ describe("admin users API", () => {
     expect(mocks.endSession).toHaveBeenCalledOnce();
   });
 
+  it("rejects an RSVP email already used in the same edition", async () => {
+    mocks.isAdmin.mockResolvedValue(true);
+    mocks.getEventById.mockResolvedValue({ _id: eventId });
+    mocks.userFindOne.mockResolvedValue({ _id: "existing-rsvp" });
+
+    const response = await POST(
+      new Request("http://localhost/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId,
+          fullName: "Another Person",
+          email: "guest@example.com",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Este email já está inscrito",
+    });
+    expect(mocks.insertOne).not.toHaveBeenCalled();
+  });
+
   it("rejects a contestant write if the atomic event guard observes a closed entry", async () => {
     mocks.isAdmin.mockResolvedValue(true);
     mocks.getEventById.mockResolvedValue({ _id: eventId });
@@ -234,7 +268,7 @@ describe("admin users API", () => {
 
   it("does not audit when an existing RSVP is unchanged", async () => {
     mocks.isAdmin.mockResolvedValue(true);
-    mocks.userFindOne.mockResolvedValue({
+    mocks.userFindOne.mockResolvedValueOnce({
       _id: "507f1f77bcf86cd799439012",
       eventId,
       fullName: "Nome escolhido",
@@ -244,7 +278,7 @@ describe("admin users API", () => {
       imageUrl: null,
       group: false,
       junior: false,
-    });
+    }).mockResolvedValueOnce(null);
     const response = await PUT(
       new Request("http://localhost/api/admin/users", {
         method: "PUT",

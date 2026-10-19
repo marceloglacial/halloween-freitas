@@ -17,6 +17,8 @@ import {
 } from "@/lib/http";
 import { getAdminUsersForEvent } from "@/lib/users";
 
+class DuplicateGuestEmailError extends Error {}
+
 async function adminEvent(eventId: unknown) {
   if (!(await isAdmin())) return errorResponse("Não autorizado", 401);
   if (typeof eventId !== "string" || !ObjectId.isValid(eventId)) {
@@ -59,6 +61,11 @@ export async function POST(request: Request) {
       const created = await session.withTransaction(async () => {
         const now = new Date();
         await claimContestEntryWrite(db, eventId, session, now);
+        const duplicate = await db.collection("users").findOne(
+          { eventId, normalizedEmail },
+          { session },
+        );
+        if (duplicate) throw new DuplicateGuestEmailError();
         const result = await db.collection("users").insertOne(
           {
             eventId,
@@ -93,6 +100,9 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ContestEntryClosedError) {
       return errorResponse("As inscrições do concurso estão encerradas", 409);
+    }
+    if (error instanceof DuplicateGuestEmailError) {
+      return errorResponse("Este email já está inscrito", 409);
     }
     if (error instanceof MongoServerError && error.code === 11000) {
       return errorResponse("Este email já está inscrito", 409);
@@ -145,6 +155,15 @@ export async function PUT(request: Request) {
           { session },
         );
         if (!existing) return { matchedCount: 0 };
+        const duplicate = await users.findOne(
+          {
+            eventId: eventObjectId,
+            normalizedEmail,
+            _id: { $ne: userId },
+          },
+          { session },
+        );
+        if (duplicate) throw new DuplicateGuestEmailError();
         const correctionFields = [
           "fullName",
           "email",
@@ -187,6 +206,9 @@ export async function PUT(request: Request) {
       return errorResponse("Usuário não encontrado", 404);
     return Response.json({ _id: body._id, eventId: event._id, ...update });
   } catch (error) {
+    if (error instanceof DuplicateGuestEmailError) {
+      return errorResponse("Este email já está inscrito", 409);
+    }
     if (error instanceof MongoServerError && error.code === 11000) {
       return errorResponse("Este email já está inscrito", 409);
     }

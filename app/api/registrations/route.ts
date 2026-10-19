@@ -16,6 +16,7 @@ import {
 } from "@/lib/http";
 
 class RegistrationUnavailableError extends Error {}
+class DuplicateRegistrationError extends Error {}
 
 function registrationWriteFilter(eventId: ObjectId, now: Date) {
   return {
@@ -101,6 +102,12 @@ export async function POST(request: Request) {
         );
       if (!gate.matchedCount) throw new RegistrationUnavailableError();
 
+      const existingRegistration = await db.collection("users").findOne(
+        { eventId, normalizedEmail },
+        { session },
+      );
+      if (existingRegistration) throw new DuplicateRegistrationError();
+
       await db.collection("users").insertOne(
         {
           eventId,
@@ -121,8 +128,11 @@ export async function POST(request: Request) {
     if (error instanceof RegistrationUnavailableError) {
       return errorResponse("As inscrições foram encerradas", 403);
     }
+    if (error instanceof DuplicateRegistrationError) {
+      return errorResponse("Este email já confirmou presença nesta edição", 409);
+    }
     if (error instanceof MongoServerError && error.code === 11000) {
-      return confirmedResponse();
+      return errorResponse("Este email já confirmou presença nesta edição", 409);
     }
     logServerError("Registration failed", error);
     return errorResponse("Não foi possível realizar a inscrição", 500);

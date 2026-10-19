@@ -2,7 +2,6 @@
 
 import React, { FC, JSX } from "react";
 import { useForm } from "@/hooks/useForm";
-import Link from "next/link";
 
 const Form: FC = (): JSX.Element => {
   const { loading, confirmed, handleSubmit } = useForm();
@@ -14,14 +13,8 @@ const Form: FC = (): JSX.Element => {
       >
         <p className="text-xl text-orange-300">Presença confirmada! 🎃</p>
         <p>
-          Não precisa entrar nem verificar seu email para confirmar presença.
+          Aguarde mais informações quando a festa começar!
         </p>
-        <Link
-          href="/votacao"
-          className="text-orange-300 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
-        >
-          Acessar votação quando estiver aberta
-        </Link>
       </div>
     );
   return (
