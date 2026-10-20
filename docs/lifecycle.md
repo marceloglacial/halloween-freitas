@@ -39,6 +39,14 @@ voting. Only complete, consented, photo-valid entries are eligible; incomplete
 drafts remain private. Reopening before the first voting opening permits the
 entry workflow again, but does not change RSVP availability.
 
+For individual and child entries, guests edit the optional title and select or
+remove the contest photo before saving. A selected image is previewed locally
+and is not uploaded until the guest explicitly saves; a new upload requires
+consent, with guardian consent for a child entry. A group entry uses its name as
+the costume name and saves its photo separately. Removing a saved photo returns
+the entry to `draft` and queues safe asset cleanup. The guest editor is
+unavailable after entries close or voting freezes the candidate set.
+
 When voting first opens, contestant membership is permanently frozen for that
 edition. No guest or administrator can add or delete contestant entries after
 that point. Administrators may correct existing guest/contestant fields and
@@ -73,9 +81,12 @@ place. A category with no ballots has no winner.
 Each ballot is scoped by event, round, category, and verified RSVP identity, and
 has a stable ID referencing the contestant entry ID. A unique database index
 enforces one ballot per eligible RSVP/category/round under concurrency. Guests
-cannot vote for their own individual entry; a guardian may vote for a child's
-entry, and a group creator may vote for their group. Candidate eligibility is
-determined from the frozen set, not current RSVP or profile fields.
+may vote for their own individual entry, a group they created, and child entries
+for which they are the guardian. Candidate eligibility is determined from the
+frozen set, not current RSVP or profile fields. Individual entries appear in
+every category whose eligibility is `all`; they do not appear in group-only or
+child-only categories. The entry's stored category reference does not limit its
+voting scope.
 
 ## Results publication
 

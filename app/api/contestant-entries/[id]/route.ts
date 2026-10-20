@@ -6,7 +6,7 @@ import {
 import { ContestEntryClosedError } from "@/lib/contest-entry-writes";
 import {
   ContestantEntryWriteError,
-  updateIndividualContestantEntryTitle,
+  updateOwnedContestantEntryTitle,
 } from "@/lib/contestant-entry-mutations";
 import { normalizeCostumeTitle } from "@/lib/contestant-entries";
 import { getDb, getMongoClient } from "@/lib/db";
@@ -14,6 +14,7 @@ import { getEventById } from "@/lib/events";
 import {
   errorResponse,
   logServerError,
+  normalizeName,
   parseObjectId,
   readJsonObject,
 } from "@/lib/http";
@@ -31,18 +32,29 @@ export async function PATCH(
     if (!body || !validGuestEventId(body.eventId)) {
       return errorResponse("Evento inválido.", 400);
     }
-    if (!Object.hasOwn(body, "costumeTitle")) {
-      return errorResponse("Informe o título da fantasia.", 400);
+    const hasCostumeTitle = Object.hasOwn(body, "costumeTitle");
+    const hasDisplayName = Object.hasOwn(body, "displayName");
+    if (!hasCostumeTitle && !hasDisplayName) {
+      return errorResponse("Informe os dados que deseja alterar.", 400);
     }
     const { id } = await params;
     const entryId = parseObjectId(id);
     if (!entryId) return errorResponse("Inscrição inválida.", 400);
 
     let costumeTitle: string | undefined;
-    try {
-      costumeTitle = normalizeCostumeTitle(body.costumeTitle);
-    } catch {
-      return errorResponse("O título deve ter até 100 caracteres.", 400);
+    if (hasCostumeTitle) {
+      try {
+        costumeTitle = normalizeCostumeTitle(body.costumeTitle);
+      } catch {
+        return errorResponse("O título deve ter até 100 caracteres.", 400);
+      }
+    }
+    const displayName = hasDisplayName ? normalizeName(body.displayName) : null;
+    if (hasDisplayName && !displayName) {
+      return errorResponse(
+        "O nome do grupo deve ter de 2 a 120 caracteres.",
+        400,
+      );
     }
 
     const [event, guest] = await Promise.all([
@@ -55,19 +67,27 @@ export async function PATCH(
       return errorResponse("As inscrições do concurso estão encerradas.", 409);
     }
 
-    const result = await updateIndividualContestantEntryTitle(
+    const result = await updateOwnedContestantEntryTitle(
       await getMongoClient(),
       await getDb(),
       {
         eventId: new ObjectId(event._id),
         entryId,
         rsvpId: new ObjectId(guest.userId),
-        costumeTitle,
+        ...(hasCostumeTitle ? { costumeTitle } : {}),
+        ...(hasDisplayName ? { displayName: displayName! } : {}),
+        ...(hasDisplayName ? { entryType: "group" as const } : {}),
         now,
       },
     );
     return Response.json(
-      { entryId: id, costumeTitle: result.costumeTitle ?? null },
+      {
+        entryId: id,
+        ...(hasCostumeTitle
+          ? { costumeTitle: result.costumeTitle ?? null }
+          : {}),
+        ...(hasDisplayName ? { displayName: result.displayName } : {}),
+      },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
@@ -85,13 +105,14 @@ export async function PATCH(
         entry_not_found: "Inscrição não encontrada.",
         entry_not_editable: "Esta inscrição não pode mais ser alterada.",
         invalid_costume_title: "O título deve ter até 100 caracteres.",
+        invalid_group_name: "O nome do grupo deve ter de 2 a 120 caracteres.",
       };
       return Response.json(
         { error: messages[error.code] ?? "Dados da inscrição inválidos." },
         { status: error.status, headers: { "Cache-Control": "no-store" } },
       );
     }
-    logServerError("Individual contestant entry update failed", error);
+    logServerError("Contestant entry update failed", error);
     return errorResponse(
       "Não foi possível salvar o título. Tente novamente.",
       500,

@@ -13,9 +13,14 @@ export async function getCategoryResults(
   const eventObjectId = new ObjectId(eventId);
   const categoryObjectId = new ObjectId(categoryId);
   const roundObjectId = new ObjectId(roundId);
-  const rows = await (
-    await getDb()
-  )
+  const db = await getDb();
+  const category = await db.collection<{ eligibility?: Category["eligibility"] }>("categories").findOne(
+    { _id: categoryObjectId, eventId: eventObjectId },
+    { projection: { eligibility: 1 } },
+  );
+  if (!category) return { users: [], totalVotes: 0 };
+
+  const rows = await db
     .collection("votes")
     .aggregate<{
       _id: string;
@@ -44,8 +49,23 @@ export async function getCategoryResults(
       {
         $match: {
           "candidate.eventId": eventObjectId,
-          "candidate.categoryId": categoryObjectId,
           "candidate.status": "locked",
+          ...(category.eligibility === "group"
+            ? {
+                "candidate.categoryId": categoryObjectId,
+                "candidate.entryType": "group",
+              }
+            : category.eligibility === "junior"
+              ? {
+                  "candidate.categoryId": categoryObjectId,
+                  "candidate.entryType": "junior",
+                }
+              : {
+                  $or: [
+                    { "candidate.categoryId": categoryObjectId },
+                    { "candidate.entryType": "individual" },
+                  ],
+                }),
         },
       },
       {

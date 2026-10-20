@@ -1,4 +1,3 @@
-import { CldImage } from "next-cloudinary";
 import React from "react";
 
 interface UserImageModalProps {
@@ -72,10 +71,12 @@ const UserImageModal: React.FC<UserImageModalProps> = ({
         >
           ×
         </button>
-        <CldImage
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={imageSrc}
           width={900}
           height={600}
+          decoding="async"
           alt={imageAlt}
           className="max-h-[84vh] max-w-[90vw] rounded-lg border-4 border-orange-400 object-contain"
         />

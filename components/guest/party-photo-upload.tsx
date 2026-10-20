@@ -174,15 +174,16 @@ export default function PartyPhotoUpload({
   return (
     <section
       aria-labelledby="party-photos-heading"
-      className="grid gap-4 rounded-2xl border border-white/10 bg-zinc-900 p-5 sm:p-6"
+      className="grid gap-4 rounded-2xl border border-orange-400/40 bg-zinc-900 p-5 sm:p-6"
     >
       <div className="grid gap-2">
         <h2 id="party-photos-heading" className="text-3xl font-semibold">
           Fotos da festa
         </h2>
         <p className="text-stone-300">
-          Envie várias fotos da festa. Elas ficam privadas e só serão mostradas
-          a todos se a organização publicar o álbum.
+          Este envio é separado das fotos das fantasias do concurso. Envie aqui
+          fotos gerais da festa; elas ficam privadas até a organização publicar
+          o álbum.
         </p>
       </div>
       {!available ? (

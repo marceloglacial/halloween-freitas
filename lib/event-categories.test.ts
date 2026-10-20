@@ -33,12 +33,7 @@ describe("event category configuration", () => {
         order: 5,
         eligibility: "junior",
       },
-      {
-        title: "Fantasia Mais Sexy",
-        icon: "🔥",
-        order: 6,
-        eligibility: "all",
-      },
+      { title: "Fantasia Mais Sexy", icon: "🔥", order: 6, eligibility: "all" },
     ]);
   });
 

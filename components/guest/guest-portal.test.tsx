@@ -13,6 +13,9 @@ vi.mock("next/link", () => ({
   ),
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("@/components/logout-button", () => ({
+  default: () => <button type="button">Sair</button>,
+}));
 
 import GuestPortal from "@/components/guest/guest-portal";
 

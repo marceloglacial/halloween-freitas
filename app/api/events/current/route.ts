@@ -1,6 +1,7 @@
 import { getActiveEvent, getEventPhase } from "@/lib/events";
 import { errorResponse, logServerError } from "@/lib/http";
 import { getCategories } from "@/util/get-categories";
+import { getContestEntryState } from "@/util/contest-entry-state";
 import { getRegistrationState } from "@/util/registration-state";
 
 function noStoreError(message: string, status: number) {
@@ -19,6 +20,7 @@ export async function GET() {
         ...event,
         phase: getEventPhase(event),
         registrationState: getRegistrationState(event),
+        contestEntryState: getContestEntryState(event),
         categories,
       },
       { headers: { "Cache-Control": "no-store" } },

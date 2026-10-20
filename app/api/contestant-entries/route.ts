@@ -52,7 +52,7 @@ function failure(error: unknown, entryType: "individual" | "junior" | "group") {
     const messages: Record<string, string> = {
       category_not_found: "Categoria não encontrada nesta edição.",
       category_not_available:
-        "Escolha uma categoria disponível para este tipo de inscrição.",
+        "Não há uma categoria compatível com este tipo de inscrição nesta edição.",
       entry_not_found: "Inscrição não encontrada.",
       entry_not_editable: "Esta inscrição não pode mais ser alterada.",
       invalid_costume_title: "O título deve ter até 100 caracteres.",
@@ -86,9 +86,6 @@ export async function POST(request: Request) {
     if (!body || !validGuestEventId(body.eventId)) {
       return errorResponse("Evento inválido.", 400);
     }
-    const categoryId = parseObjectId(body.categoryId);
-    if (!categoryId) return errorResponse("Categoria inválida.", 400);
-
     const requestedType = body.entryType ?? "individual";
     if (
       requestedType !== "individual" &&
@@ -98,6 +95,13 @@ export async function POST(request: Request) {
       return errorResponse("Tipo de inscrição inválido.", 400);
     }
     entryType = requestedType;
+    const categoryId =
+      body.categoryId === undefined
+        ? undefined
+        : parseObjectId(body.categoryId);
+    if (body.categoryId !== undefined && !categoryId) {
+      return errorResponse("Categoria inválida.", 400);
+    }
 
     const entryName =
       entryType === "junior"
@@ -136,7 +140,7 @@ export async function POST(request: Request) {
       entryType === "group"
         ? await createGroupContestantEntry(client, db, {
             eventId: new ObjectId(event._id),
-            categoryId,
+            ...(categoryId ? { categoryId } : {}),
             ownerRsvpId: new ObjectId(guest.userId),
             groupName: entryName!,
             ...(costumeTitle ? { costumeTitle } : {}),
@@ -145,7 +149,7 @@ export async function POST(request: Request) {
         : entryType === "junior"
           ? await createJuniorContestantEntry(client, db, {
               eventId: new ObjectId(event._id),
-              categoryId,
+              ...(categoryId ? { categoryId } : {}),
               guardianRsvpId: new ObjectId(guest.userId),
               childName: entryName!,
               ...(costumeTitle ? { costumeTitle } : {}),
@@ -153,7 +157,6 @@ export async function POST(request: Request) {
             })
           : await createIndividualContestantEntry(client, db, {
               eventId: new ObjectId(event._id),
-              categoryId,
               rsvpId: new ObjectId(guest.userId),
               displayName: guest.fullName,
               ...(costumeTitle ? { costumeTitle } : {}),

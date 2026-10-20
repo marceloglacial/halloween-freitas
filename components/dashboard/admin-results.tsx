@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const TALLY_REFRESH_INTERVAL_MS = 10_000;
 
 type AdminTally = {
   eventId: string;
@@ -103,6 +105,7 @@ export default function AdminResults({
   refreshKey?: number;
 }) {
   const [tally, setTally] = useState<AdminTally | null>(null);
+  const tallyRef = useRef<AdminTally | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -128,6 +131,7 @@ export default function AdminResults({
     void loadTally(controller.signal)
       .then((data) => {
         if (controller.signal.aborted) return;
+        tallyRef.current = data;
         setTally(data);
         setError(null);
       })
@@ -145,11 +149,32 @@ export default function AdminResults({
     return () => controller.abort();
   }, [loadTally, refreshKey]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    const interval = window.setInterval(() => {
+      if (tallyRef.current?.votingStatus !== "open") return;
+      void loadTally(controller.signal)
+        .then((data) => {
+          if (controller.signal.aborted) return;
+          tallyRef.current = data;
+          setTally(data);
+        })
+        .catch(() => {
+          // Keep the last available tally and retry at the next interval.
+        });
+    }, TALLY_REFRESH_INTERVAL_MS);
+    return () => {
+      controller.abort();
+      window.clearInterval(interval);
+    };
+  }, [loadTally]);
+
   function refreshTally() {
     setLoading(true);
     setError(null);
     void loadTally()
       .then((data) => {
+        tallyRef.current = data;
         setTally(data);
       })
       .catch((cause: unknown) => {

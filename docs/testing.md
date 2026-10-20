@@ -65,8 +65,9 @@ cross-edition isolation cases where they apply.
 
 - Enforce one ballot per verified RSVP, category, round, and edition under
   simultaneous requests.
-- Cover category eligibility, individual self-vote rejection, guardian voting
-  for a child, and creator voting for a couple/group entry.
+- Cover category eligibility, individual entries in every `all` category,
+  individual self-voting, guardian voting for a child, and creator voting for a
+  couple/group entry.
 - Race first voting opening against new RSVP and contestant requests; only
   operations ordered before the cutoff may succeed. Race close/reopen and ballot
   submission and assert no duplicate or lost ballot.

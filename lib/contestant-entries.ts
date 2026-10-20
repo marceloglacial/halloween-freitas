@@ -280,7 +280,10 @@ export async function getVotingCandidatesForCategory(
   if (allowedCandidateIds?.length === 0) return [];
   const entryQuery: Filter<ContestantEntryDocument> = {
     eventId: eventObjectId,
-    categoryId: categoryObjectId,
+    $or: [
+      { categoryId: categoryObjectId },
+      { entryType: "individual" },
+    ],
     status: "locked",
     ...(allowedCandidateIds ? { _id: { $in: allowedCandidateIds } } : {}),
   };
@@ -292,6 +295,9 @@ export async function getVotingCandidatesForCategory(
   const categoryEligibility = categoryDocument.eligibility ?? "all";
   const eligibilityByCategory = new Map([
     [categoryObjectId.toString(), categoryEligibility],
+    ...entries
+      .filter((entry) => entry.entryType === "individual")
+      .map((entry) => [entry.categoryId.toString(), "all" as const] as const),
   ]);
 
   return entries
@@ -299,7 +305,7 @@ export async function getVotingCandidatesForCategory(
       (entry) =>
         entry.status === "locked" &&
         isCompleteContestantEntry(entry, eligibilityByCategory) &&
-        entryCanVoteForCategory(entry, { ...category, eventId }, voterObjectId),
+        entryCanVoteForCategory(entry, { ...category, eventId }),
     )
     .map((entry) => {
       const serialized = serializePublicContestantEntry(entry);
@@ -344,8 +350,11 @@ export async function getContestantEntryForVote(
     .findOne({
       _id: entryObjectId,
       eventId: eventObjectId,
-      categoryId: categoryObjectId,
       status: "locked",
+      $or: [
+        { categoryId: categoryObjectId },
+        { entryType: "individual" },
+      ],
     });
   if (!entry) return null;
   const categoryDocument = await db
@@ -358,10 +367,13 @@ export async function getContestantEntryForVote(
   if (!categoryDocument) return null;
   const eligibilityByCategory = new Map([
     [categoryObjectId.toString(), categoryDocument.eligibility ?? "all"],
+    ...(entry.entryType === "individual"
+      ? [[entry.categoryId.toString(), "all" as const] as const]
+      : []),
   ]);
   if (
     !isCompleteContestantEntry(entry, eligibilityByCategory) ||
-    !entryCanVoteForCategory(entry, { ...category, eventId }, voterObjectId)
+    !entryCanVoteForCategory(entry, { ...category, eventId })
   ) {
     return null;
   }

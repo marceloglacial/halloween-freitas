@@ -78,6 +78,7 @@ export default function EventLifecycle({
   initialCategories,
   initialNow,
   initialRsvpOpen,
+  initialContestEntryState,
   preEventContent,
   postEventContent,
   heroContent,
@@ -87,6 +88,7 @@ export default function EventLifecycle({
   initialCategories: Category[];
   initialNow: string;
   initialRsvpOpen: boolean;
+  initialContestEntryState: ContestEntryState;
   preEventContent: ReactNode;
   postEventContent: ReactNode;
   heroContent: ReactNode;
@@ -95,6 +97,7 @@ export default function EventLifecycle({
   const router = useRouter();
   const currentEventKey = useRef(initialEvent?._id ?? null);
   const currentRsvpOpen = useRef(initialRsvpOpen);
+  const currentContestEntryState = useRef(initialContestEntryState);
   const [event, setEvent] = useState(initialEvent);
   const [categories, setCategories] = useState(initialCategories);
   const [observedAt, setObservedAt] = useState(() => new Date(initialNow));
@@ -114,11 +117,13 @@ export default function EventLifecycle({
             setCategories([]);
             const eventChanged = currentEventKey.current !== null;
             const availabilityChanged = currentRsvpOpen.current;
+            const entryStateChanged = currentContestEntryState.current !== "closed";
             currentRsvpOpen.current = false;
+            currentContestEntryState.current = "closed";
             if (eventChanged) {
               currentEventKey.current = null;
             }
-            if (eventChanged || availabilityChanged) router.refresh();
+            if (eventChanged || availabilityChanged || entryStateChanged) router.refresh();
           }
           return;
         }
@@ -126,6 +131,7 @@ export default function EventLifecycle({
         const currentEvent = (await response.json()) as HalloweenEvent & {
           phase: EventPhase;
           registrationState: RegistrationState;
+          contestEntryState: ContestEntryState;
           categories: Category[];
         };
         if (active) {
@@ -134,11 +140,14 @@ export default function EventLifecycle({
           const eventChanged = currentEventKey.current !== currentEvent._id;
           const rsvpOpen = currentEvent.registrationState === "open";
           const availabilityChanged = currentRsvpOpen.current !== rsvpOpen;
+          const entryStateChanged =
+            currentContestEntryState.current !== currentEvent.contestEntryState;
           currentRsvpOpen.current = rsvpOpen;
+          currentContestEntryState.current = currentEvent.contestEntryState;
           if (eventChanged) {
             currentEventKey.current = currentEvent._id;
           }
-          if (eventChanged || availabilityChanged) router.refresh();
+          if (eventChanged || availabilityChanged || entryStateChanged) router.refresh();
         }
       } catch {
         // Keep the last valid state and retry on the next interval.
@@ -156,6 +165,38 @@ export default function EventLifecycle({
   }, [router]);
 
   const state = getHomeEventState(event, observedAt);
+  if (state === "voting_open") {
+    return (
+      <>
+        {heroContent}
+        <VotingPanel state="voting_open" />
+        {footerContent}
+      </>
+    );
+  }
+
+  if (state === "voting_ended") {
+    return (
+      <>
+        {heroContent}
+        {footerContent}
+      </>
+    );
+  }
+
+  if (
+    event?.status === "active" &&
+    event.contestEntryStatus === "closed" &&
+    event.votingStatus === "not_started"
+  ) {
+    return (
+      <>
+        {heroContent}
+        {footerContent}
+      </>
+    );
+  }
+
   const eventContent = (
     <HomeCategoriesProvider categories={categories}>
       {preEventContent}
@@ -197,11 +238,7 @@ export default function EventLifecycle({
         {footerContent}
       </>
     );
-  if (
-    state === "voting_soon" ||
-    state === "voting_open" ||
-    state === "voting_ended"
-  ) {
+  if (state === "voting_soon") {
     return (
       <>
         {heroContent}

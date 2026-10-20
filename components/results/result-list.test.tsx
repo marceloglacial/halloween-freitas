@@ -51,7 +51,7 @@ describe("public results ranking", () => {
     expect(html).toContain('aria-label="3º lugar: Caio Freitas"');
     expect(html).toContain('aria-label="Ampliar foto de Ana Freitas"');
     expect(html).toContain("ana-photo");
-    expect(html).toContain("halloween-freitas/apple-icon_fqkaye");
+    expect(html).toContain("/apple-icon.png");
     expect(html).toContain("4 votos");
     expect(html).toContain("2 votos");
     expect(html).toContain("40.00%");

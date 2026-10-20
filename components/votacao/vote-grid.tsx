@@ -13,15 +13,14 @@ export default function VoteGrid({
   const router = useRouter();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [reviewing, setReviewing] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
-    if (reviewing || submitted) stepHeadingRef.current?.focus();
-  }, [reviewing, submitted]);
+    if (submitted) stepHeadingRef.current?.focus();
+  }, [submitted]);
 
   const handleVote = async () => {
     if (!selectedUserId || loading) return;
@@ -93,59 +92,6 @@ export default function VoteGrid({
     );
   }
 
-  if (reviewing && selectedUserId) {
-    const selectedUser = users.find((user) => user._id === selectedUserId);
-    if (selectedUser) {
-      return (
-        <section
-          aria-labelledby="vote-review-heading"
-          className="mx-auto max-w-xl rounded-2xl border border-orange-400/60 bg-zinc-900 p-6 sm:p-8"
-        >
-          <h2
-            ref={stepHeadingRef}
-            id="vote-review-heading"
-            tabIndex={-1}
-            className="text-2xl font-semibold"
-          >
-            Confira sua escolha
-          </h2>
-          <p className="mt-2 text-orange-100">
-            Confirme para registrar seu voto nesta categoria.
-          </p>
-          <div className="mx-auto my-6 max-w-xs">
-            <UserCard user={selectedUser} selected />
-          </div>
-          {errorMessage && (
-            <p role="alert" className="mb-4 text-red-300">
-              {errorMessage}
-            </p>
-          )}
-          <div className="flex flex-col justify-center gap-3 sm:flex-row">
-            <button
-              type="button"
-              className="rounded-xl border border-orange-300 px-5 py-3"
-              onClick={() => {
-                setErrorMessage(null);
-                setReviewing(false);
-              }}
-              disabled={loading}
-            >
-              Alterar escolha
-            </button>
-            <button
-              type="button"
-              className="rounded-xl bg-orange-400 px-5 py-3 font-semibold text-black disabled:opacity-60"
-              onClick={handleVote}
-              disabled={loading}
-            >
-              {loading ? "Registrando voto…" : "Confirmar voto"}
-            </button>
-          </div>
-        </section>
-      );
-    }
-  }
-
   return (
     <div className="relative">
       <p className="mb-4 text-orange-100">
@@ -186,23 +132,14 @@ export default function VoteGrid({
           {errorMessage}
         </p>
       )}
-      <button
-        type="button"
-        className="mt-8 rounded-xl border border-orange-300 px-5 py-3"
-        onClick={() => router.push(`/votacao/categories?eventId=${eventId}`)}
-      >
-        Pular esta categoria
-      </button>
       {selectedUserId && (
         <button
           type="button"
           className="fixed bottom-6 left-1/2 z-50 w-full max-w-xs -translate-x-1/2 rounded-2xl bg-orange-400 px-16 py-3 text-black shadow-lg lg:py-4 lg:text-xl"
-          onClick={() => {
-            setErrorMessage(null);
-            setReviewing(true);
-          }}
+          onClick={() => void handleVote()}
+          disabled={loading}
         >
-          Revisar escolha
+          {loading ? "Registrando voto…" : "Votar nesta categoria"}
         </button>
       )}
     </div>

@@ -191,7 +191,7 @@ describe("contestant entry readiness and freeze", () => {
     );
   });
 
-  it("allows guardian and group-owner votes but blocks individual self-votes", () => {
+  it("allows voters to vote for their own individual, child, and group entries", () => {
     const category = {
       _id: categoryId.toString(),
       eventId: eventId.toString(),
@@ -201,14 +201,12 @@ describe("contestant entry readiness and freeze", () => {
       entryCanVoteForCategory(
         readyEntry({ status: "locked" }),
         category,
-        ownerRsvpId,
       ),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       entryCanVoteForCategory(
         readyEntry({ status: "locked" }),
         category,
-        otherRsvpId,
       ),
     ).toBe(true);
     expect(
@@ -220,14 +218,12 @@ describe("contestant entry readiness and freeze", () => {
           guardianRsvpId: ownerRsvpId,
         }),
         category,
-        ownerRsvpId,
       ),
     ).toBe(true);
     expect(
       entryCanVoteForCategory(
         readyEntry({ status: "locked", entryType: "group" }),
         category,
-        ownerRsvpId,
       ),
     ).toBe(true);
   });

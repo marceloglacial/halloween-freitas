@@ -109,6 +109,62 @@ export async function saveContestPhotoForGuest(
   return previousPhoto;
 }
 
+export async function removeContestPhotoForGuest(
+  client: MongoClient,
+  db: Db,
+  input: { eventId: ObjectId; entryId: ObjectId; rsvpId: ObjectId; now: Date },
+) {
+  const session = client.startSession();
+  let removedPhoto: ContestPhotoAsset | undefined;
+  try {
+    await session.withTransaction(async () => {
+      await claimContestEntryWrite(db, input.eventId, session, input.now);
+      const collection = db.collection("contestants");
+      const ownership = {
+        _id: input.entryId,
+        eventId: input.eventId,
+        $or: [{ ownerRsvpId: input.rsvpId }, { guardianRsvpId: input.rsvpId }],
+      };
+      const entry = await collection.findOne(ownership, {
+        projection: { _id: 1, status: 1, contestPhoto: 1 },
+        session,
+      });
+      if (!entry) throw new ContestPhotoWriteError(404, "entry_not_found");
+      if (entry.status === "locked" || entry.status === "withdrawn") {
+        throw new ContestPhotoWriteError(409, "entry_not_editable");
+      }
+      removedPhoto = entry.contestPhoto as ContestPhotoAsset | undefined;
+      if (!removedPhoto?.assetId || !removedPhoto.publicId) {
+        throw new ContestPhotoWriteError(404, "photo_not_found");
+      }
+      const result = await collection.updateOne(
+        { ...ownership, "contestPhoto.assetId": removedPhoto.assetId },
+        {
+          $unset: { contestPhoto: "" },
+          $set: { status: "draft", updatedAt: input.now },
+        },
+        { session },
+      );
+      if (!result.matchedCount) {
+        throw new ContestPhotoWriteError(409, "photo_changed_retry");
+      }
+      await enqueueContestPhotoCleanup(
+        db,
+        {
+          eventId: input.eventId,
+          assetId: removedPhoto.assetId,
+          publicId: removedPhoto.publicId,
+          now: input.now,
+        },
+        session,
+      );
+    });
+  } finally {
+    await session.endSession();
+  }
+  return removedPhoto;
+}
+
 export async function saveContestPhotoForAdmin(
   client: MongoClient,
   db: Db,

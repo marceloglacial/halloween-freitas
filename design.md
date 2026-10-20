@@ -110,24 +110,29 @@ they are not currently implemented.
 
 ## Screens and journeys
 
-| Screen                     | Purpose and layout                                                                     | Important states                                                                       |
-| -------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `/`                        | Hero, countdown, party information, program, registration, footer                      | Pre-event, registration upcoming/open/closed, voting soon/open/ended, post-event       |
-| `/votacao`                 | Verified Google/email-code access for registered guests                                | Entering, rejected email or connection error, voting unavailable                       |
-| `/votacao/categories`      | Category tiles with guest greeting                                                     | Available category, already voted, guest session unavailable                           |
-| `/votacao/categories/[id]` | Candidate search, selectable photo grid, floating vote action                          | No matches, selected candidate, submitting, vote success or failure                    |
-| `/meu-halloween?eventId=…` | Linked guest portal for one selected edition                                           | RSVP/profile, owned entries/statuses, photo upload/replacement and voting state        |
-| `/perfil?eventId=...`      | Selected-edition RSVP confirmation and editable guest name                             | Loading, denied/unlinked, validation, saving, saved, archived edition                  |
-| `/resultados`              | Published category tiles and event navigation                                          | Published results, no published results                                                |
-| `/resultados/[id]`         | Prominent first place and remaining ranked participants                                | Vote counts and percentages, category with no votes                                    |
-| `/fotos`                   | Contestant photo gallery with event navigation, search, and viewer                     | No photos or matches, selected photo                                                   |
-| `/album-da-festa`          | Published party-photo album with annual archive selection                              | Waiting for publication, empty published album, selected photo                         |
-| `/dashboard`               | Admin overview with event KPIs, readiness checklist, milestone, and valid next actions | No edition, selected active or archived edition, lifecycle phases, metrics unavailable |
-| `/dashboard/convidados`    | Selected-edition guest management                                                      | Guest list and editing, archived-edition inspection                                    |
-| `/dashboard/concursos`     | Selected-edition contest categories, entries, and enrollment status                    | Loading, empty, error, enrollment open/closed/frozen, archived edition                 |
-| `/dashboard/votacao`       | Voting controls and results publication                                                | Manual voting state, publication, archived-edition inspection                          |
-| `/dashboard/galeria`       | Selected-edition party album management                                                | Album publication and photos, separate from contestant images                          |
-| `/dashboard/configuracoes` | Event schedule, settings, category settings, annual edition creation                   | Selected edition, validation, active or archived state                                 |
+| Screen                          | Purpose and layout                                                                     | Important states                                                                                   |
+| ------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `/`                             | Hero, countdown, party information, program, registration, party-photo access, footer  | Pre-event, registration upcoming/open/closed, voting soon/open/ended, post-event                   |
+| `/votacao`                      | Verified Google/email-code access for registered guests                                | Entering, rejected email or connection error, voting unavailable                                   |
+| `/votacao/categories`           | Category tiles with guest greeting                                                     | Available category, already voted, guest session unavailable                                       |
+| `/votacao/categories/[id]`      | Candidate search, selectable photo grid, floating vote action                          | No matches, selected candidate, submitting, vote success or failure                                |
+| `/meu-halloween?eventId=…`      | Edition-specific guest hub linking to the participant flows and voting                 | RSVP-linked access, flow status, voting state                                                      |
+| `/meu-halloween/individual`     | Individual costume registration and its contest photo                                  | Create entry, staged title/photo save, local photo preview, photo removal, entry closed            |
+| `/meu-halloween/criancas`       | Guardian-managed child costume registrations and contest photos                        | Multiple children, staged title/photo save, preview, guardian consent, photo removal, entry closed |
+| `/meu-halloween/grupo`          | Couple/group costume registration and its contest photo                                | Create entry, editable group name, photo preview/save/removal, category availability, entry closed |
+| `/meu-halloween/fotos-da-festa` | Separate guest uploads for the party album                                             | Waiting for event start, multi-photo upload, private uploads                                       |
+| `/meu-halloween/votacao`        | Edition voting hub with category links                                                 | Hidden from the guest hub until the event starts and voting opens                                  |
+| `/perfil?eventId=...`           | Selected-edition RSVP confirmation and editable guest name                             | Loading, denied/unlinked, validation, saving, saved, archived edition                              |
+| `/resultados`                   | Published category tiles and event navigation                                          | Published results, no published results                                                            |
+| `/resultados/[id]`              | Prominent first place and remaining ranked participants                                | Vote counts and percentages, category with no votes                                                |
+| `/fotos`                        | Contestant photo gallery with event navigation, search, and viewer                     | No photos or matches, selected photo                                                               |
+| `/album-da-festa`               | Published party-photo album with annual archive selection                              | Waiting for publication, empty published album, selected photo                                     |
+| `/dashboard`                    | Admin overview with event KPIs, readiness checklist, milestone, and valid next actions | No edition, selected active or archived edition, lifecycle phases, metrics unavailable             |
+| `/dashboard/convidados`         | Selected-edition guest management                                                      | Guest list and editing, archived-edition inspection                                                |
+| `/dashboard/concursos`          | Selected-edition contest categories, entries, and enrollment status                    | Loading, empty, error, enrollment open/closed/frozen, archived edition                             |
+| `/dashboard/votacao`            | Voting controls and results publication                                                | Manual voting state, publication, archived-edition inspection                                      |
+| `/dashboard/galeria`            | Selected-edition party album management                                                | Album publication and photos, separate from contestant images                                      |
+| `/dashboard/configuracoes`      | Event schedule, settings, category settings, annual edition creation                   | Selected edition, validation, active or archived state                                             |
 
 ### Homepage and registration
 
@@ -139,12 +144,16 @@ cutoff; otherwise show the relevant opening or closed state. RSVP availability
 remains independent of whether contestant entry is open. Preserve the existing
 section layout while communicating these states.
 
+After `eventStartsAt`, show a login and party-photo upload button beside the
+hero's RSVP call to action. Keep it available even after RSVP closes. Link to
+the selected edition's guest portal so sign-in returns guests to party-photo
+uploads; hide the button before the party starts. Stack the actions on narrow
+screens and align them side by side on wider screens.
+
 Registration asks for full name and email and explains that each adult needs a
 separate email. During submission, disable the inputs and action and show
 “Enviando...”. Success resets the form and leaves a persistent “Presença confirmada!” panel; duplicate registration,
 server rejection, and connection failure produce error toasts.
-The selected-edition registration section also links guests to their profile;
-the page requires a verified sign-in linked to an RSVP for that edition.
 
 At the event start, keep event information, the program, and the RSVP status
 visible so the persistent navigation's section links remain useful. Follow them
@@ -200,17 +209,17 @@ administrators; the server links each guest to their existing event registration
 the event's open state and enforce voting integrity on the server as described
 in the architecture guide.
 
-### Meu Halloween guest portal
+### Meu Halloween guest portal and participant flows
 
-The portal requires a verified Clerk session linked to an RSVP for the selected
-edition. Show that edition's event and RSVP status, a link to the editable RSVP
-profile, and only contestant entries owned by or guarded by that RSVP. Keep
-entry type and status readable in Portuguese; show a clear empty state when the
-guest has no entries. Contestant status remains private to its owner. Keep
-category voting available to every linked attendee, whether or not they have a
-contestant entry. Enable category links and the “Ir para votação” action only
-while that edition's voting is open, and mark completed categories as
-unavailable.
+The portal and each child flow require a verified Clerk session linked to an
+RSVP for the selected edition. The portal acts as a simple hub with separate
+links for individual, child, and group costume registration and party-photo
+uploads. Each flow has its own page, shows only entries owned by or guarded by
+that RSVP, and keeps a contestant's photo upload beside its registration.
+Contestant status remains private to its owner. Show the voting page link in
+the hub only after the event starts and voting opens. The separate voting page
+is available to every linked attendee, whether or not they have a contestant
+entry, and marks completed categories as unavailable.
 
 From the authenticated voting categories page, guests can open their selected
 edition's Meu Halloween portal to view entries, RSVP/event status, and profile
@@ -263,17 +272,19 @@ enlarged-photo viewer. Clearly identify this as party photography and avoid
 reusing contestant names, eligibility, or photo controls. Keep published
 editions navigable while an unpublished edition shows only its waiting state.
 
-In Meu Halloween, show the party-photo upload area after the edition's event
-start. Use a multiple-file picker, local previews, per-file progress, and clear
-upload errors. Explain that photos stay private until the organization
+On the separate party-photo page, show the upload area after the edition's
+event start. Use a multiple-file picker, local previews, per-file progress, and
+clear upload errors. Explain that photos stay private until the organization
 publishes the album. Show the guest only their own uploaded photos before
-publication; provide an opening-time message before the party starts. Keep this
-upload flow separate from contestant photo controls.
+publication; provide an opening-time message before the party starts. Explain
+that these are general party photos, separate from the costume photos submitted
+to the contest.
 
 ### Administration
 
-The public feature navigation is hidden throughout `/dashboard`; the admin
-dashboard uses its own desktop sidebar and native modal drawer on mobile.
+The public feature navigation is hidden throughout `/dashboard` and on
+`/meu-halloween`; the admin dashboard uses its own desktop sidebar and native
+modal drawer on mobile.
 Its main bar shows the current section and a right-aligned edition dropdown
 labeled “Selecionar edição”, followed by a “Ver site” link to the public home;
 choosing a year opens that edition's overview. On mobile, keep the edition

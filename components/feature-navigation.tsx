@@ -284,6 +284,24 @@ function PublicFeatureNavigation({ clerkEnabled }: { clerkEnabled: boolean }) {
       : "Não há edição disponível no momento."
     : "Carregando navegação da edição.";
 
+  const votingIsOpen =
+    navigation.event?.status === "active" &&
+    navigation.event.votingStatus === "open";
+  const votingHasEnded =
+    navigation.event?.status === "active" &&
+    navigation.event.votingStatus === "ended";
+  const entriesAreClosed =
+    navigation.event?.status === "active" &&
+    navigation.event.contestEntryStatus === "closed" &&
+    navigation.event.votingStatus === "not_started";
+
+  if (
+    pathname === "/" &&
+    (votingIsOpen || votingHasEnded || entriesAreClosed)
+  ) {
+    return null;
+  }
+
   return (
     <>
       <header
@@ -419,7 +437,14 @@ export default function FeatureNavigation({
   clerkEnabled: boolean;
 }) {
   const pathname = usePathname();
-  if (pathname.startsWith("/dashboard")) return null;
+  if (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/meu-halloween") ||
+    pathname.startsWith("/resultados") ||
+    pathname.startsWith("/votacao")
+  ) {
+    return null;
+  }
 
   return <PublicFeatureNavigation clerkEnabled={clerkEnabled} />;
 }

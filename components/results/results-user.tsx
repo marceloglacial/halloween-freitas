@@ -11,7 +11,7 @@ interface ResultsUserProps {
 }
 export const ResultsUser: FC<ResultsUserProps> = (props): JSX.Element => {
   const [modalOpen, setModalOpen] = useState(false);
-  const imageSrc = props.user.imageUrl || "halloween-freitas/apple-icon_fqkaye";
+  const imageSrc = props.user.imageUrl || "/apple-icon.png";
   const imageAlt = `Foto de ${props.user.fullName}`;
   const percentage =
     props.totalVotes > 0

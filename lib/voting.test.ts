@@ -4,10 +4,10 @@ import { isEligibleCandidate } from "@/lib/voting";
 describe("candidate eligibility", () => {
   const candidate = { _id: "candidate", group: false, junior: true };
 
-  it("excludes the voter from every category", () => {
+  it("allows the voter to choose their own contestant entry", () => {
     expect(
-      isEligibleCandidate({ eligibility: "all" }, candidate, "candidate"),
-    ).toBe(false);
+      isEligibleCandidate({ eligibility: "all" }, candidate),
+    ).toBe(true);
   });
 
   it("enforces explicit group and junior flags", () => {

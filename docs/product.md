@@ -34,6 +34,11 @@ an adult's individual entry, a guardian-owned child entry, or a creator-owned
 couple/group entry competing in that edition. One adult may own at most one
 individual and one couple/group entry per edition; a guardian may create
 multiple child entries. Children do not need an RSVP or Clerk account.
+An individual entry does not select a category and is eligible in every
+category open to all contestant types. Group-only and child-only categories
+remain restricted to their matching entry types and are assigned by the
+server when the entry is created; guests do not choose a category for those
+entry types.
 Contestant photos belong to entries. The party photo album stores guest uploads
 and is separate from contestant entries, contest photos, and voting candidates.
 
@@ -46,9 +51,18 @@ and is separate from contestant entries, contest photos, and voting candidates.
 - Let an adult confirm attendance through an anonymous RSVP using their full
   name and email; the RSVP does not itself create a contestant entry or a
   Clerk account.
+- After `eventStartsAt`, show a homepage action beside the RSVP call to action
+  that takes guests through login to the selected edition's party-photo upload
+  area, even after RSVP closes.
 - Let a verified guest view and update their own RSVP name for the selected
   edition. Keep email and account identifiers private, and keep a frozen
   contestant display name independent from later RSVP profile edits.
+- Let guests stage an optional costume title and photo for individual and child
+  entries, preview a selected photo before upload, and save both with one
+  explicit action. A group entry's name is its costume name, and its creator can
+  edit that name while entries are open. Require consent when uploading a new
+  photo (guardian consent for a child), and allow guests to remove their saved
+  photo while contestant entries are open.
 - Show RSVP availability from the edition's scheduled `registrationStartsAt`
   until the first opening of voting. RSVP availability is independent of whether
   contestant entries are open.
@@ -62,6 +76,9 @@ and is separate from contestant entries, contest photos, and voting candidates.
 - After `eventStartsAt` and contestant freeze, administrators may open voting.
   The first opening permanently cuts off new RSVPs and contestant additions or
   deletions for that edition.
+- Allow a guest to vote for their own individual entry, their group entry, and
+  child entries for which they are the guardian, subject to normal category
+  eligibility and one-ballot-per-category rules.
 - Let administrators manage event categories before voting first opens; lock
   category configuration once voting begins.
 - Let enrolled guests upload multiple party photos after `eventStartsAt`, even

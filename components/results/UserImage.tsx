@@ -1,4 +1,3 @@
-import { CldImage } from "next-cloudinary";
 import React from "react";
 
 interface UserImageProps {
@@ -22,11 +21,13 @@ const UserImage: React.FC<UserImageProps> = ({
     aria-label={`Ampliar foto de ${name}`}
     className="shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300"
   >
-    <CldImage
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img
       src={imageSrc}
       width={900}
       height={600}
-      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+      loading="lazy"
+      decoding="async"
       alt={alt}
       className={
         position === 1

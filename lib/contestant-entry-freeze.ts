@@ -128,12 +128,18 @@ export async function reopenContestantEntries(
 export function entryCanVoteForCategory(
   entry: ContestantEntryDocument,
   category: Pick<Category, "_id" | "eventId" | "eligibility">,
-  voterRsvpId: ObjectId,
 ) {
   if (
     entry.status !== "locked" ||
-    !entry.categoryId.equals(new ObjectId(category._id)) ||
+    (entry.entryType !== "individual" &&
+      !entry.categoryId.equals(new ObjectId(category._id))) ||
     entry.eventId.toString() !== category.eventId
+  ) {
+    return false;
+  }
+  if (
+    entry.entryType === "individual" &&
+    (category.eligibility ?? "all") !== "all"
   ) {
     return false;
   }
@@ -141,12 +147,6 @@ export function entryCanVoteForCategory(
     return false;
   }
   if (category.eligibility === "junior" && entry.entryType !== "junior") {
-    return false;
-  }
-  if (
-    entry.entryType === "individual" &&
-    sameId(entry.ownerRsvpId, voterRsvpId)
-  ) {
     return false;
   }
   return true;

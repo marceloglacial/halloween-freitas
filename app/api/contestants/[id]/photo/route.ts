@@ -20,6 +20,7 @@ import {
 import {
   ContestPhotoWriteError,
   getContestantEntryForPhoto,
+  removeContestPhotoForGuest,
   saveContestPhotoForGuest,
 } from "@/lib/contestant-photo-writes";
 import { getContestEntryState } from "@/util/contest-entry-state";
@@ -42,6 +43,7 @@ function failure(error: unknown) {
       entry_not_found: "Inscrição não encontrada.",
       entry_not_editable: "Esta inscrição não pode mais ser alterada.",
       photo_changed_retry: "A foto mudou. Atualize a página e tente novamente.",
+      photo_not_found: "Esta inscrição ainda não tem uma foto para excluir.",
     };
     return Response.json(
       {
@@ -56,6 +58,64 @@ function failure(error: unknown) {
   }
   logServerError("Contest photo upload failed", error);
   return errorResponse("Não foi possível salvar a foto. Tente novamente.", 500);
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const eventId = new URL(request.url).searchParams.get("eventId");
+    if (!validGuestEventId(eventId))
+      return errorResponse("Evento inválido", 400);
+    const { id } = await params;
+    if (!ObjectId.isValid(id)) return errorResponse("Inscrição inválida", 400);
+    const [event, guest] = await Promise.all([
+      getEventById(eventId),
+      getGuestRegistration(eventId),
+    ]);
+    if (!event) return errorResponse("Evento não encontrado", 404);
+    const now = new Date();
+    if (getContestEntryState(event, now) !== "open") {
+      return errorResponse("As inscrições do concurso estão fechadas.", 409);
+    }
+    const eventObjectId = new ObjectId(eventId);
+    const db = await getDb();
+    const removedPhoto = await removeContestPhotoForGuest(
+      await getMongoClient(),
+      db,
+      {
+        eventId: eventObjectId,
+        entryId: new ObjectId(id),
+        rsvpId: new ObjectId(guest.userId),
+        now,
+      },
+    );
+    if (!removedPhoto) {
+      throw new ContestPhotoWriteError(409, "photo_changed_retry");
+    }
+    await retryContestPhotoCleanup(db, eventObjectId, now);
+    const cleanupPending = await db
+      .collection<{ _id: string; eventId: ObjectId }>("contest-photo-cleanups")
+      .findOne({ _id: removedPhoto.assetId, eventId: eventObjectId });
+    if (cleanupPending) {
+      return Response.json(
+        {
+          removed: true,
+          cleanupPending: true,
+          error:
+            "A foto saiu da inscrição, mas o Cloudinary não confirmou a exclusão. A limpeza foi registrada para uma nova tentativa.",
+        },
+        { status: 503, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    return Response.json(
+      { removed: true },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    return failure(error);
+  }
 }
 
 export async function PUT(
