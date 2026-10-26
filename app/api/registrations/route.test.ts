@@ -112,7 +112,11 @@ describe("public RSVP API", () => {
       status: "active",
       votingStatus: "not_started",
     });
-    expect(eventFilter.$or).toEqual([
+    expect(eventFilter.$and[0].$or).toEqual([
+      { contestEntryStatus: "open" },
+      { contestEntryStatus: { $exists: false } },
+    ]);
+    expect(eventFilter.$and[1].$or).toEqual([
       { registrationStartsAt: { $lte: expect.any(Date) } },
       {
         registrationStartsAt: { $exists: false },
@@ -127,14 +131,13 @@ describe("public RSVP API", () => {
         fullName: "Guest User",
         email: "guest@example.com",
         normalizedEmail: "guest@example.com",
-        contestant: false,
       }),
       { session },
     );
     expect(mocks.endSession).toHaveBeenCalledOnce();
   });
 
-  it("allows late RSVP while contestant entry is closed", async () => {
+  it("rejects RSVP while the unified enrollment window is closed", async () => {
     mocks.getCurrentEvent.mockResolvedValue({
       _id: eventId,
       status: "active",
@@ -143,13 +146,11 @@ describe("public RSVP API", () => {
       registrationStartsAt: "2026-09-01T04:00:00.000Z",
     });
 
+    mocks.getRegistrationState.mockReturnValue("closed");
     const response = await POST(registrationRequest());
 
-    expect(response.status).toBe(201);
-    expect(mocks.insertUser).toHaveBeenCalledWith(
-      expect.objectContaining({ contestant: false }),
-      { session },
-    );
+    expect(response.status).toBe(403);
+    expect(mocks.insertUser).not.toHaveBeenCalled();
   });
 
   it("does not create an RSVP when first voting opening wins the cutoff race", async () => {

@@ -28,7 +28,7 @@ describe("contest entry state", () => {
     ).toBe("open");
   });
 
-  it("closes independently of RSVP state and cannot reopen after voting starts", () => {
+  it("closes the shared enrollment window and cannot reopen after voting starts", () => {
     expect(
       getContestEntryState(
         { ...event, contestEntryStatus: "closed" },

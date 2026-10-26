@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 export default function ContestantEntryEditor({
@@ -20,6 +21,7 @@ export default function ContestantEntryEditor({
   initialPhotoUrl: string | null;
   enabled: boolean;
 }) {
+  const router = useRouter();
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [savedDisplayName, setSavedDisplayName] = useState(initialDisplayName);
   const [title, setTitle] = useState(initialTitle ?? "");
@@ -128,6 +130,7 @@ export default function ContestantEntryEditor({
       } = await response.json();
       if (result.removed) {
         setPhotoUrl(null);
+        if (entryType === "individual") router.refresh();
         if (result.cleanupPending) {
           setMessage("Foto removida da inscrição.");
           setError(

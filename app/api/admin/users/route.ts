@@ -16,6 +16,8 @@ import {
   logServerError,
 } from "@/lib/http";
 import { getAdminUsersForEvent } from "@/lib/users";
+import type { ContestantEntryDocument } from "@/lib/contestant-entries";
+import { enqueueContestPhotoCleanup } from "@/lib/contestant-photo-cleanup";
 
 class DuplicateGuestEmailError extends Error {}
 
@@ -71,10 +73,6 @@ export async function POST(request: Request) {
             fullName,
             email: normalizedEmail,
             normalizedEmail,
-            imageUrl: typeof body.imageUrl === "string" ? body.imageUrl : null,
-            contestant: true,
-            contestantName: fullName,
-            group: Boolean(body.group),
             createdAt: now,
           },
           { session },
@@ -84,9 +82,6 @@ export async function POST(request: Request) {
           eventId: event._id,
           fullName,
           email: normalizedEmail,
-          imageUrl: typeof body.imageUrl === "string" ? body.imageUrl : null,
-          contestant: true,
-          group: Boolean(body.group),
         };
       });
       if (!created) throw new Error("USER_NOT_CREATED");
@@ -133,9 +128,7 @@ export async function PUT(request: Request) {
       fullName,
       email: normalizedEmail,
       normalizedEmail,
-      imageUrl: typeof body.imageUrl === "string" ? body.imageUrl : null,
       contestantName: fullName,
-      group: Boolean(body.group),
       updatedAt: new Date(),
     };
     const eventObjectId = new ObjectId(event._id);
@@ -164,9 +157,7 @@ export async function PUT(request: Request) {
           "fullName",
           "email",
           "normalizedEmail",
-          "imageUrl",
           "contestantName",
-          "group",
         ] as const;
         const changes = correctionFields.filter(
           (field) => existing[field] !== update[field],
@@ -229,14 +220,47 @@ export async function DELETE(request: Request) {
     try {
       outcome = await session.withTransaction(async () => {
         await claimContestEntryWrite(db, eventObjectId, session, new Date());
+        const contestantEntries = await db
+          .collection<ContestantEntryDocument>("contestants")
+          .find(
+            { eventId: eventObjectId, ownerRsvpId: userId },
+            { projection: { _id: 1, contestPhoto: 1 }, session },
+          )
+          .toArray();
+        const candidateIds = contestantEntries.map((entry) => entry._id);
         const votes = await db.collection("votes").findOne(
           {
             eventId: eventObjectId,
-            $or: [{ voterRsvpId: userId }, { candidateId: userId }],
+            $or: [
+              { voterRsvpId: userId },
+              ...(candidateIds.length
+                ? [{ candidateId: { $in: candidateIds } }]
+                : []),
+            ],
           },
           { session },
         );
         if (votes) return { hasVotes: true as const };
+        for (const entry of contestantEntries) {
+          if (entry.contestPhoto?.assetId && entry.contestPhoto.publicId) {
+            await enqueueContestPhotoCleanup(
+              db,
+              {
+                eventId: eventObjectId,
+                assetId: entry.contestPhoto.assetId,
+                publicId: entry.contestPhoto.publicId,
+                now: new Date(),
+              },
+              session,
+            );
+          }
+        }
+        await db
+          .collection("contestants")
+          .deleteMany(
+            { eventId: eventObjectId, ownerRsvpId: userId },
+            { session },
+          );
         return {
           hasVotes: false as const,
           result: await db

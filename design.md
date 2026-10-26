@@ -117,7 +117,7 @@ they are not currently implemented.
 | `/votacao/categories`           | Category tiles with guest greeting                                                     | Available category, already voted, guest session unavailable                                       |
 | `/votacao/categories/[id]`      | Candidate search, selectable photo grid, floating vote action                          | No matches, selected candidate, submitting, vote success or failure                                |
 | `/meu-halloween?eventId=…`      | Edition-specific guest hub linking to the participant flows and voting                 | RSVP-linked access, flow status, voting state                                                      |
-| `/meu-halloween/individual`     | Individual costume registration and its contest photo                                  | Create entry, staged title/photo save, local photo preview, photo removal, entry closed            |
+| `/meu-halloween/individual`     | RSVP-authorized individual costume participation and its contest photo                 | Title/photo save creates entry, local preview, photo removal, enrollment closed                    |
 | `/meu-halloween/grupo`          | Couple/group costume registration and its contest photo                                | Create entry, editable group name, photo preview/save/removal, category availability, entry closed |
 | `/meu-halloween/fotos-da-festa` | Separate guest uploads for the party album                                             | Waiting for event start, multi-photo upload, private uploads                                       |
 | `/meu-halloween/votacao`        | Edition voting hub with category links                                                 | Hidden from the guest hub until the event starts and voting opens                                  |
@@ -139,9 +139,9 @@ Before the event starts, show event information, the program, and the registrati
 section. The countdown appears when an event start is available and the initial
 homepage state is pre-event. Show the attendance RSVP form when its scheduled
 start has passed and the edition remains before its permanent first-voting
-cutoff; otherwise show the relevant opening or closed state. RSVP availability
-remains independent of whether contestant entry is open. Preserve the existing
-section layout while communicating these states.
+cutoff; otherwise show the relevant opening or closed state. Manual enrollment
+closure applies to both RSVP and contestant entry. Preserve the existing section
+layout while communicating these states.
 
 After `eventStartsAt`, show a login and party-photo upload button beside the
 hero's RSVP call to action. Keep it available even after RSVP closes. Link to

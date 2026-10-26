@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   authorize: vi.fn(),
   getEvents: vi.fn(),
   getEntries: vi.fn(),
+  countRsvps: vi.fn(),
   contests: vi.fn(),
   voting: vi.fn(),
   gallery: vi.fn(),
@@ -17,6 +18,9 @@ vi.mock("@/lib/auth/admin-page", () => ({
 vi.mock("@/lib/events", () => ({ getEvents: mocks.getEvents }));
 vi.mock("@/lib/contestant-entries", () => ({
   getAdminContestantEntriesForEvent: mocks.getEntries,
+}));
+vi.mock("@/lib/users", () => ({
+  countConfirmedRsvpsForEvent: mocks.countRsvps,
 }));
 vi.mock("@/components/dashboard/admin-event-contests", () => ({
   default: mocks.contests,
@@ -78,6 +82,7 @@ describe("admin event feature route data", () => {
     mocks.authorize.mockResolvedValue(true);
     mocks.getEvents.mockResolvedValue([activeEvent, archivedEvent]);
     mocks.getEntries.mockResolvedValue([]);
+    mocks.countRsvps.mockResolvedValue(2);
 
     const contests = await AdminEventFeaturePage({
       searchParams: Promise.resolve({ year: "2025" }),
@@ -91,6 +96,8 @@ describe("admin event feature route data", () => {
     expect(contests.type).toBe(mocks.contests);
     expect(contests.props.event._id).toBe(archivedEvent._id);
     expect(mocks.getEntries).toHaveBeenCalledWith(archivedEvent._id);
+    expect(mocks.countRsvps).toHaveBeenCalledWith(archivedEvent._id);
+    expect(contests.props.confirmedRsvps).toBe(2);
     expect(gallery.type).toBe(mocks.gallery);
     expect(gallery.props.event._id).toBe(activeEvent._id);
   });

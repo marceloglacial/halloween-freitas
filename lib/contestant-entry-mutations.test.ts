@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ObjectId } from "mongodb";
 import {
   createGroupContestantEntry,
-  createIndividualContestantEntry,
+  createIndividualContestantEntryWithPhoto,
   updateIndividualContestantEntryTitle,
 } from "@/lib/contestant-entry-mutations";
 
@@ -70,81 +70,49 @@ function fixture({
 }
 
 describe("individual contestant entry mutations", () => {
-  it("creates a canonical draft from the same-event RSVP and all-eligible category", async () => {
+  it("materializes an RSVP as a ready contestant only with a valid photo", async () => {
     const f = fixture();
+    const photo = {
+      assetId: "asset",
+      publicId: `contest-photos/${eventId.toString()}/photo`,
+      format: "png" as const,
+      bytes: 1024,
+      width: 800,
+      height: 600,
+      uploadedAt: now,
+      consentAt: now,
+      consentByRsvpId: rsvpId.toString(),
+    };
 
-    const created = await createIndividualContestantEntry(f.client, f.db, {
-      eventId,
-      categoryId,
-      rsvpId,
-      displayName: "Ana Freitas",
-      costumeTitle: "Bruxa",
-      now,
-    });
+    const created = await createIndividualContestantEntryWithPhoto(
+      f.client,
+      f.db,
+      {
+        eventId,
+        rsvpId,
+        displayName: "Ana Freitas",
+        costumeTitle: "Bruxa",
+        photo,
+        now,
+      },
+    );
 
     expect(created).toMatchObject({
       eventId,
       categoryId,
       ownerRsvpId: rsvpId,
       entryType: "individual",
-      displayName: "Ana Freitas",
-      costumeTitle: "Bruxa",
-      status: "draft",
-      createdAt: now,
-      updatedAt: now,
+      status: "ready",
+      contestPhoto: photo,
     });
-    expect(f.eventUpdate).toHaveBeenCalledOnce();
-    expect(f.rsvpFind).toHaveBeenCalledWith(
-      { _id: rsvpId, eventId, status: { $ne: "cancelled" } },
-      expect.objectContaining({ session: f.session }),
-    );
-    expect(f.categoryFind).toHaveBeenCalledWith(
-      { eventId },
+    expect(f.categoryFindOne).toHaveBeenCalledWith(
+      {
+        eventId,
+        $or: [{ eligibility: "all" }, { eligibility: { $exists: false } }],
+      },
       expect.objectContaining({ session: f.session }),
     );
     expect(f.insert).toHaveBeenCalledWith(created, { session: f.session });
-    expect(f.session.endSession).toHaveBeenCalledOnce();
-  });
-
-  it("does not create an entry if the event cutoff guard loses the race", async () => {
-    const f = fixture({ eventMatched: 0 });
-
-    await expect(
-      createIndividualContestantEntry(f.client, f.db, {
-        eventId,
-        categoryId,
-        rsvpId,
-        displayName: "Ana Freitas",
-        now,
-      }),
-    ).rejects.toThrow("CONTEST_ENTRY_CLOSED");
-    expect(f.rsvpFind).not.toHaveBeenCalled();
-    expect(f.insert).not.toHaveBeenCalled();
-    expect(f.session.endSession).toHaveBeenCalledOnce();
-  });
-
-  it("does not create an entry for a category outside the edition or individual eligibility", async () => {
-    const missingCategory = fixture({ category: null });
-    await expect(
-      createIndividualContestantEntry(
-        missingCategory.client,
-        missingCategory.db,
-        { eventId, categoryId, rsvpId, displayName: "Ana", now },
-      ),
-    ).rejects.toMatchObject({ status: 400, code: "category_not_available" });
-    expect(missingCategory.insert).not.toHaveBeenCalled();
-
-    const restrictedCategory = fixture({
-      category: { _id: categoryId, eligibility: "group" },
-    });
-    await expect(
-      createIndividualContestantEntry(
-        restrictedCategory.client,
-        restrictedCategory.db,
-        { eventId, categoryId, rsvpId, displayName: "Ana", now },
-      ),
-    ).rejects.toMatchObject({ status: 400, code: "category_not_available" });
-    expect(restrictedCategory.insert).not.toHaveBeenCalled();
   });
 
   it("updates only an owned individual entry title within the selected event", async () => {

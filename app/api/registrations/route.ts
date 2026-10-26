@@ -23,11 +23,21 @@ function registrationWriteFilter(eventId: ObjectId, now: Date) {
     _id: eventId,
     status: "active",
     votingStatus: "not_started",
-    $or: [
-      { registrationStartsAt: { $lte: now } },
+    $and: [
       {
-        registrationStartsAt: { $exists: false },
-        registrationOpensAt: { $lte: now },
+        $or: [
+          { contestEntryStatus: "open" },
+          { contestEntryStatus: { $exists: false } },
+        ],
+      },
+      {
+        $or: [
+          { registrationStartsAt: { $lte: now } },
+          {
+            registrationStartsAt: { $exists: false },
+            registrationOpensAt: { $lte: now },
+          },
+        ],
       },
     ],
   };
@@ -113,9 +123,6 @@ export async function POST(request: Request) {
           fullName,
           email: normalizedEmail,
           normalizedEmail,
-          imageUrl: null,
-          contestant: false,
-          group: false,
           createdAt: now,
         },
         { session },

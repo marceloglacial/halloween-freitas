@@ -61,7 +61,7 @@ export async function saveContestPhotoForGuest(
         ownerRsvpId: input.rsvpId,
       };
       const entry = await collection.findOne(ownership, {
-        projection: { _id: 1, status: 1, contestPhoto: 1 },
+        projection: { _id: 1, status: 1, entryType: 1, contestPhoto: 1 },
         session,
       });
       if (!entry) throw new ContestPhotoWriteError(404, "entry_not_found");
@@ -125,7 +125,7 @@ export async function removeContestPhotoForGuest(
         ownerRsvpId: input.rsvpId,
       };
       const entry = await collection.findOne(ownership, {
-        projection: { _id: 1, status: 1, contestPhoto: 1 },
+        projection: { _id: 1, status: 1, entryType: 1, contestPhoto: 1 },
         session,
       });
       if (!entry) throw new ContestPhotoWriteError(404, "entry_not_found");
@@ -136,15 +136,28 @@ export async function removeContestPhotoForGuest(
       if (!removedPhoto?.assetId || !removedPhoto.publicId) {
         throw new ContestPhotoWriteError(404, "photo_not_found");
       }
-      const result = await collection.updateOne(
-        { ...ownership, "contestPhoto.assetId": removedPhoto.assetId },
-        {
-          $unset: { contestPhoto: "" },
-          $set: { status: "draft", updatedAt: input.now },
-        },
-        { session },
-      );
-      if (!result.matchedCount) {
+      const filter = {
+        ...ownership,
+        "contestPhoto.assetId": removedPhoto.assetId,
+      };
+      const matched =
+        entry.entryType === "individual"
+          ? (
+              await collection.deleteOne(filter, {
+                session,
+              })
+            ).deletedCount
+          : (
+              await collection.updateOne(
+                filter,
+                {
+                  $unset: { contestPhoto: "" },
+                  $set: { status: "draft", updatedAt: input.now },
+                },
+                { session },
+              )
+            ).matchedCount;
+      if (!matched) {
         throw new ContestPhotoWriteError(409, "photo_changed_retry");
       }
       await enqueueContestPhotoCleanup(

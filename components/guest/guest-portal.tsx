@@ -41,7 +41,8 @@ export default function GuestPortal({
       href: `/meu-halloween/individual${eventQuery}`,
       icon: "🧙",
       title: "Fantasia individual",
-      description: "Cadastre sua fantasia e envie a foto do concurso.",
+      description:
+        "Seu RSVP já permite concorrer; envie a foto para confirmar a participação.",
       status:
         individualEntry || contestEntryOpen
           ? entryStatus(individualEntry)

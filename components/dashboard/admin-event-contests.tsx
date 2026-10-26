@@ -16,13 +16,26 @@ async function responseError(response: Response) {
   return body?.error || "Não foi possível concluir a operação.";
 }
 
+export function closeEnrollmentPrompt(confirmedRsvps: number) {
+  if (confirmedRsvps <= 0) {
+    return "Fechar as inscrições? Novos RSVPs e novos envios ou alterações de fotos do concurso ficarão indisponíveis até uma eventual reabertura.";
+  }
+  const guests =
+    confirmedRsvps === 1
+      ? "Há 1 convidado com presença confirmada."
+      : `Há ${confirmedRsvps} convidados com presença confirmada.`;
+  return `${guests} Ao fechar as inscrições, novos RSVPs e alterações no concurso ficarão indisponíveis. Somente convidados que já enviaram uma foto válida concorrerão. Deseja continuar?`;
+}
+
 export default function AdminEventContests({
   event: initialEvent,
   entries,
+  confirmedRsvps,
   now,
 }: {
   event: HalloweenEvent;
   entries: AdminContestantEntrySummary[];
+  confirmedRsvps: number;
   now: string;
 }) {
   const router = useRouter();
@@ -141,18 +154,49 @@ export default function AdminEventContests({
   async function changeContestEntryStatus() {
     const action = entryClosed ? "reopen-contest-entry" : "close-contest-entry";
     const prompt = entryClosed
-      ? "Reabrir as inscrições do concurso para esta edição?"
-      : "Fechar as inscrições do concurso? As confirmações de presença continuam disponíveis.";
+      ? "Reabrir os RSVPs e as inscrições do concurso para esta edição?"
+      : closeEnrollmentPrompt(confirmedRsvps);
     if (!window.confirm(prompt)) return;
 
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch(`/api/admin/events/${event._id}/lifecycle`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
+      const requestChange = (confirmExistingRsvps: boolean) =>
+        fetch(`/api/admin/events/${event._id}/lifecycle`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action,
+            ...(action === "close-contest-entry"
+              ? { confirmExistingRsvps }
+              : {}),
+          }),
+        });
+      let response = await requestChange(
+        action === "close-contest-entry" && confirmedRsvps > 0,
+      );
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as {
+          error?: string;
+          code?: string;
+          confirmedRsvps?: number;
+        } | null;
+        if (
+          action === "close-contest-entry" &&
+          response.status === 409 &&
+          body?.code === "rsvp_confirmation_required" &&
+          typeof body.confirmedRsvps === "number"
+        ) {
+          if (!window.confirm(closeEnrollmentPrompt(body.confirmedRsvps))) {
+            return;
+          }
+          response = await requestChange(true);
+        } else {
+          throw new Error(
+            body?.error || "Não foi possível concluir a operação.",
+          );
+        }
+      }
       if (!response.ok) throw new Error(await responseError(response));
       setEvent((await response.json()) as HalloweenEvent);
       toast.success(
@@ -376,12 +420,12 @@ export default function AdminEventContests({
               {enrollment.contestantState === "upcoming"
                 ? "As inscrições abrem no início programado desta edição."
                 : entryClosed
-                  ? "As inscrições estão fechadas; novas entradas não podem ser adicionadas."
-                  : "As inscrições estão abertas para esta edição."}
+                  ? "RSVPs e inscrições do concurso estão fechados para esta edição."
+                  : "RSVPs e inscrições do concurso estão abertos para esta edição."}
             </p>
             <p className="mt-1 text-sm text-gray-300">
-              Fechar inscrições não fecha o RSVP. Ao iniciar a votação, a
-              participação é congelada permanentemente.
+              Fechar inscrições interrompe novos RSVPs e alterações no concurso.
+              Ao iniciar a votação, a participação é congelada permanentemente.
             </p>
           </div>
           <span

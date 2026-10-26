@@ -1,7 +1,7 @@
 # Edition lifecycle
 
-This document defines the independent RSVP, contestant-entry, voting, results,
-and party-album transitions for each edition. See [product](product.md) for
+This document defines the unified enrollment window plus voting, results, and
+party-album transitions for each edition. See [product](product.md) for
 user-facing scope and [architecture](architecture.md) for trust boundaries.
 
 ## Scheduled starts
@@ -15,12 +15,12 @@ invalid timezones, and nonexistent or ambiguous daylight-saving local times.
 
 ## RSVP availability
 
-RSVP becomes available at `registrationStartsAt`. It remains available
-independently of contestant-entry state, including while entries are closed and
-through the pre-voting part of the event. The first successful opening of voting
-atomically establishes the permanent enrollment cutoff and closes new RSVP
-creation. Only the active edition accepts new RSVPs. Closing or reopening a
-voting round never reverses this cutoff.
+RSVP becomes available at `registrationStartsAt` as part of the unified
+enrollment window. An administrator may close and reopen that window before
+voting first opens; closure stops both new RSVPs and contestant additions or
+edits. The first successful opening of voting atomically establishes the
+permanent enrollment cutoff. Only the active edition accepts new RSVPs.
+Closing or reopening a voting round never reverses this cutoff.
 
 RSVP is per edition and unique by normalized email within that edition. A
 verified Clerk account can link to an existing RSVP by a matching verified
@@ -29,23 +29,24 @@ link silently, or allows one edition's RSVP to authorize another.
 
 ## Contestant entries
 
-Contestant entry opens at `registrationStartsAt` in the edition's IANA timezone,
-unless an administrator closes it. Administrators can close and reopen entries
-before voting first opens. The event stores this administrator-controlled
+Contestant entry opens with RSVP at `registrationStartsAt` in the edition's
+IANA timezone, unless an administrator closes the unified window.
+Administrators can close and reopen it before voting first opens. The event
+stores this administrator-controlled
 override as `contestEntryStatus`; legacy records without the field are treated
 as open until their scheduled start. While entries are closed, guests cannot
 add or edit contestant entries or photos; eligible candidates are frozen for
 voting. Only complete, consented, photo-valid entries are eligible; incomplete
-drafts remain private. Reopening before the first voting opening permits the
-entry workflow again, but does not change RSVP availability.
+drafts remain private. Reopening before the first voting opening permits both
+RSVP and contestant workflows again.
 
-For individual entries, guests edit the optional title and select or remove the
-contest photo before saving. A selected image is previewed locally and is not
-uploaded until the guest explicitly saves; a new upload requires consent. A
-group entry uses its name as the costume name and saves its photo separately.
-Removing a saved photo returns the entry to `draft` and queues safe asset
-cleanup. The guest editor is unavailable after entries close or voting freezes
-the candidate set.
+Every RSVP is eligible for the individual contest, but no individual contestant
+record exists until the guest explicitly saves a valid photo with consent. The
+same save may include an optional costume title. Removing that photo before the
+cutoff removes the individual entry and queues safe asset cleanup. A group entry
+uses its name as the costume name, is created separately, and returns to `draft`
+if its photo is removed. Guest editors are unavailable after enrollment closes
+or voting freezes the candidate set.
 
 When voting first opens, contestant membership is permanently frozen for that
 edition. No guest or administrator can add or delete contestant entries after
@@ -114,8 +115,8 @@ through routes, delivery URLs, server rendering, and cache revalidation.
 ## Transition overview
 
 ```text
-RSVP:             scheduled start ─────────────── first voting open (permanent cutoff)
-Contest entries:  admin opens ⇄ admin closes ───── first voting open (permanent freeze)
+Enrollment:       scheduled start → admin opens ⇄ admin closes → first voting open (permanent cutoff)
+Candidates:       RSVP + individual photo, or group + photo ───── freeze at voting
 Voting:           not_started → open ⇄ ended → [one runoff] → ended
 Results:          private ──────────────────────── admin publishes ⇄ unpublishes
 Party album:      private ──────────────────────── admin publishes ⇄ unpublishes

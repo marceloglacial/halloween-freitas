@@ -29,10 +29,11 @@ still blocks RSVP creation and voting. New RSVPs and first-time voting openings
 belong only to the active edition. Historical editions remain individually
 selectable according to their publication state.
 
-An RSVP records attendance intent. A contestant entry independently represents
-an adult's individual entry or a creator-owned couple/group entry competing in
-that edition. One adult may own at most one individual and one couple/group
-entry per edition.
+An RSVP records attendance intent and makes that adult eligible to enter the
+individual costume contest. The individual contestant entry is materialized
+only when the guest saves a valid, consented contest photo. A creator-owned
+couple/group entry remains a separate explicit registration. One adult may own
+at most one individual and one couple/group entry per edition.
 An individual entry does not select a category and is eligible in every
 category open to all contestant types. Group-only categories remain restricted
 to group entries and are assigned by the server when the entry is created;
@@ -47,7 +48,8 @@ and is separate from contestant entries, contest photos, and voting candidates.
   and order. A homepage data refresh reflects category changes; without an
   active edition, the waiting page omits the awards section.
 - Let an adult confirm attendance through an anonymous RSVP using their full
-  name and email; the RSVP does not itself create a contestant entry or a
+  name and email. The RSVP grants individual-contest eligibility but does not
+  create a contestant entry until a photo is saved, and it does not create a
   Clerk account.
 - After `eventStartsAt`, show a homepage action beside the RSVP call to action
   that takes guests through login to the selected edition's party-photo upload
@@ -55,19 +57,18 @@ and is separate from contestant entries, contest photos, and voting candidates.
 - Let a verified guest view and update their own RSVP name for the selected
   edition. Keep email and account identifiers private, and keep a frozen
   contestant display name independent from later RSVP profile edits.
-- Let guests stage an optional costume title and photo for individual entries,
-  preview a selected photo before upload, and save both with one explicit
-  action. A group entry's name is its costume name, and its creator can edit
+- Let guests stage an optional costume title and required photo for individual
+  entries, preview the selected photo, and save both with one explicit action.
+  Saving the first valid, consented photo creates the individual entry; removing
+  that photo before voting removes the entry. A group entry's name is its
+  costume name, and its creator can edit
   that name while entries are open. Require consent when uploading a new photo,
   and allow guests to remove their saved photo while contestant entries are
   open.
-- Show RSVP availability from the edition's scheduled `registrationStartsAt`
-  until the first opening of voting. RSVP availability is independent of whether
-  contestant entries are open.
-- Open contestant entry at the scheduled `registrationStartsAt` instant in the
-  edition's timezone. Administrators can close and reopen entries before
-  voting first opens. Closing entries freezes the eligible candidate set while
-  leaving RSVP available.
+- Open the unified RSVP and contest-entry window at the scheduled
+  `registrationStartsAt` instant in the edition's timezone. Administrators can
+  close and reopen that window before voting first opens. Closing it stops new
+  RSVPs and contest additions or edits and freezes the eligible candidate set.
 - Allow a previously registered guest to verify and link their Clerk identity
   after the RSVP cutoff. Authentication does not create an RSVP or grant access
   to another edition.

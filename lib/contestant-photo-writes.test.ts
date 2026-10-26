@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ObjectId } from "mongodb";
 import {
   getContestantEntryForPhoto,
+  removeContestPhotoForGuest,
   saveContestPhotoForAdmin,
   saveContestPhotoForGuest,
 } from "@/lib/contestant-photo-writes";
@@ -149,6 +150,49 @@ describe("contestant photo ownership and persistence", () => {
     ).rejects.toThrow("CONTEST_ENTRY_CLOSED");
     expect(entryFind).not.toHaveBeenCalled();
     expect(session.endSession).toHaveBeenCalledOnce();
+  });
+
+  it("removes an individual participation when its only qualifying photo is deleted", async () => {
+    const eventsUpdate = vi.fn().mockResolvedValue({ matchedCount: 1 });
+    const entryFind = vi.fn().mockResolvedValue({
+      _id: entryId,
+      status: "ready",
+      entryType: "individual",
+      contestPhoto: photo,
+    });
+    const entryDelete = vi.fn().mockResolvedValue({ deletedCount: 1 });
+    const cleanupUpdate = vi.fn().mockResolvedValue({ upsertedCount: 1 });
+    const db = {
+      collection: (name: string) => {
+        if (name === "events") return { updateOne: eventsUpdate };
+        if (name === "contestants") {
+          return { findOne: entryFind, deleteOne: entryDelete };
+        }
+        return { updateOne: cleanupUpdate };
+      },
+    };
+    const session = {
+      withTransaction: (work: () => Promise<unknown>) => work(),
+      endSession: vi.fn(),
+    };
+
+    await expect(
+      removeContestPhotoForGuest(
+        { startSession: () => session } as never,
+        db as never,
+        { eventId, entryId, rsvpId, now },
+      ),
+    ).resolves.toEqual(photo);
+    expect(entryDelete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: entryId,
+        eventId,
+        ownerRsvpId: rsvpId,
+        "contestPhoto.assetId": photo.assetId,
+      }),
+      { session },
+    );
+    expect(cleanupUpdate).toHaveBeenCalled();
   });
 
   it("audits admin photo corrections and preserves the original consent", async () => {

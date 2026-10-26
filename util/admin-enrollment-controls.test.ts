@@ -16,13 +16,13 @@ const event: HalloweenEvent = {
 };
 
 describe("admin enrollment controls", () => {
-  it("shows RSVP and contestant entry as separate scheduled states", () => {
+  it("closes RSVP and contestant entry through the same enrollment state", () => {
     const state = getAdminEnrollmentControls(
       { ...event, contestEntryStatus: "closed" },
       new Date("2026-09-15T00:00:00.000Z"),
     );
 
-    expect(state.rsvpState).toBe("open");
+    expect(state.rsvpState).toBe("closed");
     expect(state.contestantState).toBe("closed");
     expect(state.canChangeContestantMembership).toBe(false);
     expect(state.contestantMembershipDisabledReason).toMatch(

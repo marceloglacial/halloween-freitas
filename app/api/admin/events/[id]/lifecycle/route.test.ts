@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   roundInsertOne: vi.fn(),
   roundUpdateOne: vi.fn(),
   auditInsertOne: vi.fn(),
+  countRsvps: vi.fn(),
   withTransaction: vi.fn(),
   endSession: vi.fn(),
 }));
@@ -30,25 +31,27 @@ vi.mock("@/lib/db", () => ({
         ? { findOne: mocks.eventFindOne, updateOne: mocks.updateOne }
         : name === "adminAudits"
           ? { insertOne: mocks.auditInsertOne }
-          : name === "categories"
-            ? { find: () => ({ toArray: mocks.categoryToArray }) }
-            : name === "votingRounds"
-              ? {
-                  findOne: mocks.roundFindOne,
-                  find: () => ({
-                    sort: () => ({
-                      limit: () => ({ toArray: mocks.roundFindMany }),
+          : name === "users"
+            ? { countDocuments: mocks.countRsvps }
+            : name === "categories"
+              ? { find: () => ({ toArray: mocks.categoryToArray }) }
+              : name === "votingRounds"
+                ? {
+                    findOne: mocks.roundFindOne,
+                    find: () => ({
+                      sort: () => ({
+                        limit: () => ({ toArray: mocks.roundFindMany }),
+                      }),
                     }),
-                  }),
-                  insertOne: mocks.roundInsertOne,
-                  updateOne: mocks.roundUpdateOne,
-                }
-              : name === "votes"
-                ? { find: () => ({ toArray: mocks.ballotToArray }) }
-                : {
-                    find: () => ({ toArray: mocks.contestantToArray }),
-                    updateMany: mocks.updateMany,
-                  },
+                    insertOne: mocks.roundInsertOne,
+                    updateOne: mocks.roundUpdateOne,
+                  }
+                : name === "votes"
+                  ? { find: () => ({ toArray: mocks.ballotToArray }) }
+                  : {
+                      find: () => ({ toArray: mocks.contestantToArray }),
+                      updateMany: mocks.updateMany,
+                    },
   }),
   getMongoClient: vi.fn().mockResolvedValue({
     startSession: () => ({
@@ -62,12 +65,12 @@ import { POST } from "@/app/api/admin/events/[id]/lifecycle/route";
 
 const eventId = "507f1f77bcf86cd799439011";
 
-function request(action: string) {
+function request(action: string, extra: Record<string, unknown> = {}) {
   return POST(
     new Request("http://localhost", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ action, ...extra }),
     }),
     { params: Promise.resolve({ id: eventId }) },
   );
@@ -112,6 +115,7 @@ describe("event lifecycle controls", () => {
     mocks.roundInsertOne.mockResolvedValue({ insertedId: new ObjectId() });
     mocks.roundUpdateOne.mockResolvedValue({ matchedCount: 1 });
     mocks.auditInsertOne.mockResolvedValue({ acknowledged: true });
+    mocks.countRsvps.mockResolvedValue(0);
     mocks.withTransaction.mockImplementation(async (callback) => callback());
     mocks.eventFindOne.mockResolvedValue({
       votingStatus: "ended",
@@ -346,6 +350,26 @@ describe("event lifecycle controls", () => {
       { session: expect.anything() },
     );
     expect(mocks.withTransaction).toHaveBeenCalledOnce();
+  });
+
+  it("requires explicit confirmation before closing registrations with RSVPs", async () => {
+    mocks.countRsvps.mockResolvedValue(3);
+
+    const warning = await request("close-contest-entry");
+    expect(warning.status).toBe(409);
+    expect(await warning.json()).toEqual({
+      error:
+        "Confirme o encerramento das inscrições para os convidados já registrados",
+      code: "rsvp_confirmation_required",
+      confirmedRsvps: 3,
+    });
+    expect(mocks.updateOne).not.toHaveBeenCalled();
+
+    const confirmed = await request("close-contest-entry", {
+      confirmExistingRsvps: true,
+    });
+    expect(confirmed.status).toBe(200);
+    expect(mocks.updateOne).toHaveBeenCalledOnce();
   });
 
   it("freezes photo-complete entries while leaving incomplete drafts private", async () => {

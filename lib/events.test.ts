@@ -76,7 +76,7 @@ describe("event phases", () => {
     ).toBe(false);
   });
 
-  it("opens registration inclusively and keeps it open until voting first opens", () => {
+  it("opens registration inclusively and closes it with the unified enrollment window", () => {
     expect(
       getRegistrationState(event, new Date("2026-09-01T03:59:59.999Z")),
     ).toBe("upcoming");
@@ -97,7 +97,7 @@ describe("event phases", () => {
         { ...event, contestEntryStatus: "closed" },
         new Date("2026-09-15T00:00:00Z"),
       ),
-    ).toBe("open");
+    ).toBe("closed");
   });
 
   it("keeps archived events closed regardless of their dates", () => {

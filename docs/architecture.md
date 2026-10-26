@@ -71,21 +71,20 @@ retain the event and asset ownership context from their authorized request.
 ## Lifecycle as a shared domain service
 
 Represent transitions and eligibility as server-side domain operations shared
-by UI loaders, route handlers, and background tasks. `rsvpOpen` is derived from
-`registrationStartsAt`, active edition state, and the permanent first-voting
-cutoff. Contest entry opens at the same scheduled instant and follows its
-event-scoped `contestEntryStatus` close/reopen override; this state is
-independent from RSVP eligibility. The two scheduled starts, contest-entry
-controls, voting rounds, results publication, and party album publication
-follow [lifecycle.md](lifecycle.md).
+by UI loaders, route handlers, and background tasks. `rsvpOpen` and contest
+entry availability are derived from `registrationStartsAt`, active edition
+state, the event-scoped `contestEntryStatus` close/reopen override, and the
+permanent first-voting cutoff. The two scheduled starts, unified enrollment
+control, voting rounds, results publication, and party album publication follow
+[lifecycle.md](lifecycle.md).
 
 The first successful voting opening must atomically verify that the edition has
 started and contestant eligibility is frozen, then record the permanent RSVP
 and contestant add/delete cutoff before accepting ballots. RSVP writes,
 contestant writes, and entry-state changes serialize through an event-scoped
-transactional guard against that cutoff. RSVP writes remain independent of
-contest-entry closure until voting first opens. Closing or reopening a round
-preserves the cutoff and prior ballots.
+transactional guard against that cutoff. Manual enrollment closure serializes
+with RSVP, group, and individual-photo writes. Closing or reopening a round
+preserves the permanent cutoff and prior ballots.
 
 Category configuration is event-scoped and editable only before the first
 voting opening. Serialize category saves with the event's voting transition,
@@ -110,7 +109,9 @@ shows first-edition setup and does not request event metrics.
 ## Photo and publication boundaries
 
 Contest photos and party photos are different domain assets with different
-owners, eligibility, and publication rules. A contestant entry has its own
+owners, eligibility, and publication rules. An RSVP authorizes individual
+participation, while its first valid contest-photo save atomically materializes
+the contestant entry. A contestant entry has its own
 authenticated Cloudinary contest photo and readiness state. Accept only
 validated JPG, PNG, or WebP content within the documented size/dimension limit;
 record the consenting RSVP and time. Keep draft previews temporary and

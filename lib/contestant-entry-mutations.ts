@@ -7,6 +7,7 @@ import {
 } from "@/lib/contestant-entries";
 import { claimContestEntryWrite } from "@/lib/contest-entry-writes";
 import { normalizeName } from "@/lib/http";
+import type { ContestPhotoAsset } from "@/lib/contestant-photos";
 
 export class ContestantEntryWriteError extends Error {
   constructor(
@@ -17,15 +18,15 @@ export class ContestantEntryWriteError extends Error {
   }
 }
 
-export async function createIndividualContestantEntry(
+export async function createIndividualContestantEntryWithPhoto(
   client: MongoClient,
   db: Db,
   input: {
     eventId: ObjectId;
-    categoryId?: ObjectId;
     rsvpId: ObjectId;
     displayName: string;
     costumeTitle?: string;
+    photo: ContestPhotoAsset;
     now: Date;
   },
 ) {
@@ -42,36 +43,36 @@ export async function createIndividualContestantEntry(
         session,
       );
 
-      const categories = await db
-        .collection("categories")
-        .find(
-          { eventId: input.eventId },
-          {
-            projection: { _id: 1, eligibility: 1 },
-            sort: { order: 1, _id: 1 },
-            session,
-          },
-        )
-        .toArray();
-      const category = categories.find(
-        (candidate) =>
-          !candidate.eligibility || candidate.eligibility === "all",
+      const category = await db.collection("categories").findOne(
+        {
+          eventId: input.eventId,
+          $or: [{ eligibility: "all" }, { eligibility: { $exists: false } }],
+        },
+        {
+          projection: { _id: 1 },
+          sort: { order: 1, _id: 1 },
+          session,
+        },
       );
       if (!category) {
         throw new ContestantEntryWriteError(400, "category_not_available");
       }
 
-      entry = createContestantEntry(
-        {
-          eventId: input.eventId.toString(),
-          categoryId: category._id.toString(),
-          entryType: "individual",
-          rsvpId: input.rsvpId.toString(),
-          displayName: input.displayName,
-          costumeTitle: input.costumeTitle,
-        },
-        input.now,
-      );
+      entry = {
+        ...createContestantEntry(
+          {
+            eventId: input.eventId.toString(),
+            categoryId: category._id.toString(),
+            entryType: "individual",
+            rsvpId: input.rsvpId.toString(),
+            displayName: input.displayName,
+            costumeTitle: input.costumeTitle,
+          },
+          input.now,
+        ),
+        status: "ready",
+        contestPhoto: input.photo,
+      };
       await db
         .collection<ContestantEntryDocument>("contestants")
         .insertOne(entry, { session });

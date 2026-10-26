@@ -7,7 +7,6 @@ import { ContestEntryClosedError } from "@/lib/contest-entry-writes";
 import {
   ContestantEntryWriteError,
   createGroupContestantEntry,
-  createIndividualContestantEntry,
 } from "@/lib/contestant-entry-mutations";
 import { normalizeCostumeTitle } from "@/lib/contestant-entries";
 import { getDb, getMongoClient } from "@/lib/db";
@@ -25,7 +24,7 @@ import { validGuestEventId } from "@/util/guest-access";
 export const runtime = "nodejs";
 
 function serializeOwnedEntry(
-  entry: Awaited<ReturnType<typeof createIndividualContestantEntry>>,
+  entry: Awaited<ReturnType<typeof createGroupContestantEntry>>,
 ) {
   return {
     _id: entry._id.toString(),
@@ -79,17 +78,19 @@ function failure(error: unknown, entryType: "individual" | "group") {
 }
 
 export async function POST(request: Request) {
-  let entryType: "individual" | "group" = "individual";
+  const entryType = "group" as const;
   try {
     const body = await readJsonObject(request);
     if (!body || !validGuestEventId(body.eventId)) {
       return errorResponse("Evento inválido.", 400);
     }
-    const requestedType = body.entryType ?? "individual";
-    if (requestedType !== "individual" && requestedType !== "group") {
-      return errorResponse("Tipo de inscrição inválido.", 400);
+    const requestedType = body.entryType;
+    if (requestedType !== "group") {
+      return errorResponse(
+        "A participação individual é criada ao salvar uma foto.",
+        400,
+      );
     }
-    entryType = requestedType;
     const categoryId =
       body.categoryId === undefined
         ? undefined
@@ -98,9 +99,8 @@ export async function POST(request: Request) {
       return errorResponse("Categoria inválida.", 400);
     }
 
-    const entryName =
-      entryType === "group" ? normalizeName(body.groupName) : null;
-    if (entryType !== "individual" && !entryName) {
+    const entryName = normalizeName(body.groupName);
+    if (!entryName) {
       return errorResponse(
         "Informe o nome do grupo (de 2 a 120 caracteres).",
         400,
@@ -125,23 +125,14 @@ export async function POST(request: Request) {
     }
 
     const [client, db] = await Promise.all([getMongoClient(), getDb()]);
-    const entry =
-      entryType === "group"
-        ? await createGroupContestantEntry(client, db, {
-            eventId: new ObjectId(event._id),
-            ...(categoryId ? { categoryId } : {}),
-            ownerRsvpId: new ObjectId(guest.userId),
-            groupName: entryName!,
-            ...(costumeTitle ? { costumeTitle } : {}),
-            now,
-          })
-        : await createIndividualContestantEntry(client, db, {
-            eventId: new ObjectId(event._id),
-            rsvpId: new ObjectId(guest.userId),
-            displayName: guest.fullName,
-            ...(costumeTitle ? { costumeTitle } : {}),
-            now,
-          });
+    const entry = await createGroupContestantEntry(client, db, {
+      eventId: new ObjectId(event._id),
+      ...(categoryId ? { categoryId } : {}),
+      ownerRsvpId: new ObjectId(guest.userId),
+      groupName: entryName,
+      ...(costumeTitle ? { costumeTitle } : {}),
+      now,
+    });
 
     return Response.json(serializeOwnedEntry(entry), {
       status: 201,

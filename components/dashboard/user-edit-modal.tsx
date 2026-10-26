@@ -1,5 +1,4 @@
 import React from "react";
-import { CldImage, CldUploadButton } from "next-cloudinary";
 
 export function UserEditModal({
   showModal,
@@ -110,51 +109,11 @@ export function UserEditModal({
             disabled={loading}
             className="w-full rounded border border-gray-700 bg-gray-800 px-3 py-2 text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
           />
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={!!modalUser.group}
-              className="size-4 accent-orange-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
-              onChange={(e) =>
-                setModalUser({ ...modalUser, group: e.target.checked })
-              }
-              disabled={loading}
-            />
-            <span className="text-white">Participa como grupo</span>
-          </label>
-          {modalUser.imageUrl ? (
-            <button
-              type="button"
-              aria-label="Remover imagem do participante"
-              disabled={loading}
-              className="cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
-              onClick={() => setModalUser({ ...modalUser, imageUrl: "" })}
-            >
-              <CldImage
-                src={modalUser.imageUrl}
-                width={900}
-                height={600}
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                alt={`Foto de ${modalUser.fullName || "participante"}`}
-                className="h-80 overflow-hidden rounded object-contain"
-              />
-            </button>
-          ) : (
-            <CldUploadButton
-              uploadPreset="halloween-freitas"
-              className="cursor-pointer rounded bg-blue-600 px-4 py-2 text-white hover:bg-orange-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
-              onSuccess={(e) => {
-                // @ts-expect-error next-cloudinary returns info with public_id
-                setModalUser((prev) => ({
-                  ...prev,
-                  // @ts-expect-error next-cloudinary returns info with public_id
-                  imageUrl: e.info?.public_id,
-                }));
-              }}
-            >
-              Enviar uma imagem
-            </CldUploadButton>
-          )}
+          <p className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm text-stone-300">
+            Todo RSVP pode concorrer individualmente. A participação aparece no
+            concurso somente depois que o convidado envia uma foto no Meu
+            Halloween; grupos são cadastrados separadamente.
+          </p>
           <div className="flex justify-end gap-2">
             <button
               type="button"

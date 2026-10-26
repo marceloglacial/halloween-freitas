@@ -22,10 +22,13 @@ cross-edition isolation cases where they apply.
   and omit the awards section.
 - Validate both scheduled starts, ordering, IANA timezones, malformed input,
   daylight-saving gaps, and the exact before/at/after behavior of each boundary.
-- Verify `rsvpOpen` derives from registration start, active edition, and the
-  permanent first-voting cutoff, independently of contestant-entry state.
-- Exercise contestant entry open/close/reopen, freeze, incomplete drafts,
-  consent/photo eligibility, and attempts to add/edit while closed.
+- Verify RSVP and contestant entry share the scheduled start and manual
+  close/reopen override, and that the first voting opening makes the cutoff
+  permanent.
+- Verify an RSVP alone creates no candidate; the first valid, consented
+  individual photo atomically creates a `ready` entry. Exercise replacement,
+  removal, cleanup, duplicate uploads, close/upload races, and attempts while
+  closed.
 - Verify a linked guest can create one group entry in an eligible group
   category per edition; use the creator's RSVP, reject a second entry even
   under concurrency, keep entries private until a valid photo is uploaded, and
@@ -129,7 +132,7 @@ source of truth for mutations.
 | No edition                            | Explain that no edition exists and link to settings to create the first one                                                         | KPIs, event dates, or lifecycle actions                |
 | Before registration start             | Show upcoming confirmations and their localized start; offer edition setup                                                          | Open RSVP or voting actions                            |
 | Registration available                | Show confirmations open and link to guest management                                                                                | Voting before event start and contestant-entry closure |
-| Event started, contest entries open   | Show the next action to close contest entries and preserve RSVP availability                                                        | First-vote action before the contestant set is frozen  |
+| Event started, enrollment open        | Show the next action to close RSVPs and contest entries, warning when confirmed guests exist                                        | First-vote action before the contestant set is frozen  |
 | Event started, contest entries closed | Show voting ready for the administrator; offer first-vote controls for the active edition                                           | A first-vote action for an archived edition            |
 | Voting open                           | Show voting in progress and link to voting administration                                                                           | Results publication                                    |
 | Voting ended, results private         | Show results awaiting publication and link to publication controls                                                                  | Public results                                         |

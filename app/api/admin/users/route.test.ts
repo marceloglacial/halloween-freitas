@@ -10,7 +10,9 @@ const mocks = vi.hoisted(() => ({
   eventUpdateOne: vi.fn(),
   insertOne: vi.fn(),
   deleteOne: vi.fn(),
+  deleteMany: vi.fn(),
   findOne: vi.fn(),
+  contestantToArray: vi.fn(),
   userFindOne: vi.fn(),
   auditInsertOne: vi.fn(),
   withTransaction: vi.fn(),
@@ -27,14 +29,19 @@ vi.mock("@/lib/db", () => ({
         ? { updateOne: mocks.eventUpdateOne }
         : name === "votes"
           ? { findOne: mocks.findOne }
-          : name === "adminAudits"
-            ? { insertOne: mocks.auditInsertOne }
-            : {
-                insertOne: mocks.insertOne,
-                updateOne: mocks.updateOne,
-                deleteOne: mocks.deleteOne,
-                findOne: mocks.userFindOne,
-              },
+          : name === "contestants"
+            ? {
+                find: () => ({ toArray: mocks.contestantToArray }),
+                deleteMany: mocks.deleteMany,
+              }
+            : name === "adminAudits"
+              ? { insertOne: mocks.auditInsertOne }
+              : {
+                  insertOne: mocks.insertOne,
+                  updateOne: mocks.updateOne,
+                  deleteOne: mocks.deleteOne,
+                  findOne: mocks.userFindOne,
+                },
   })),
   getMongoClient: mocks.getMongoClient,
 }));
@@ -55,6 +62,8 @@ describe("admin users API", () => {
     });
     mocks.updateOne.mockResolvedValue({ matchedCount: 1 });
     mocks.deleteOne.mockResolvedValue({ deletedCount: 1 });
+    mocks.deleteMany.mockResolvedValue({ deletedCount: 0 });
+    mocks.contestantToArray.mockResolvedValue([]);
     mocks.findOne.mockResolvedValue(null);
     mocks.withTransaction.mockImplementation(
       async (operation: () => Promise<unknown>) => operation(),
@@ -189,7 +198,7 @@ describe("admin users API", () => {
     expect(mocks.auditInsertOne).not.toHaveBeenCalled();
   });
 
-  it("creates contestant records only while scheduled entry is open", async () => {
+  it("creates an RSVP without pretending it is already a contestant", async () => {
     mocks.isAdmin.mockResolvedValue(true);
     mocks.getEventById.mockResolvedValue({ _id: eventId });
     const response = await POST(
@@ -206,9 +215,11 @@ describe("admin users API", () => {
 
     expect(response.status).toBe(201);
     expect(mocks.insertOne).toHaveBeenCalledWith(
-      expect.objectContaining({ contestant: true, eventId: expect.anything() }),
+      expect.objectContaining({ eventId: expect.anything() }),
       { session: expect.any(Object) },
     );
+    expect(mocks.insertOne.mock.calls[0][0]).not.toHaveProperty("contestant");
+    expect(mocks.insertOne.mock.calls[0][0]).not.toHaveProperty("imageUrl");
     expect(mocks.withTransaction).toHaveBeenCalledOnce();
     expect(mocks.endSession).toHaveBeenCalledOnce();
   });
@@ -312,6 +323,49 @@ describe("admin users API", () => {
     expect(mocks.deleteOne).toHaveBeenCalledWith(
       expect.objectContaining({ eventId: expect.anything() }),
       { session: expect.any(Object) },
+    );
+  });
+
+  it("removes owned contest entries and queues their photos with the RSVP", async () => {
+    mocks.isAdmin.mockResolvedValue(true);
+    mocks.getEventById.mockResolvedValue({ _id: eventId });
+    mocks.contestantToArray.mockResolvedValue([
+      {
+        _id: "507f1f77bcf86cd799439014",
+        contestPhoto: {
+          assetId: "contest-asset",
+          publicId: `contest-photos/${eventId}/photo`,
+        },
+      },
+    ]);
+
+    const response = await DELETE(
+      new Request("http://localhost/api/admin/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId,
+          _id: "507f1f77bcf86cd799439012",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(204);
+    expect(mocks.deleteMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventId: expect.anything(),
+        ownerRsvpId: expect.anything(),
+      }),
+      { session: expect.any(Object) },
+    );
+    expect(mocks.updateOne).toHaveBeenCalledWith(
+      { _id: "contest-asset" },
+      expect.objectContaining({
+        $setOnInsert: expect.objectContaining({
+          publicId: `contest-photos/${eventId}/photo`,
+        }),
+      }),
+      expect.objectContaining({ upsert: true }),
     );
   });
 

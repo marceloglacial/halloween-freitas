@@ -1,5 +1,4 @@
 import React from "react";
-import { CldImage } from "next-cloudinary";
 
 export function UserListItem({
   user,
@@ -13,27 +12,12 @@ export function UserListItem({
       key={user._id}
       className="flex flex-col gap-3 rounded-lg bg-white/10 p-4 sm:flex-row sm:items-center sm:gap-4"
     >
-      <CldImage
-        src={user.imageUrl || "halloween-freitas/apple-icon_fqkaye"}
-        width={900}
-        height={600}
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        alt={`Foto de ${user.fullName}`}
-        className="h-10 w-10 rounded-full"
-      />
       <div className="min-w-0 flex-1">
         <div className="w-32 truncate font-semibold md:w-fit">
           {user.fullName}
         </div>
         <div className="w-32 truncate text-sm text-gray-400 md:w-fit">
           {user.email}
-        </div>
-        <div className="mt-1 flex gap-2">
-          {user.group && (
-            <span className="rounded bg-orange-200 px-2 py-1 text-xs text-orange-800">
-              Grupo
-            </span>
-          )}
         </div>
       </div>
       <div className="flex flex-wrap gap-2 sm:justify-end">

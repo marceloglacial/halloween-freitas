@@ -110,6 +110,7 @@ export async function POST(
     let result: { matchedCount: number } = { matchedCount: 0 };
     let runoffOpened = false;
     let publicationConflict: string | null = null;
+    let rsvpConfirmationCount: number | null = null;
     if (
       action === "close-contest-entry" ||
       action === "reopen-contest-entry" ||
@@ -118,6 +119,18 @@ export async function POST(
       const session = (await getMongoClient()).startSession();
       try {
         await session.withTransaction(async () => {
+          if (action === "close-contest-entry") {
+            const confirmedRsvps = await db
+              .collection("users")
+              .countDocuments(
+                { eventId, status: { $ne: "cancelled" } },
+                { session },
+              );
+            if (confirmedRsvps > 0 && body.confirmExistingRsvps !== true) {
+              rsvpConfirmationCount = confirmedRsvps;
+              return;
+            }
+          }
           const previousEvent =
             action === "start-voting"
               ? await db.collection("events").findOne(
@@ -365,6 +378,18 @@ export async function POST(
       result = await db
         .collection("events")
         .updateOne(filters[action], { $set: updates[action] });
+    }
+
+    if (rsvpConfirmationCount !== null) {
+      return Response.json(
+        {
+          error:
+            "Confirme o encerramento das inscrições para os convidados já registrados",
+          code: "rsvp_confirmation_required",
+          confirmedRsvps: rsvpConfirmationCount,
+        },
+        { status: 409 },
+      );
     }
 
     if (!result.matchedCount) {

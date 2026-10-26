@@ -10,7 +10,9 @@ vi.mock("@/components/dashboard/user-list", () => ({
   ),
 }));
 
-import AdminEventContests from "@/components/dashboard/admin-event-contests";
+import AdminEventContests, {
+  closeEnrollmentPrompt,
+} from "@/components/dashboard/admin-event-contests";
 
 const event: HalloweenEvent = {
   _id: "event-2025",
@@ -32,6 +34,7 @@ describe("admin contest page", () => {
       createElement(AdminEventContests, {
         event,
         entries: [],
+        confirmedRsvps: 0,
         now: "2025-11-01T01:00:00.000Z",
       }),
     );
@@ -44,5 +47,18 @@ describe("admin contest page", () => {
     expect(html).toContain(
       "As inscrições não podem ser alteradas após a primeira abertura da votação.",
     );
+  });
+
+  it("warns that only guests with photos will compete when RSVPs exist", () => {
+    expect(closeEnrollmentPrompt(1)).toContain(
+      "Há 1 convidado com presença confirmada",
+    );
+    expect(closeEnrollmentPrompt(3)).toContain(
+      "Há 3 convidados com presença confirmada",
+    );
+    expect(closeEnrollmentPrompt(3)).toContain(
+      "Somente convidados que já enviaram uma foto válida concorrerão",
+    );
+    expect(closeEnrollmentPrompt(0)).toContain("Novos RSVPs");
   });
 });

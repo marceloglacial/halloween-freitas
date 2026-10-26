@@ -49,7 +49,8 @@ export default async function IndividualCostumePage({
           <IndividualEntryControls eventId={event._id} enabled={entryOpen} />
         ) : (
           <p role="status" className="text-stone-300">
-            As inscrições do concurso foram encerradas.
+            As inscrições foram encerradas. Apenas participações com foto salva
+            antes do fechamento concorrem nesta edição.
           </p>
         )}
       </section>

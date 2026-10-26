@@ -98,6 +98,13 @@ export async function getAdminUsersForEvent(
   }));
 }
 
+export async function countConfirmedRsvpsForEvent(eventId: string) {
+  return (await getDb()).collection<UserDocument>("users").countDocuments({
+    eventId: new ObjectId(eventId),
+    status: { $ne: "cancelled" },
+  });
+}
+
 export async function getUserByEmail(eventId: string, normalizedEmail: string) {
   const db = await getDb();
   const user = await db.collection<UserDocument>("users").findOne({
