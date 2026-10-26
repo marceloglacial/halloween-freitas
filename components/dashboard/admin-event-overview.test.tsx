@@ -33,7 +33,9 @@ describe("admin event overview", () => {
         now={new Date("2025-08-01T12:00:00.000Z")}
       />,
     );
-    expect(html).toContain("edição 2025 · ativa");
+    expect(html).not.toContain("Edição 2025");
+    expect(html).toContain(">Visão Geral</h1>");
+    expect(html).not.toContain("Halloween dos Freitas 2025");
     expect(html).toContain("12");
     expect(html).toContain("8");
     expect(html).toContain("America/Toronto");

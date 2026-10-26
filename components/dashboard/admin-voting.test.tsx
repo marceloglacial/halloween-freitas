@@ -29,12 +29,14 @@ describe("admin voting page", () => {
       <AdminVoting event={event} now="2026-11-01T01:00:00.000Z" />,
     );
 
+    expect(html).toContain(">Votação</h1>");
     expect(html).toContain('aria-label="Estado da votação: Encerrada"');
     expect(html).toContain("Reabrir votação");
     expect(html).toContain("Publicação dos resultados");
     expect(html).toContain("Resultados privados");
     expect(html).toContain("Reabrir mantém os votos anteriores");
     expect(html).toContain("Apuração por categoria");
+    expect(html).not.toContain(event.title);
   });
 
   it("requires an active edition, event start and closed entry before opening", () => {

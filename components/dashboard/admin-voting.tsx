@@ -96,10 +96,7 @@ export default function AdminVoting({
   return (
     <div className="space-y-6">
       <header className="rounded-2xl border border-white/10 bg-stone-950/80 p-5 sm:p-6">
-        <p className="text-xs font-semibold tracking-[0.2em] text-orange-300 uppercase">
-          Votação · edição {event.year}
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold">{event.title}</h1>
+        <h1 className="text-4xl text-orange-300 sm:text-5xl">Votação</h1>
         {event.status === "archived" && (
           <p className="mt-3 rounded-lg border border-amber-300/20 bg-amber-300/5 p-3 text-sm text-amber-100">
             Edição arquivada. Estado e apuração históricos permanecem

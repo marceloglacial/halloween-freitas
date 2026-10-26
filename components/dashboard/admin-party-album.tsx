@@ -186,12 +186,10 @@ export default function AdminPartyAlbum({ event }: { event: HalloweenEvent }) {
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-2">
-          <p className="text-xs font-semibold tracking-[0.2em] text-orange-300 uppercase">
-            Galeria · edição {event.year}
-          </p>
-          <h1 id="party-album-heading" className="text-2xl font-bold">
-            {event.title} · fotos da festa
-          </h1>
+          <h1 className="text-4xl text-orange-300 sm:text-5xl">Galeria</h1>
+          <h2 id="party-album-heading" className="text-2xl font-bold">
+            Fotos da festa
+          </h2>
           <p className="max-w-2xl text-sm text-gray-300">
             Os envios ficam privados até a publicação. Publicar mostra todas as
             fotos mantidas nesta edição e também os próximos envios.

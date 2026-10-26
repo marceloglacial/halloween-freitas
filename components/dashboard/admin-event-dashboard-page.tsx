@@ -35,6 +35,7 @@ export default async function AdminEventDashboardPage({
     if (!selectedEvent) {
       return (
         <section className="rounded-2xl border border-white/10 bg-stone-950/80 p-6">
+          <h1 className="text-4xl text-orange-300 sm:text-5xl">Convidados</h1>
           <h2 className="text-xl font-semibold">Nenhuma edição selecionada</h2>
           <p className="mt-2 text-gray-300">
             Crie uma edição em Configurações antes de gerenciar convidados.

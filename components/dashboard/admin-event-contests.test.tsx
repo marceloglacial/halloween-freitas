@@ -39,7 +39,9 @@ describe("admin contest page", () => {
       }),
     );
 
-    expect(html).toContain("Concursos · edição 2025");
+    expect(html).toContain(">Concursos</h1>");
+    expect(html).not.toContain("Edição 2025");
+    expect(html).not.toContain(event.title);
     expect(html).toContain("Edição arquivada");
     expect(html).toContain("Categorias do concurso");
     expect(html).toContain("Inscrições do concurso");

@@ -42,9 +42,7 @@ export default async function DashboardPage({
   if (!selection.event) {
     return (
       <section className="rounded-2xl border border-white/10 bg-stone-950/80 p-6 sm:p-8">
-        <p className="text-xs font-semibold tracking-[0.2em] text-orange-300 uppercase">
-          Visão geral
-        </p>
+        <h1 className="text-4xl text-orange-300 sm:text-5xl">Visão Geral</h1>
         <h2 className="mt-3 text-2xl font-semibold">
           Nenhuma edição cadastrada
         </h2>
@@ -73,6 +71,7 @@ export default async function DashboardPage({
         role="alert"
         className="rounded-2xl border border-red-400/30 bg-red-950/30 p-6"
       >
+        <h1 className="text-4xl text-orange-300 sm:text-5xl">Visão Geral</h1>
         <h2 className="text-xl font-semibold">
           Não foi possível carregar a visão geral
         </h2>

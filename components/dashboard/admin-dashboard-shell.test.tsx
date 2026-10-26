@@ -29,7 +29,7 @@ vi.mock("@/components/logout-button", () => ({
 import AdminDashboardShell from "@/components/dashboard/admin-dashboard-shell";
 
 describe("admin dashboard shell", () => {
-  it("keeps a semantic page heading available on narrow layouts", () => {
+  it("leaves the section heading to the page content", () => {
     const html = renderToStaticMarkup(
       <AdminDashboardShell
         events={[{ year: 2025, title: "Halloween 2025", status: "active" }]}
@@ -38,9 +38,8 @@ describe("admin dashboard shell", () => {
       </AdminDashboardShell>,
     );
 
-    expect(html).toContain(
-      '<h1 class="sr-only text-lg font-semibold lg:not-sr-only lg:mr-auto lg:text-left lg:text-xl">Visão geral</h1>',
-    );
+    expect(html).not.toContain("<h1");
+    expect(html).not.toContain("Halloween 2025");
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('href="/dashboard/convidados?year=2025"');
     expect(html).not.toContain('aria-label="Seleção de edição"');
@@ -61,19 +60,22 @@ describe("admin dashboard shell", () => {
     const mobileNavigation = html.match(
       /<nav aria-label="Navegação administrativa principal"[\s\S]*?<\/nav>/,
     )?.[0];
-    expect(mobileNavigation).toContain("Visão geral");
+    expect(mobileNavigation).toContain("Visão Geral");
     expect(mobileNavigation).toContain("Convidados");
     expect(mobileNavigation).toContain("Concursos");
     expect(mobileNavigation).toContain("Votação");
     expect(mobileNavigation).toContain("Galeria");
-    expect(mobileNavigation).not.toContain("Configurações");
-    expect(mobileNavigation?.match(/<svg aria-hidden="true"/g)).toHaveLength(5);
-    expect(mobileNavigation).not.toMatch(/[🏚️👥🎭🗳️📸]/u);
+    expect(mobileNavigation).toContain("Configurações");
+    expect(mobileNavigation?.match(/<svg aria-hidden="true"/g)).toHaveLength(6);
+    expect(mobileNavigation).not.toMatch(/[🏚️👥🎭🗳️📸⚙️]/u);
+    expect(
+      mobileNavigation?.indexOf('aria-label="Configurações"'),
+    ).toBeGreaterThan(mobileNavigation?.indexOf('aria-label="Galeria"') ?? -1);
 
     const accountMenu = html.match(
       /<div id="admin-account-menu"[^>]*>([\s\S]*?)<\/div>/,
     )?.[1];
-    expect(accountMenu).toContain("Configurações");
+    expect(accountMenu).not.toContain("Configurações");
     expect(accountMenu).toContain("Ver site");
     expect(accountMenu).toContain("Sair");
   });

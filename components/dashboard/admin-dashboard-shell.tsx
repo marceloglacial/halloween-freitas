@@ -20,7 +20,7 @@ const sections: {
   label: string;
   icon: DashboardIconName;
 }[] = [
-  { href: "/dashboard", label: "Visão geral", icon: "overview" },
+  { href: "/dashboard", label: "Visão Geral", icon: "overview" },
   { href: "/dashboard/convidados", label: "Convidados", icon: "guests" },
   { href: "/dashboard/concursos", label: "Concursos", icon: "contest" },
   { href: "/dashboard/votacao", label: "Votação", icon: "voting" },
@@ -31,9 +31,7 @@ const sections: {
     icon: "settings",
   },
 ];
-const primaryMobileSections = sections.filter(
-  (section) => section.href !== "/dashboard/configuracoes",
-);
+const primaryMobileSections = sections;
 
 const logoutButtonClassName =
   "min-h-11 w-full rounded-xl border border-red-400/30 bg-red-950/60 px-4 py-2 text-left font-semibold text-red-100 transition hover:border-red-300/50 hover:bg-red-900/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300 motion-reduce:transition-none";
@@ -168,7 +166,7 @@ function MobileBottomNavigation({
       aria-label="Navegação administrativa principal"
       className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-zinc-950/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.35)] backdrop-blur lg:hidden"
     >
-      <ul className="mx-auto grid max-w-xl grid-cols-5 items-stretch">
+      <ul className="mx-auto grid max-w-xl grid-cols-6 items-stretch">
         {primaryMobileSections.map((section) => {
           const active = pathname === section.href;
           return (
@@ -366,7 +364,6 @@ export default function AdminDashboardShell({
           <span>
             <span className="block text-xs tracking-[0.18em] text-orange-300 uppercase">
               Halloween
-              {selection.event && <> {selection.event.year}</>}
             </span>
           </span>
         </Link>
@@ -379,10 +376,7 @@ export default function AdminDashboardShell({
 
       <div className="min-w-0">
         <header className="border-b border-white/10 bg-zinc-950/90 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex w-full flex-col items-stretch gap-3 lg:flex-row lg:items-center lg:gap-4">
-            <h1 className="sr-only text-lg font-semibold lg:not-sr-only lg:mr-auto lg:text-left lg:text-xl">
-              {currentSection}
-            </h1>
+          <div className="flex w-full items-center justify-end">
             <div className="ml-auto hidden items-center gap-3 lg:flex">
               {isSettingsPage && (
                 <EditionSelection
@@ -400,10 +394,7 @@ export default function AdminDashboardShell({
                 className="flex min-w-0 items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
               >
                 <span aria-hidden="true">🎃</span>
-                <span className="truncate font-semibold">
-                  Halloween
-                  {selection.event && <> {selection.event.year}</>}
-                </span>
+                <span className="truncate font-semibold">Halloween</span>
               </Link>
               <div ref={accountMenuRef} className="relative">
                 <button
@@ -447,17 +438,6 @@ export default function AdminDashboardShell({
                   hidden={!accountMenuOpen}
                   className="absolute top-full right-0 z-40 mt-2 grid w-56 gap-2 rounded-xl border border-white/15 bg-zinc-950 p-2 shadow-xl [&[hidden]]:hidden"
                 >
-                  <Link
-                    href={pathWithYear(
-                      "/dashboard/configuracoes",
-                      selection.event?.year,
-                    )}
-                    onClick={() => setAccountMenuOpen(false)}
-                    className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-100 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
-                  >
-                    <DashboardIcon name="settings" />
-                    Configurações
-                  </Link>
                   <SiteLink className="w-full" />
                   <LogoutButton
                     className={logoutButtonClassName}

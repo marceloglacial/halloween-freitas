@@ -152,7 +152,7 @@ function EventForm({
                 aria-invalid={fieldCollisions.length > 0 || undefined}
                 aria-describedby={describedBy || undefined}
                 onChange={(event) => onDateChange(field, event.target.value)}
-                className={`rounded border bg-white/10 px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 read-only:cursor-not-allowed read-only:opacity-70 ${
+                className={`rounded border bg-white/10 px-3 py-2 read-only:cursor-not-allowed read-only:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 ${
                   fieldCollisions.length > 0
                     ? "border-red-500 ring-1 ring-red-500"
                     : "border-white/20"
@@ -346,7 +346,7 @@ export default function EventDashboard({
   if (!draft) {
     return (
       <section className="rounded-xl bg-white/10 p-6">
-        <h1 className="text-3xl font-bold">Configurações</h1>
+        <h1 className="text-4xl text-orange-300 sm:text-5xl">Configurações</h1>
         <p className="mt-3">Nenhum evento cadastrado.</p>
         <button
           type="button"
@@ -367,13 +367,18 @@ export default function EventDashboard({
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold">
-              {creating
-                ? selected
-                  ? "Criar próxima edição"
-                  : "Criar primeira edição"
-                : `Configurações de ${selected?.year}`}
+            <h1 className="text-4xl text-orange-300 sm:text-5xl">
+              Configurações
             </h1>
+            {creating && (
+              <h2 className="mt-2 text-2xl font-semibold">
+                {creating
+                  ? selected
+                    ? "Criar próxima edição"
+                    : "Criar primeira edição"
+                  : null}
+              </h2>
+            )}
             {creating && (
               <p className="mt-1 max-w-3xl text-sm text-gray-300">
                 {selected

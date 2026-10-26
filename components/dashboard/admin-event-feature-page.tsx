@@ -19,8 +19,8 @@ const featureRoute: Record<AdminEventFeature, string> = {
 
 const featureTitle: Record<AdminEventFeature, string> = {
   contests: "Concursos",
-  voting: "Votação e resultados",
-  gallery: "Galeria da festa",
+  voting: "Votação",
+  gallery: "Galeria",
 };
 
 export default async function AdminEventFeaturePage({
@@ -43,7 +43,9 @@ export default async function AdminEventFeaturePage({
   if (!event) {
     return (
       <section className="rounded-2xl border border-white/10 bg-stone-950/80 p-5 sm:p-6">
-        <h1 className="text-2xl font-semibold">{featureTitle[feature]}</h1>
+        <h1 className="text-4xl text-orange-300 sm:text-5xl">
+          {featureTitle[feature]}
+        </h1>
         <h2 className="mt-4 text-xl font-semibold">
           Nenhuma edição disponível
         </h2>

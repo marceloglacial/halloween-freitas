@@ -28,7 +28,9 @@ describe("admin event guest route", () => {
     const html = renderToStaticMarkup(
       <AdminEventGuests event={event} now="2025-11-02T00:00:00.000Z" />,
     );
-    expect(html).toContain("Convidados · edição 2025");
+    expect(html).toContain(">Convidados</h1>");
+    expect(html).not.toContain("Edição 2025");
+    expect(html).not.toContain(event.title);
     expect(html).toContain("Edição arquivada");
     expect(html).toContain("novas inclusões e exclusões seguem bloqueadas");
     expect(html).toContain(`data-event-id="${event._id}"`);

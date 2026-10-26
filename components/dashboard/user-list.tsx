@@ -44,7 +44,7 @@ export default function UserList({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-3xl font-bold">{users.length} convidados</h1>
+        <h2 className="text-2xl font-semibold">{users.length} convidados</h2>
         <div className="flex flex-wrap justify-between gap-2">
           <button
             type="button"

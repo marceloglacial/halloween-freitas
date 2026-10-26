@@ -241,13 +241,7 @@ export default function AdminEventOverview({
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-orange-400/20 bg-gradient-to-br from-orange-500/10 via-stone-950 to-stone-950 p-6 sm:p-8">
-        <p className="text-xs font-semibold tracking-[0.2em] text-orange-300 uppercase">
-          Visão geral · edição {year} ·{" "}
-          {event.status === "active" ? "ativa" : "arquivada"}
-        </p>
-        <h2 className="mt-3 text-2xl font-semibold sm:text-3xl">
-          {event.title}
-        </h2>
+        <h1 className="text-4xl text-orange-300 sm:text-5xl">Visão Geral</h1>
         <p role="status" className="mt-2 text-sm font-medium text-orange-100">
           Estado atual: {lifecycleStatus}
         </p>
