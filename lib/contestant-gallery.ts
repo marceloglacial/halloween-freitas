@@ -22,7 +22,6 @@ type GalleryEntryDocument = Pick<
   | "displayName"
   | "status"
   | "ownerRsvpId"
-  | "guardianRsvpId"
   | "contestPhoto"
 >;
 
@@ -57,12 +56,6 @@ function completeEntry(
     entry as ContestantEntryDocument,
     new Map([[category._id.toString(), category.eligibility ?? "all"]]),
   );
-}
-
-function ownerRsvpId(entry: GalleryEntryDocument) {
-  return entry.entryType === "junior"
-    ? entry.guardianRsvpId
-    : entry.ownerRsvpId;
 }
 
 function hasGalleryPhotoMetadata(entry: GalleryEntryDocument) {
@@ -108,7 +101,6 @@ async function getGalleryEntries(db: Db, eventId: ObjectId) {
             displayName: 1,
             status: 1,
             ownerRsvpId: 1,
-            guardianRsvpId: 1,
             contestPhoto: 1,
           },
         },
@@ -120,7 +112,7 @@ async function getGalleryEntries(db: Db, eventId: ObjectId) {
     categories.map((category) => [category._id.toString(), category]),
   );
   const ownerIds = entries.flatMap((entry) => {
-    const owner = ownerRsvpId(entry);
+    const owner = entry.ownerRsvpId;
     return owner ? [owner] : [];
   });
   const sameEditionOwners = new Set(
@@ -133,7 +125,7 @@ async function getGalleryEntries(db: Db, eventId: ObjectId) {
   );
   return entries.flatMap((entry) => {
     const category = categoryById.get(entry.categoryId.toString()) ?? null;
-    const owner = ownerRsvpId(entry);
+    const owner = entry.ownerRsvpId;
     if (
       !owner ||
       !sameEditionOwners.has(owner.toString()) ||
@@ -185,7 +177,6 @@ export async function getPublicContestGalleryPhoto(
           displayName: 1,
           status: 1,
           ownerRsvpId: 1,
-          guardianRsvpId: 1,
           contestPhoto: 1,
         },
       },
@@ -206,7 +197,7 @@ export async function getPublicContestGalleryPhoto(
   if (!completeEntry(entry, category) || !hasGalleryPhotoMetadata(entry)) {
     return null;
   }
-  const owner = ownerRsvpId(entry);
+  const owner = entry.ownerRsvpId;
   if (
     !owner ||
     !(await db

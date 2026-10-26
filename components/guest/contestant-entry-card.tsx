@@ -3,7 +3,6 @@ import type { OwnedContestantEntry } from "@/lib/contestant-entries";
 
 const entryTypeLabels: Record<ContestantEntryType, string> = {
   individual: "Fantasia individual",
-  junior: "Fantasia infantil",
   group: "Fantasia em grupo",
 };
 

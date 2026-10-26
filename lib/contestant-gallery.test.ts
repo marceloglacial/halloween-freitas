@@ -21,10 +21,10 @@ function entry(overrides: Record<string, unknown> = {}) {
     _id: validEntryId,
     eventId,
     categoryId,
-    entryType: "junior",
-    displayName: "Bia Freitas",
+    entryType: "group",
+    displayName: "Família Freitas",
     status: "ready",
-    guardianRsvpId: ownerId,
+    ownerRsvpId: ownerId,
     contestPhoto: {
       assetId: "private-asset-id",
       publicId: `contest-photos/${eventId}/secret-photo-id`,
@@ -46,9 +46,9 @@ describe("public contestant photo gallery queries", () => {
     const category = {
       _id: categoryId,
       eventId,
-      title: "Fantasia infantil",
-      icon: "🧒",
-      eligibility: "junior",
+      title: "Fantasia em grupo",
+      icon: "👯",
+      eligibility: "group",
     };
     const find = vi
       .fn()
@@ -59,12 +59,12 @@ describe("public contestant photo gallery queries", () => {
             entry(),
             entry({
               _id: new ObjectId("507f1f77bcf86cd799439015"),
-              displayName: "Draft child",
+              displayName: "Draft group",
               status: "draft",
             }),
             entry({
               _id: new ObjectId("507f1f77bcf86cd799439016"),
-              displayName: "Unconsented child",
+              displayName: "Unconsented group",
               contestPhoto: {
                 ...entry().contestPhoto,
                 consentByRsvpId: new ObjectId().toString(),
@@ -78,7 +78,7 @@ describe("public contestant photo gallery queries", () => {
             entry({
               _id: new ObjectId("507f1f77bcf86cd799439019"),
               displayName: "Other edition owner",
-              guardianRsvpId: new ObjectId("507f1f77bcf86cd799439020"),
+              ownerRsvpId: new ObjectId("507f1f77bcf86cd799439020"),
             }),
           ],
         }),
@@ -93,10 +93,10 @@ describe("public contestant photo gallery queries", () => {
     expect(result).toEqual([
       {
         _id: validEntryId.toString(),
-        displayName: "Bia Freitas",
-        entryType: "junior",
-        categoryTitle: "Fantasia infantil",
-        categoryIcon: "🧒",
+        displayName: "Família Freitas",
+        entryType: "group",
+        categoryTitle: "Fantasia em grupo",
+        categoryIcon: "👯",
         width: 800,
         height: 1200,
       },
@@ -123,8 +123,8 @@ describe("public contestant photo gallery queries", () => {
       .mockResolvedValueOnce({
         _id: categoryId,
         eventId,
-        title: "Fantasia infantil",
-        eligibility: "junior",
+        title: "Fantasia em grupo",
+        eligibility: "group",
       })
       .mockResolvedValueOnce({ _id: ownerId });
     db.collection.mockImplementation(() => ({ findOne }));
@@ -150,7 +150,7 @@ describe("public contestant photo gallery queries", () => {
     });
   });
 
-  it("does not deliver photos when guardian consent is missing or belongs to another RSVP", async () => {
+  it("does not deliver photos when owner consent is missing or belongs to another RSVP", async () => {
     const findOne = vi
       .fn()
       .mockResolvedValueOnce(
@@ -164,8 +164,8 @@ describe("public contestant photo gallery queries", () => {
       .mockResolvedValueOnce({
         _id: categoryId,
         eventId,
-        title: "Fantasia infantil",
-        eligibility: "junior",
+        title: "Fantasia em grupo",
+        eligibility: "group",
       });
     db.collection.mockImplementation(() => ({ findOne }));
 

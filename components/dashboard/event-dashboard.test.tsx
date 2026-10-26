@@ -48,7 +48,7 @@ describe("event settings route", () => {
     expect(markup).toContain("🧟 Fantasia Mais Assustadora");
     expect(markup).toContain("🤡 Fantasia Mais Engraçada");
     expect(markup).toContain("👯‍♀️ Melhor Fantasia de Grupo ou Dupla");
-    expect(markup).toContain("🧒 Melhor Fantasia Infantil");
+    expect(markup).not.toContain("Melhor Fantasia Infantil");
     expect(markup).toContain("🔥 Fantasia Mais Sexy");
     expect(markup).not.toContain("Adicionar categoria");
   });

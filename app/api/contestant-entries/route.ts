@@ -7,7 +7,6 @@ import { ContestEntryClosedError } from "@/lib/contest-entry-writes";
 import {
   ContestantEntryWriteError,
   createGroupContestantEntry,
-  createJuniorContestantEntry,
   createIndividualContestantEntry,
 } from "@/lib/contestant-entry-mutations";
 import { normalizeCostumeTitle } from "@/lib/contestant-entries";
@@ -38,7 +37,7 @@ function serializeOwnedEntry(
   };
 }
 
-function failure(error: unknown, entryType: "individual" | "junior" | "group") {
+function failure(error: unknown, entryType: "individual" | "group") {
   if (error instanceof GuestAccessError) {
     return Response.json(
       { error: error.message, code: error.code },
@@ -80,18 +79,14 @@ function failure(error: unknown, entryType: "individual" | "junior" | "group") {
 }
 
 export async function POST(request: Request) {
-  let entryType: "individual" | "junior" | "group" = "individual";
+  let entryType: "individual" | "group" = "individual";
   try {
     const body = await readJsonObject(request);
     if (!body || !validGuestEventId(body.eventId)) {
       return errorResponse("Evento inválido.", 400);
     }
     const requestedType = body.entryType ?? "individual";
-    if (
-      requestedType !== "individual" &&
-      requestedType !== "junior" &&
-      requestedType !== "group"
-    ) {
+    if (requestedType !== "individual" && requestedType !== "group") {
       return errorResponse("Tipo de inscrição inválido.", 400);
     }
     entryType = requestedType;
@@ -104,16 +99,10 @@ export async function POST(request: Request) {
     }
 
     const entryName =
-      entryType === "junior"
-        ? normalizeName(body.childName)
-        : entryType === "group"
-          ? normalizeName(body.groupName)
-          : null;
+      entryType === "group" ? normalizeName(body.groupName) : null;
     if (entryType !== "individual" && !entryName) {
       return errorResponse(
-        entryType === "junior"
-          ? "Informe o nome da criança (de 2 a 120 caracteres)."
-          : "Informe o nome do grupo (de 2 a 120 caracteres).",
+        "Informe o nome do grupo (de 2 a 120 caracteres).",
         400,
       );
     }
@@ -146,22 +135,13 @@ export async function POST(request: Request) {
             ...(costumeTitle ? { costumeTitle } : {}),
             now,
           })
-        : entryType === "junior"
-          ? await createJuniorContestantEntry(client, db, {
-              eventId: new ObjectId(event._id),
-              ...(categoryId ? { categoryId } : {}),
-              guardianRsvpId: new ObjectId(guest.userId),
-              childName: entryName!,
-              ...(costumeTitle ? { costumeTitle } : {}),
-              now,
-            })
-          : await createIndividualContestantEntry(client, db, {
-              eventId: new ObjectId(event._id),
-              rsvpId: new ObjectId(guest.userId),
-              displayName: guest.fullName,
-              ...(costumeTitle ? { costumeTitle } : {}),
-              now,
-            });
+        : await createIndividualContestantEntry(client, db, {
+            eventId: new ObjectId(event._id),
+            rsvpId: new ObjectId(guest.userId),
+            displayName: guest.fullName,
+            ...(costumeTitle ? { costumeTitle } : {}),
+            now,
+          });
 
     return Response.json(serializeOwnedEntry(entry), {
       status: 201,

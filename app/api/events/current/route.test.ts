@@ -63,6 +63,7 @@ describe("current active event endpoint", () => {
       ...activeEvent,
       phase: "registration",
       registrationState: "open",
+      contestEntryState: "closed",
       categories,
     });
     expect(response.headers.get("Cache-Control")).toBe("no-store");

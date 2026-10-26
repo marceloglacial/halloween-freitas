@@ -19,7 +19,6 @@ export function serializeUser(user: UserDocument): User {
     imageUrl: user.imageUrl,
     ...(user.contestant !== undefined ? { contestant: user.contestant } : {}),
     group: Boolean(user.group),
-    junior: Boolean(user.junior),
     ...(user.status ? { status: user.status } : {}),
   };
 }
@@ -36,7 +35,6 @@ export function toPublicUser(
         : user.fullName,
     imageUrl: user.imageUrl,
     group: user.group,
-    junior: user.junior,
   };
 }
 

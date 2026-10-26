@@ -154,10 +154,7 @@ export default function ContestantEntryEditor({
     (entryType !== "group" && title !== savedTitle) ||
     photo !== null;
   const shownImage = previewUrl ?? photoUrl;
-  const consentLabel =
-    entryType === "junior"
-      ? "Confirmo que sou responsável legal e autorizo o uso desta foto no concurso."
-      : "Autorizo o uso desta foto no concurso.";
+  const consentLabel = "Autorizo o uso desta foto no concurso.";
 
   return (
     <form onSubmit={save} className="grid gap-5">

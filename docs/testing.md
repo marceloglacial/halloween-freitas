@@ -12,7 +12,7 @@ cross-edition isolation cases where they apply.
 
 ## Domain and schedule tests
 
-- Create a new edition and verify its transaction seeds exactly the seven
+- Create a new edition and verify its transaction seeds exactly the six
   standard Portuguese categories, once, in the specified order and with
   event-specific eligibility. Verify duplicate event creation does not create
   another category set, and existing editions' category records are unchanged.
@@ -26,10 +26,6 @@ cross-edition isolation cases where they apply.
   permanent first-voting cutoff, independently of contestant-entry state.
 - Exercise contestant entry open/close/reopen, freeze, incomplete drafts,
   consent/photo eligibility, and attempts to add/edit while closed.
-- Verify a linked guardian can add multiple child entries only to junior
-  categories in the selected edition; each entry uses the child's name,
-  remains a private draft without its required photo and guardian consent, and
-  cannot be created after the first-voting cutoff.
 - Verify a linked guest can create one group entry in an eligible group
   category per edition; use the creator's RSVP, reject a second entry even
   under concurrency, keep entries private until a valid photo is uploaded, and
@@ -66,8 +62,7 @@ cross-edition isolation cases where they apply.
 - Enforce one ballot per verified RSVP, category, round, and edition under
   simultaneous requests.
 - Cover category eligibility, individual entries in every `all` category,
-  individual self-voting, guardian voting for a child, and creator voting for a
-  couple/group entry.
+  individual self-voting, and creator voting for a couple/group entry.
 - Race first voting opening against new RSVP and contestant requests; only
   operations ordered before the cutoff may succeed. Race close/reopen and ballot
   submission and assert no duplicate or lost ballot.

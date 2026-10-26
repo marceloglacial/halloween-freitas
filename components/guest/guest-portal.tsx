@@ -22,20 +22,16 @@ export default function GuestPortal({
   guestName: string;
   entries: OwnedContestantEntry[];
   now: string;
-  /** @deprecated Voting is rendered on the separate voting page. */
-  categories?: Category[];
-  /** @deprecated Voting is rendered on the separate voting page. */
-  votedCategoryIds?: string[];
 }) {
   const eventStarted =
     new Date(now).getTime() >= new Date(event.eventStartsAt).getTime();
   const votingOpen = isVotingOpen(event) && eventStarted;
-  const contestEntryOpen = getContestEntryState(event, new Date(now)) === "open";
+  const contestEntryOpen =
+    getContestEntryState(event, new Date(now)) === "open";
   const individualEntry = entries.find(
     (entry) => entry.entryType === "individual",
   );
   const groupEntry = entries.find((entry) => entry.entryType === "group");
-  const juniorEntries = entries.filter((entry) => entry.entryType === "junior");
   const eventQuery = `?eventId=${event._id}`;
   const entryStatus = (entry?: OwnedContestantEntry) =>
     entry ? entryStatusLabels[entry.status] : "Ainda não cadastrada";
@@ -49,17 +45,6 @@ export default function GuestPortal({
       status:
         individualEntry || contestEntryOpen
           ? entryStatus(individualEntry)
-          : "Inscrições encerradas",
-    },
-    {
-      href: `/meu-halloween/criancas${eventQuery}`,
-      icon: "🧒",
-      title: "Fantasias infantis",
-      description: "Cadastre cada criança e envie uma foto com autorização.",
-      status: contestEntryOpen
-        ? `${juniorEntries.length} ${juniorEntries.length === 1 ? "criança cadastrada" : "crianças cadastradas"}`
-        : juniorEntries.length
-          ? `${juniorEntries.length} ${juniorEntries.length === 1 ? "criança cadastrada" : "crianças cadastradas"} · inscrições encerradas`
           : "Inscrições encerradas",
     },
     {

@@ -102,10 +102,9 @@ export async function POST(request: Request) {
         );
       if (!gate.matchedCount) throw new RegistrationUnavailableError();
 
-      const existingRegistration = await db.collection("users").findOne(
-        { eventId, normalizedEmail },
-        { session },
-      );
+      const existingRegistration = await db
+        .collection("users")
+        .findOne({ eventId, normalizedEmail }, { session });
       if (existingRegistration) throw new DuplicateRegistrationError();
 
       await db.collection("users").insertOne(
@@ -117,7 +116,6 @@ export async function POST(request: Request) {
           imageUrl: null,
           contestant: false,
           group: false,
-          junior: false,
           createdAt: now,
         },
         { session },
@@ -129,10 +127,16 @@ export async function POST(request: Request) {
       return errorResponse("As inscrições foram encerradas", 403);
     }
     if (error instanceof DuplicateRegistrationError) {
-      return errorResponse("Este email já confirmou presença nesta edição", 409);
+      return errorResponse(
+        "Este email já confirmou presença nesta edição",
+        409,
+      );
     }
     if (error instanceof MongoServerError && error.code === 11000) {
-      return errorResponse("Este email já confirmou presença nesta edição", 409);
+      return errorResponse(
+        "Este email já confirmou presença nesta edição",
+        409,
+      );
     }
     logServerError("Registration failed", error);
     return errorResponse("Não foi possível realizar a inscrição", 500);

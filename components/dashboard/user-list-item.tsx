@@ -34,11 +34,6 @@ export function UserListItem({
               Grupo
             </span>
           )}
-          {user.junior && (
-            <span className="rounded bg-blue-200 px-2 py-1 text-xs text-blue-800">
-              Junior
-            </span>
-          )}
         </div>
       </div>
       <div className="flex flex-wrap gap-2 sm:justify-end">

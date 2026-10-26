@@ -20,18 +20,16 @@ export function isCompleteContestantEntry(
   categories: Map<string, Category["eligibility"]>,
 ) {
   const eligibility = categories.get(entry.categoryId.toString());
-  const ownerId =
-    entry.entryType === "junior" ? entry.guardianRsvpId : entry.ownerRsvpId;
+  const ownerId = entry.ownerRsvpId;
   const photo = entry.contestPhoto;
 
   return Boolean(
     entry.status !== "withdrawn" &&
-    ["individual", "junior", "group"].includes(entry.entryType) &&
+    ["individual", "group"].includes(entry.entryType) &&
     entry.displayName.trim() &&
     eligibility &&
     (eligibility === "all" ||
-      (eligibility === "group" && entry.entryType === "group") ||
-      (eligibility === "junior" && entry.entryType === "junior")) &&
+      (eligibility === "group" && entry.entryType === "group")) &&
     ownerId &&
     photo?.assetId &&
     photo.publicId &&
@@ -70,7 +68,6 @@ export async function freezeContestantEntries(
           displayName: 1,
           status: 1,
           ownerRsvpId: 1,
-          guardianRsvpId: 1,
           contestPhoto: 1,
         },
         session,
@@ -144,9 +141,6 @@ export function entryCanVoteForCategory(
     return false;
   }
   if (category.eligibility === "group" && entry.entryType !== "group") {
-    return false;
-  }
-  if (category.eligibility === "junior" && entry.entryType !== "junior") {
     return false;
   }
   return true;

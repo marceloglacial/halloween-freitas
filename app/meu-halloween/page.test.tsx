@@ -159,7 +159,7 @@ describe("Meu Halloween route", () => {
     expect(mocks.redirect).not.toHaveBeenCalled();
   });
 
-  it("loads entries and categories for the verified RSVP event, even without contestant entries", async () => {
+  it("loads entries for the verified RSVP event", async () => {
     const result = await MeuHalloweenPage({
       searchParams: Promise.resolve({ eventId: event._id }),
     });
@@ -169,8 +169,6 @@ describe("Meu Halloween route", () => {
         event,
         guestName: "Ana Freitas",
         entries: [],
-        categories: [category],
-        votedCategoryIds: [category._id],
       },
     });
     expect(mocks.getGuestRegistration).toHaveBeenCalledWith(event._id);
@@ -178,8 +176,8 @@ describe("Meu Halloween route", () => {
       event._id,
       "507f1f77bcf86cd799439013",
     );
-    expect(mocks.getCategories).toHaveBeenCalledWith(event._id);
-    expect(mocks.getOpenVotingRound).toHaveBeenCalledWith(event._id);
+    expect(mocks.getCategories).not.toHaveBeenCalled();
+    expect(mocks.getOpenVotingRound).not.toHaveBeenCalled();
   });
 
   it("does not read votes or cross-edition data when voting is closed", async () => {
@@ -201,7 +199,7 @@ describe("Meu Halloween route", () => {
     expect(mocks.getOpenVotingRound).not.toHaveBeenCalled();
   });
 
-  it("sends only a temporary photo URL to the guest portal", async () => {
+  it("omits private photo data from the guest portal hub", async () => {
     mocks.getContestantEntriesForRsvp.mockResolvedValue([
       {
         _id: "candidate-id",
@@ -228,12 +226,8 @@ describe("Meu Halloween route", () => {
         entryType: "individual",
         displayName: "Ana Freitas",
         status: "draft",
-        photoUrl: "temporary-photo-preview",
       },
     ]);
-    expect(mocks.contestPhotoPreviewUrl).toHaveBeenCalledWith(
-      "private-cloudinary-id",
-      "png",
-    );
+    expect(mocks.contestPhotoPreviewUrl).not.toHaveBeenCalled();
   });
 });

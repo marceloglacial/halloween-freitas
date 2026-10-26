@@ -40,10 +40,10 @@ describe("homepage event lifecycle", () => {
     const category: Category = {
       _id: "category-1",
       eventId: "event-1",
-      title: "Melhor Fantasia Infantil",
-      icon: "🧒",
+      title: "Melhor Fantasia de Grupo ou Dupla",
+      icon: "👯‍♀️",
       order: 5,
-      eligibility: "junior",
+      eligibility: "group",
     };
     const html = renderToStaticMarkup(
       <EventLifecycle
@@ -71,6 +71,6 @@ describe("homepage event lifecycle", () => {
     );
 
     expect(html).toContain("Premiação para as Categorias");
-    expect(html).toContain("🧒 Melhor Fantasia Infantil");
+    expect(html).toContain("👯‍♀️ Melhor Fantasia de Grupo ou Dupla");
   });
 });

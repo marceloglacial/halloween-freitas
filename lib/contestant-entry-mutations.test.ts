@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import { ObjectId } from "mongodb";
 import {
   createGroupContestantEntry,
-  createJuniorContestantEntry,
   createIndividualContestantEntry,
   updateIndividualContestantEntryTitle,
 } from "@/lib/contestant-entry-mutations";
@@ -32,7 +31,10 @@ function fixture({
 } = {}) {
   const eventUpdate = vi.fn().mockResolvedValue({ matchedCount: eventMatched });
   const rsvpFind = vi.fn().mockResolvedValue(rsvp);
-  const categoryFind = vi.fn().mockResolvedValue(category);
+  const categoryFind = vi.fn().mockReturnValue({
+    toArray: vi.fn().mockResolvedValue(category ? [category] : []),
+  });
+  const categoryFindOne = vi.fn().mockResolvedValue(category);
   const entryFind = vi.fn().mockResolvedValue(entry);
   const insert = vi.fn().mockResolvedValue({ insertedId: entryId });
   const update = vi.fn().mockResolvedValue({ matchedCount: 1 });
@@ -40,7 +42,8 @@ function fixture({
     collection: (name: string) => {
       if (name === "events") return { updateOne: eventUpdate };
       if (name === "users") return { findOne: rsvpFind };
-      if (name === "categories") return { findOne: categoryFind };
+      if (name === "categories")
+        return { find: categoryFind, findOne: categoryFindOne };
       if (name === "contestants") {
         return { insertOne: insert, findOne: entryFind, updateOne: update };
       }
@@ -59,6 +62,7 @@ function fixture({
     eventUpdate,
     rsvpFind,
     categoryFind,
+    categoryFindOne,
     entryFind,
     insert,
     update,
@@ -95,7 +99,7 @@ describe("individual contestant entry mutations", () => {
       expect.objectContaining({ session: f.session }),
     );
     expect(f.categoryFind).toHaveBeenCalledWith(
-      { _id: categoryId, eventId },
+      { eventId },
       expect.objectContaining({ session: f.session }),
     );
     expect(f.insert).toHaveBeenCalledWith(created, { session: f.session });
@@ -127,11 +131,11 @@ describe("individual contestant entry mutations", () => {
         missingCategory.db,
         { eventId, categoryId, rsvpId, displayName: "Ana", now },
       ),
-    ).rejects.toMatchObject({ status: 404, code: "category_not_found" });
+    ).rejects.toMatchObject({ status: 400, code: "category_not_available" });
     expect(missingCategory.insert).not.toHaveBeenCalled();
 
     const restrictedCategory = fixture({
-      category: { _id: categoryId, eligibility: "junior" },
+      category: { _id: categoryId, eligibility: "group" },
     });
     await expect(
       createIndividualContestantEntry(
@@ -193,103 +197,6 @@ describe("individual contestant entry mutations", () => {
   });
 });
 
-describe("junior contestant entry mutations", () => {
-  it("creates multiple private child drafts owned by the event guardian", async () => {
-    const f = fixture({
-      category: { _id: categoryId, eligibility: "junior" },
-    });
-
-    const first = await createJuniorContestantEntry(f.client, f.db, {
-      eventId,
-      categoryId,
-      guardianRsvpId: rsvpId,
-      childName: "  Bia   Freitas ",
-      costumeTitle: "Fada",
-      now,
-    });
-    const second = await createJuniorContestantEntry(f.client, f.db, {
-      eventId,
-      categoryId,
-      guardianRsvpId: rsvpId,
-      childName: "Clara Freitas",
-      now,
-    });
-
-    expect(first).toMatchObject({
-      eventId,
-      categoryId,
-      guardianRsvpId: rsvpId,
-      entryType: "junior",
-      displayName: "Bia Freitas",
-      costumeTitle: "Fada",
-      status: "draft",
-      createdAt: now,
-      updatedAt: now,
-    });
-    expect(first).not.toHaveProperty("ownerRsvpId");
-    expect(second).toMatchObject({
-      guardianRsvpId: rsvpId,
-      entryType: "junior",
-      displayName: "Clara Freitas",
-      status: "draft",
-    });
-    expect(second._id).not.toEqual(first._id);
-    expect(f.insert).toHaveBeenCalledTimes(2);
-    expect(f.rsvpFind).toHaveBeenCalledWith(
-      { _id: rsvpId, eventId, status: { $ne: "cancelled" } },
-      expect.objectContaining({ session: f.session }),
-    );
-  });
-
-  it("requires a junior category and the same-edition guardian RSVP", async () => {
-    const wrongCategory = fixture();
-    await expect(
-      createJuniorContestantEntry(wrongCategory.client, wrongCategory.db, {
-        eventId,
-        categoryId,
-        guardianRsvpId: rsvpId,
-        childName: "Bia Freitas",
-        now,
-      }),
-    ).rejects.toMatchObject({ status: 400, code: "category_not_available" });
-    expect(wrongCategory.insert).not.toHaveBeenCalled();
-
-    const wrongEventRsvp = fixture({
-      category: { _id: categoryId, eligibility: "junior" },
-      rsvp: null,
-    });
-    await expect(
-      createJuniorContestantEntry(wrongEventRsvp.client, wrongEventRsvp.db, {
-        eventId,
-        categoryId,
-        guardianRsvpId: rsvpId,
-        childName: "Bia Freitas",
-        now,
-      }),
-    ).rejects.toThrow("CONTESTANT_RSVP_NOT_FOUND_FOR_EVENT");
-    expect(wrongEventRsvp.insert).not.toHaveBeenCalled();
-  });
-
-  it("does not create a draft after the voting cutoff wins", async () => {
-    const f = fixture({
-      eventMatched: 0,
-      category: { _id: categoryId, eligibility: "junior" },
-    });
-
-    await expect(
-      createJuniorContestantEntry(f.client, f.db, {
-        eventId,
-        categoryId,
-        guardianRsvpId: rsvpId,
-        childName: "Bia Freitas",
-        now,
-      }),
-    ).rejects.toThrow("CONTEST_ENTRY_CLOSED");
-    expect(f.rsvpFind).not.toHaveBeenCalled();
-    expect(f.insert).not.toHaveBeenCalled();
-  });
-});
-
 describe("group contestant entry mutations", () => {
   it("creates a private creator-owned draft in a group category", async () => {
     const f = fixture({
@@ -321,7 +228,7 @@ describe("group contestant entry mutations", () => {
       { _id: rsvpId, eventId, status: { $ne: "cancelled" } },
       expect.objectContaining({ session: f.session }),
     );
-    expect(f.categoryFind).toHaveBeenCalledWith(
+    expect(f.categoryFindOne).toHaveBeenCalledWith(
       { _id: categoryId, eventId },
       expect.objectContaining({ session: f.session }),
     );

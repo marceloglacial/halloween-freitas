@@ -5,7 +5,7 @@ import {
 } from "@/lib/event-categories";
 
 describe("event category configuration", () => {
-  it("defines the seven ordered Brazilian Portuguese default categories", () => {
+  it("defines the six ordered Brazilian Portuguese default categories", () => {
     expect(DEFAULT_EVENT_CATEGORIES).toEqual([
       { title: "Melhor Fantasia", icon: "🏆", order: 0, eligibility: "all" },
       { title: "Pior Fantasia", icon: "💩", order: 1, eligibility: "all" },
@@ -27,26 +27,20 @@ describe("event category configuration", () => {
         order: 4,
         eligibility: "group",
       },
-      {
-        title: "Melhor Fantasia Infantil",
-        icon: "🧒",
-        order: 5,
-        eligibility: "junior",
-      },
-      { title: "Fantasia Mais Sexy", icon: "🔥", order: 6, eligibility: "all" },
+      { title: "Fantasia Mais Sexy", icon: "🔥", order: 5, eligibility: "all" },
     ]);
   });
 
   it("normalizes labels and sorts the configured order", () => {
     expect(
       parseEventCategories([
-        { title: " Junior ", icon: "🎃", order: 1, eligibility: "junior" },
+        { title: " Grupo ", icon: "🎃", order: 1, eligibility: "group" },
         { title: " Geral ", icon: "👻", order: 0, eligibility: "all" },
       ]),
     ).toEqual({
       value: [
         { title: "Geral", icon: "👻", order: 0, eligibility: "all" },
-        { title: "Junior", icon: "🎃", order: 1, eligibility: "junior" },
+        { title: "Grupo", icon: "🎃", order: 1, eligibility: "group" },
       ],
     });
   });
@@ -70,12 +64,12 @@ describe("event category configuration", () => {
     expect(
       parseEventCategories([
         { title: "Geral", icon: "", order: 0, eligibility: "all" },
-        { title: "Infantil", icon: "", order: 0, eligibility: "junior" },
+        { title: "Grupos", icon: "", order: 0, eligibility: "group" },
       ]),
     ).toEqual({ error: "A ordem das categorias deve ser única e válida" });
     expect(
       parseEventCategories([
-        { title: "Geral", icon: "", order: 0, eligibility: "everyone" },
+        { title: "Infantil", icon: "", order: 0, eligibility: "junior" },
       ]),
     ).toEqual({ error: "Elegibilidade da categoria inválida" });
   });

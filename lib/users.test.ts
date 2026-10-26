@@ -39,7 +39,6 @@ describe("public user serialization", () => {
       fullName: "Ana",
       imageUrl: undefined,
       group: undefined,
-      junior: undefined,
     });
   });
   it("uses the frozen contestant name in public candidate views", () => {

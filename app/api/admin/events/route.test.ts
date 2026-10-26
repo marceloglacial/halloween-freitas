@@ -144,7 +144,7 @@ describe("admin events API", () => {
     expect(mocks.insertMany).not.toHaveBeenCalled();
   });
 
-  it("creates a first edition and seeds the seven defaults atomically", async () => {
+  it("creates a first edition and seeds the six defaults atomically", async () => {
     const insertedId = new ObjectId();
     mocks.insertOne.mockResolvedValue({ insertedId });
 
@@ -183,7 +183,7 @@ describe("admin events API", () => {
       })),
       expect.objectContaining({ session: expect.any(Object) }),
     );
-    expect(mocks.insertMany.mock.calls[0][0]).toHaveLength(7);
+    expect(mocks.insertMany.mock.calls[0][0]).toHaveLength(6);
     expect(mocks.withTransaction).toHaveBeenCalledOnce();
     expect(mocks.endSession).toHaveBeenCalledOnce();
   });

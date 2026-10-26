@@ -1,4 +1,4 @@
-type ContestantEntryType = "individual" | "junior" | "group";
+type ContestantEntryType = "individual" | "group";
 
 type ContestantEntryStatus = "draft" | "ready" | "locked" | "withdrawn";
 

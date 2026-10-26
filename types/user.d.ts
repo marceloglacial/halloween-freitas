@@ -6,7 +6,6 @@ type User = {
   imageUrl?: string | null;
   contestant?: boolean;
   group?: boolean;
-  junior?: boolean;
   status?: "confirmed" | "cancelled";
 };
 

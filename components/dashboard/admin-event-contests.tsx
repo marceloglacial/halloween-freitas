@@ -275,7 +275,6 @@ export default function AdminEventContests({
                     >
                       <option value="all">Todas as entradas</option>
                       <option value="group">Grupos ou duplas</option>
-                      <option value="junior">Infantil</option>
                     </select>
                   </label>
                   <div className="flex items-end gap-2">
@@ -453,11 +452,9 @@ export default function AdminEventContests({
                     </p>
                     <p className="mt-1 text-xs text-gray-400">
                       {entry.categoryIcon} {entry.categoryTitle} ·{" "}
-                      {entry.entryType === "junior"
-                        ? "Infantil"
-                        : entry.entryType === "group"
-                          ? "Grupo ou dupla"
-                          : "Individual"}
+                      {entry.entryType === "group"
+                        ? "Grupo ou dupla"
+                        : "Individual"}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs">

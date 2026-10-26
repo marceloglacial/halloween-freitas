@@ -84,76 +84,6 @@ export async function createIndividualContestantEntry(
   return entry;
 }
 
-export async function createJuniorContestantEntry(
-  client: MongoClient,
-  db: Db,
-  input: {
-    eventId: ObjectId;
-    categoryId?: ObjectId;
-    guardianRsvpId: ObjectId;
-    childName: string;
-    costumeTitle?: string;
-    now: Date;
-  },
-) {
-  const session = client.startSession();
-  let entry: ContestantEntryDocument | undefined;
-
-  try {
-    await session.withTransaction(async () => {
-      await claimContestEntryWrite(db, input.eventId, session, input.now);
-      await requireContestantRsvpInEvent(
-        db,
-        input.eventId.toString(),
-        input.guardianRsvpId.toString(),
-        session,
-      );
-
-      const category = await db
-        .collection("categories")
-        .findOne(
-          input.categoryId
-            ? { _id: input.categoryId, eventId: input.eventId }
-            : { eventId: input.eventId, eligibility: "junior" },
-          {
-            projection: { _id: 1, eligibility: 1 },
-            sort: { order: 1, _id: 1 },
-            session,
-          },
-        );
-      if (!category) {
-        throw new ContestantEntryWriteError(
-          input.categoryId ? 404 : 400,
-          input.categoryId ? "category_not_found" : "category_not_available",
-        );
-      }
-      if (category.eligibility !== "junior") {
-        throw new ContestantEntryWriteError(400, "category_not_available");
-      }
-
-      entry = createContestantEntry(
-        {
-          eventId: input.eventId.toString(),
-          categoryId: category._id.toString(),
-          entryType: "junior",
-          rsvpId: input.guardianRsvpId.toString(),
-          displayName: input.childName,
-          costumeTitle: input.costumeTitle,
-        },
-        input.now,
-      );
-      await db
-        .collection<ContestantEntryDocument>("contestants")
-        .insertOne(entry, { session });
-    });
-  } finally {
-    await session.endSession();
-  }
-
-  if (!entry) throw new Error("CONTESTANT_ENTRY_NOT_CREATED");
-  return entry;
-}
-
 export async function createGroupContestantEntry(
   client: MongoClient,
   db: Db,
@@ -247,28 +177,12 @@ export async function updateOwnedContestantEntryTitle(
     await session.withTransaction(async () => {
       await claimContestEntryWrite(db, input.eventId, session, input.now);
       const contestants = db.collection<ContestantEntryDocument>("contestants");
-      const ownership: Filter<ContestantEntryDocument> = input.entryType
-        ? input.entryType === "junior"
-          ? {
-              _id: input.entryId,
-              eventId: input.eventId,
-              guardianRsvpId: input.rsvpId,
-              entryType: input.entryType,
-            }
-          : {
-              _id: input.entryId,
-              eventId: input.eventId,
-              ownerRsvpId: input.rsvpId,
-              entryType: input.entryType,
-            }
-        : {
-            _id: input.entryId,
-            eventId: input.eventId,
-            $or: [
-              { ownerRsvpId: input.rsvpId },
-              { guardianRsvpId: input.rsvpId },
-            ],
-          };
+      const ownership: Filter<ContestantEntryDocument> = {
+        _id: input.entryId,
+        eventId: input.eventId,
+        ownerRsvpId: input.rsvpId,
+        ...(input.entryType ? { entryType: input.entryType } : {}),
+      };
       const existing = await contestants.findOne(ownership, {
         projection: { _id: 1, status: 1, entryType: 1 },
         session,

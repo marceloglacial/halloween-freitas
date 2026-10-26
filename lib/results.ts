@@ -14,10 +14,12 @@ export async function getCategoryResults(
   const categoryObjectId = new ObjectId(categoryId);
   const roundObjectId = new ObjectId(roundId);
   const db = await getDb();
-  const category = await db.collection<{ eligibility?: Category["eligibility"] }>("categories").findOne(
-    { _id: categoryObjectId, eventId: eventObjectId },
-    { projection: { eligibility: 1 } },
-  );
+  const category = await db
+    .collection<{ eligibility?: Category["eligibility"] }>("categories")
+    .findOne(
+      { _id: categoryObjectId, eventId: eventObjectId },
+      { projection: { eligibility: 1 } },
+    );
   if (!category) return { users: [], totalVotes: 0 };
 
   const rows = await db
@@ -55,17 +57,12 @@ export async function getCategoryResults(
                 "candidate.categoryId": categoryObjectId,
                 "candidate.entryType": "group",
               }
-            : category.eligibility === "junior"
-              ? {
-                  "candidate.categoryId": categoryObjectId,
-                  "candidate.entryType": "junior",
-                }
-              : {
-                  $or: [
-                    { "candidate.categoryId": categoryObjectId },
-                    { "candidate.entryType": "individual" },
-                  ],
-                }),
+            : {
+                $or: [
+                  { "candidate.categoryId": categoryObjectId },
+                  { "candidate.entryType": "individual" },
+                ],
+              }),
         },
       },
       {

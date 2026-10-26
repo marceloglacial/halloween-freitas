@@ -48,7 +48,6 @@ export async function getAdminEventOverview(
               displayName: 1,
               status: 1,
               ownerRsvpId: 1,
-              guardianRsvpId: 1,
               contestPhoto: 1,
             },
           },

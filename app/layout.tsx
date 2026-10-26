@@ -79,7 +79,11 @@ export default function RootLayout({
   );
 
   return (
-    <html lang="pt-BR" className="scroll-smooth">
+    <html
+      lang="pt-BR"
+      className="scroll-smooth"
+      data-scroll-behavior="smooth"
+    >
       <body className={`${defaultFont.className} antialiased`}>
         {content}
         <Toaster

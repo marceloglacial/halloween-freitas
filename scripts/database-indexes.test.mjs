@@ -131,14 +131,10 @@ describe("database indexes", () => {
       },
     });
     expect(
-      requiredIndexes.find(
+      requiredIndexes.some(
         ({ label }) => label === "guardian contestant entries",
       ),
-    ).toMatchObject({
-      collection: "contestants",
-      key: { eventId: 1, guardianRsvpId: 1 },
-      options: {},
-    });
+    ).toBe(false);
   });
 
   it("detects duplicate adult contestant ownership before index creation", async () => {

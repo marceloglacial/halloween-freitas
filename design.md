@@ -118,7 +118,6 @@ they are not currently implemented.
 | `/votacao/categories/[id]`      | Candidate search, selectable photo grid, floating vote action                          | No matches, selected candidate, submitting, vote success or failure                                |
 | `/meu-halloween?eventId=…`      | Edition-specific guest hub linking to the participant flows and voting                 | RSVP-linked access, flow status, voting state                                                      |
 | `/meu-halloween/individual`     | Individual costume registration and its contest photo                                  | Create entry, staged title/photo save, local photo preview, photo removal, entry closed            |
-| `/meu-halloween/criancas`       | Guardian-managed child costume registrations and contest photos                        | Multiple children, staged title/photo save, preview, guardian consent, photo removal, entry closed |
 | `/meu-halloween/grupo`          | Couple/group costume registration and its contest photo                                | Create entry, editable group name, photo preview/save/removal, category availability, entry closed |
 | `/meu-halloween/fotos-da-festa` | Separate guest uploads for the party album                                             | Waiting for event start, multi-photo upload, private uploads                                       |
 | `/meu-halloween/votacao`        | Edition voting hub with category links                                                 | Hidden from the guest hub until the event starts and voting opens                                  |
@@ -211,11 +210,11 @@ in the architecture guide.
 
 ### Meu Halloween guest portal and participant flows
 
-The portal and each child flow require a verified Clerk session linked to an
-RSVP for the selected edition. The portal acts as a simple hub with separate
-links for individual, child, and group costume registration and party-photo
-uploads. Each flow has its own page, shows only entries owned by or guarded by
-that RSVP, and keeps a contestant's photo upload beside its registration.
+The portal and each participant flow require a verified Clerk session linked to
+an RSVP for the selected edition. The portal acts as a simple hub with separate
+links for individual and group costume registration and party-photo uploads.
+Each flow has its own page, shows only entries owned by that RSVP, and keeps a
+contestant's photo upload beside its registration.
 Contestant status remains private to its owner. Show the voting page link in
 the hub only after the event starts and voting opens. The separate voting page
 is available to every linked attendee, whether or not they have a contestant
@@ -225,11 +224,8 @@ From the authenticated voting categories page, guests can open their selected
 edition's Meu Halloween portal to view entries, RSVP/event status, and profile
 controls. While contestant entries are open, owners can upload or replace one
 photo per entry after confirming permission to use it. Show the current photo,
-file limits, pending upload, success, and error states. Junior entries require
-the guardian to confirm permission. Guardians can add multiple child entries in
-a junior category with the child's name, an optional costume title, and a clear
-instruction to finish the private draft by uploading a photo and confirming
-permission. Once entries close, creation and upload controls are disabled. The
+file limits, pending upload, success, and error states. Once entries close,
+creation and upload controls are disabled. The
 profile page still lets guests update the single “Nome e sobrenome” field.
 While entries are open, a guest can create one group entry per edition with a
 group name, a group-eligible category, and an optional costume title. Do not ask

@@ -45,7 +45,7 @@ function readyEntry(
 describe("contestant entry readiness and freeze", () => {
   const categories = new Map([[categoryId.toString(), "all" as const]]);
 
-  it("requires category, name, photo, and consent from the owner or guardian", () => {
+  it("requires category, name, photo, and consent from the owner", () => {
     expect(isCompleteContestantEntry(readyEntry(), categories)).toBe(true);
     expect(
       isCompleteContestantEntry(
@@ -83,28 +83,22 @@ describe("contestant entry readiness and freeze", () => {
     ).toBe(false);
   });
 
-  it("matches junior and group entries to their eligible category types", () => {
-    const juniorCategories = new Map([
-      [categoryId.toString(), "junior" as const],
+  it("matches group entries only to group-eligible categories", () => {
+    const groupCategories = new Map([
+      [categoryId.toString(), "group" as const],
     ]);
     expect(
       isCompleteContestantEntry(
         readyEntry({
-          entryType: "junior",
-          ownerRsvpId: undefined,
-          guardianRsvpId: ownerRsvpId,
-          contestPhoto: {
-            ...readyEntry().contestPhoto!,
-            consentByRsvpId: ownerRsvpId.toString(),
-          },
+          entryType: "group",
         }),
-        juniorCategories,
+        groupCategories,
       ),
     ).toBe(true);
     expect(
       isCompleteContestantEntry(
         readyEntry({ entryType: "individual" }),
-        juniorCategories,
+        groupCategories,
       ),
     ).toBe(false);
   });
@@ -191,34 +185,17 @@ describe("contestant entry readiness and freeze", () => {
     );
   });
 
-  it("allows voters to vote for their own individual, child, and group entries", () => {
+  it("allows voters to vote for individual and group entries", () => {
     const category = {
       _id: categoryId.toString(),
       eventId: eventId.toString(),
       eligibility: "all" as const,
     };
     expect(
-      entryCanVoteForCategory(
-        readyEntry({ status: "locked" }),
-        category,
-      ),
+      entryCanVoteForCategory(readyEntry({ status: "locked" }), category),
     ).toBe(true);
     expect(
-      entryCanVoteForCategory(
-        readyEntry({ status: "locked" }),
-        category,
-      ),
-    ).toBe(true);
-    expect(
-      entryCanVoteForCategory(
-        readyEntry({
-          status: "locked",
-          entryType: "junior",
-          ownerRsvpId: undefined,
-          guardianRsvpId: ownerRsvpId,
-        }),
-        category,
-      ),
+      entryCanVoteForCategory(readyEntry({ status: "locked" }), category),
     ).toBe(true);
     expect(
       entryCanVoteForCategory(

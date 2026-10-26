@@ -122,18 +122,6 @@ export function UserEditModal({
             />
             <span className="text-white">Participa como grupo</span>
           </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={!!modalUser.junior}
-              className="size-4 accent-orange-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
-              onChange={(e) =>
-                setModalUser({ ...modalUser, junior: e.target.checked })
-              }
-              disabled={loading}
-            />
-            <span className="text-white">Participante infantil</span>
-          </label>
           {modalUser.imageUrl ? (
             <button
               type="button"

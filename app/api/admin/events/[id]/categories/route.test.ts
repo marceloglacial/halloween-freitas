@@ -186,10 +186,10 @@ describe("admin event categories API", () => {
         {
           _id: new ObjectId(categoryIds[1]),
           eventId: new ObjectId(eventId),
-          title: "Infantil",
+          title: "Grupo",
           icon: "",
           order: 1,
-          eligibility: "junior",
+          eligibility: "group",
         },
       ]),
     });
@@ -230,10 +230,10 @@ describe("admin event categories API", () => {
       request([
         {
           _id: categoryIds[1],
-          title: "Junior",
+          title: "Grupo atualizado",
           icon: "🎃",
           order: 0,
-          eligibility: "junior",
+          eligibility: "group",
         },
         {
           _id: categoryIds[0],
@@ -264,10 +264,10 @@ describe("admin event categories API", () => {
       { _id: new ObjectId(categoryIds[1]), eventId: new ObjectId(eventId) },
       {
         $set: {
-          title: "Junior",
+          title: "Grupo atualizado",
           icon: "🎃",
           order: 0,
-          eligibility: "junior",
+          eligibility: "group",
         },
       },
       expect.objectContaining({ session: expect.any(Object) }),

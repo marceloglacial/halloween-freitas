@@ -76,12 +76,6 @@ export const requiredIndexes = [
   },
   {
     collection: "contestants",
-    label: "guardian contestant entries",
-    key: { eventId: 1, guardianRsvpId: 1 },
-    options: {},
-  },
-  {
-    collection: "contestants",
     label: "event contestant readiness",
     key: { eventId: 1, status: 1, entryType: 1 },
     options: {},

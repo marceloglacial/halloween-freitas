@@ -24,16 +24,10 @@ export const DEFAULT_EVENT_CATEGORIES = [
     order: 4,
     eligibility: "group",
   },
-  {
-    title: "Melhor Fantasia Infantil",
-    icon: "🧒",
-    order: 5,
-    eligibility: "junior",
-  },
-  { title: "Fantasia Mais Sexy", icon: "🔥", order: 6, eligibility: "all" },
+  { title: "Fantasia Mais Sexy", icon: "🔥", order: 5, eligibility: "all" },
 ] satisfies readonly EventCategoryInput[];
 
-const eligibilityValues = ["all", "group", "junior"] as const;
+const eligibilityValues = ["all", "group"] as const;
 
 export function parseEventCategories(
   value: unknown,

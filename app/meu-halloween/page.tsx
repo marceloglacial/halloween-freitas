@@ -20,7 +20,16 @@ export default async function MeuHalloweenPage({
   const { event, guest } = context;
 
   const now = new Date();
-  const entries = await getContestantEntriesForRsvp(event._id, guest.userId);
+  const entries = (
+    await getContestantEntriesForRsvp(event._id, guest.userId)
+  ).map((entry) => ({
+    _id: entry._id,
+    categoryId: entry.categoryId,
+    entryType: entry.entryType,
+    displayName: entry.displayName,
+    ...(entry.costumeTitle ? { costumeTitle: entry.costumeTitle } : {}),
+    status: entry.status,
+  }));
   return (
     <GuestPortal
       event={event}

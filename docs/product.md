@@ -30,15 +30,13 @@ belong only to the active edition. Historical editions remain individually
 selectable according to their publication state.
 
 An RSVP records attendance intent. A contestant entry independently represents
-an adult's individual entry, a guardian-owned child entry, or a creator-owned
-couple/group entry competing in that edition. One adult may own at most one
-individual and one couple/group entry per edition; a guardian may create
-multiple child entries. Children do not need an RSVP or Clerk account.
+an adult's individual entry or a creator-owned couple/group entry competing in
+that edition. One adult may own at most one individual and one couple/group
+entry per edition.
 An individual entry does not select a category and is eligible in every
-category open to all contestant types. Group-only and child-only categories
-remain restricted to their matching entry types and are assigned by the
-server when the entry is created; guests do not choose a category for those
-entry types.
+category open to all contestant types. Group-only categories remain restricted
+to group entries and are assigned by the server when the entry is created;
+guests do not choose a category for that entry type.
 Contestant photos belong to entries. The party photo album stores guest uploads
 and is separate from contestant entries, contest photos, and voting candidates.
 
@@ -57,12 +55,12 @@ and is separate from contestant entries, contest photos, and voting candidates.
 - Let a verified guest view and update their own RSVP name for the selected
   edition. Keep email and account identifiers private, and keep a frozen
   contestant display name independent from later RSVP profile edits.
-- Let guests stage an optional costume title and photo for individual and child
-  entries, preview a selected photo before upload, and save both with one
-  explicit action. A group entry's name is its costume name, and its creator can
-  edit that name while entries are open. Require consent when uploading a new
-  photo (guardian consent for a child), and allow guests to remove their saved
-  photo while contestant entries are open.
+- Let guests stage an optional costume title and photo for individual entries,
+  preview a selected photo before upload, and save both with one explicit
+  action. A group entry's name is its costume name, and its creator can edit
+  that name while entries are open. Require consent when uploading a new photo,
+  and allow guests to remove their saved photo while contestant entries are
+  open.
 - Show RSVP availability from the edition's scheduled `registrationStartsAt`
   until the first opening of voting. RSVP availability is independent of whether
   contestant entries are open.
@@ -76,9 +74,8 @@ and is separate from contestant entries, contest photos, and voting candidates.
 - After `eventStartsAt` and contestant freeze, administrators may open voting.
   The first opening permanently cuts off new RSVPs and contestant additions or
   deletions for that edition.
-- Allow a guest to vote for their own individual entry, their group entry, and
-  child entries for which they are the guardian, subject to normal category
-  eligibility and one-ballot-per-category rules.
+- Allow a guest to vote for their own individual or group entry, subject to
+  normal category eligibility and one-ballot-per-category rules.
 - Let administrators manage event categories before voting first opens; lock
   category configuration once voting begins.
 - Let enrolled guests upload multiple party photos after `eventStartsAt`, even
@@ -97,10 +94,10 @@ publication. All privileged decisions are enforced server-side and recorded in
 an audit history where specified by the lifecycle and architecture contracts.
 After voting first opens, an administrator may correct existing guest or
 contestant information and photos, but cannot add or delete contestant entries.
-Every newly created edition starts with these seven event-scoped costume
+Every newly created edition starts with these six event-scoped costume
 categories in order: 🏆 Melhor Fantasia, 💩 Pior Fantasia, 🧟 Fantasia Mais
 Assustadora, 🤡 Fantasia Mais Engraçada, 👯‍♀️ Melhor Fantasia de Grupo ou
-Dupla, 🧒 Melhor Fantasia Infantil, and 🔥 Fantasia Mais Sexy. Administrators
+Dupla, and 🔥 Fantasia Mais Sexy. Administrators
 can review and edit the new edition's categories before voting opens. Creating
 an edition never changes categories belonging to an existing edition.
 

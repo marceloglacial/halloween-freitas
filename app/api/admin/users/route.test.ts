@@ -74,11 +74,7 @@ describe("admin users API", () => {
     });
     mocks.auth.mockResolvedValue({ userId: "admin_user" });
     mocks.userFindOne.mockImplementation((query: Record<string, unknown>) => {
-      if (
-        query._id &&
-        typeof query._id === "object" &&
-        "$ne" in query._id
-      ) {
+      if (query._id && typeof query._id === "object" && "$ne" in query._id) {
         return null;
       }
       if (!("_id" in query)) return null;
@@ -91,7 +87,6 @@ describe("admin users API", () => {
         contestantName: "Nome anterior",
         contestant: true,
         group: false,
-        junior: false,
         clerkUserId: "linked_owner",
       };
     });
@@ -268,17 +263,18 @@ describe("admin users API", () => {
 
   it("does not audit when an existing RSVP is unchanged", async () => {
     mocks.isAdmin.mockResolvedValue(true);
-    mocks.userFindOne.mockResolvedValueOnce({
-      _id: "507f1f77bcf86cd799439012",
-      eventId,
-      fullName: "Nome escolhido",
-      email: "new@example.com",
-      normalizedEmail: "new@example.com",
-      contestantName: "Nome escolhido",
-      imageUrl: null,
-      group: false,
-      junior: false,
-    }).mockResolvedValueOnce(null);
+    mocks.userFindOne
+      .mockResolvedValueOnce({
+        _id: "507f1f77bcf86cd799439012",
+        eventId,
+        fullName: "Nome escolhido",
+        email: "new@example.com",
+        normalizedEmail: "new@example.com",
+        contestantName: "Nome escolhido",
+        imageUrl: null,
+        group: false,
+      })
+      .mockResolvedValueOnce(null);
     const response = await PUT(
       new Request("http://localhost/api/admin/users", {
         method: "PUT",

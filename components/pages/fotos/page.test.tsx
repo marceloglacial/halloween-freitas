@@ -29,10 +29,10 @@ const priorEvent = {
 };
 const entry: PublicContestGalleryEntry = {
   _id: "507f1f77bcf86cd799439012",
-  displayName: "Bia Freitas",
-  entryType: "junior",
-  categoryTitle: "Fantasia infantil",
-  categoryIcon: "🧒",
+  displayName: "Família Freitas",
+  entryType: "group",
+  categoryTitle: "Fantasia em grupo",
+  categoryIcon: "👯",
   width: 800,
   height: 1200,
 };
@@ -51,7 +51,7 @@ describe("contest photo gallery interface", () => {
     expect(html).toContain('aria-label="Edições"');
     expect(html).toContain('aria-current="page"');
     expect(html).toContain("Buscar fotos por nome ou categoria");
-    expect(html).toContain("Fantasia infantil");
+    expect(html).toContain("Fantasia em grupo");
     expect(html).toContain(
       "/api/contest-gallery/507f1f77bcf86cd799439012/photo?event=halloween-2026",
     );

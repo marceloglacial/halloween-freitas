@@ -14,20 +14,20 @@ identity alone.
 
 ## Records
 
-| Record                        | Owns or references                                                                                                                                                                                     | Key constraints                                                                                                                                                                                          |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Event**                     | Year, unique slug, IANA timezone, `registrationStartsAt`, `eventStartsAt`, active/archive state, `contestEntryStatus`, first-voting enrollment cutoff, round state, and publication controls           | Stable `eventId`; BSON date instants; unique year and slug; at most one active edition                                                                                                                   |
-| **Category**                  | Title, icon, order, and eligibility (`all`, `group`, or `junior`) for one edition                                                                                                                      | Stable category ID; unique `(eventId, order)`; references never cross editions                                                                                                                           |
-| **RSVP**                      | Attendance name, normalized email, optional linked Clerk user ID, and optional frozen contestant display-name snapshot                                                                                 | Unique `(eventId, normalizedEmail)` and unique linked `(eventId, clerkUserId)`                                                                                                                           |
-| **Contestant entry**          | Stable candidate `_id`, `eventId`, `categoryId`, `entryType`, `displayName`, and either `ownerRsvpId` (individual/group) or `guardianRsvpId` (junior); readiness/consent and contest-photo reference   | `draft`, `ready`, `locked`, or `withdrawn`; unique `(eventId, ownerRsvpId, entryType)` for adult-owned entries; multiple guardian-owned children allowed; drafts remain private; ballots reference `_id` |
-| **Contest photo**             | One current authenticated Cloudinary asset for a contestant entry, with asset/public IDs, validated format/dimensions/bytes, upload time, and consent actor/time                                       | Scoped through entry and `eventId`; drafts never expose asset IDs; replacement or guest removal preserves contestant ID, queues cleanup, and never deletes an asset still referenced by an entry         |
-| **Party album**               | One album-wide publication state and audit history per edition                                                                                                                                         | Unique `eventId`; no per-photo approval state                                                                                                                                                            |
-| **Party photo**               | Stable photo ID, `eventId`, uploader RSVP ID, authenticated Cloudinary asset ID/public ID, validated format/bytes/dimensions, and upload time; removal and cleanup state are added by album management | Uploader RSVP and asset must belong to the same edition; public delivery follows album publication; guest previews are short-lived and RSVP-authorized                                                   |
-| **Voting round**              | Stable round ID, type (`primary` or `runoff`), manual state, and frozen category scope                                                                                                                 | Unique round type per edition; at most one open round per edition                                                                                                                                        |
-| **Ballot**                    | Stable ballot ID, event, round, category, verified RSVP voter, and stable contestant candidate ID                                                                                                      | Unique `(eventId, roundId, categoryId, voterRsvpId)`; round, voter, category, and candidate all belong to the event                                                                                      |
-| **Result publication**        | Edition-wide final-results publication state and actor/time audit                                                                                                                                      | Public only after final round ends and explicit publication                                                                                                                                              |
-| **Admin audit**               | Event, Clerk admin ID, action, target, timestamp, and safe before/after change summary                                                                                                                 | Event-scoped; covers lifecycle, publication, removal, and permitted corrections; never store credentials or duplicate sensitive payloads unnecessarily                                                   |
-| **Request rate-limit bucket** | Event, action, HMAC identity, fixed-window count, and expiry                                                                                                                                           | Event/action/window-scoped; no raw email, Clerk ID, or IP; automatically removed by a TTL index                                                                                                          |
+| Record                        | Owns or references                                                                                                                                                                                     | Key constraints                                                                                                                                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Event**                     | Year, unique slug, IANA timezone, `registrationStartsAt`, `eventStartsAt`, active/archive state, `contestEntryStatus`, first-voting enrollment cutoff, round state, and publication controls           | Stable `eventId`; BSON date instants; unique year and slug; at most one active edition                                                                                                           |
+| **Category**                  | Title, icon, order, and eligibility (`all` or `group`) for one edition                                                                                                                                 | Stable category ID; unique `(eventId, order)`; references never cross editions                                                                                                                   |
+| **RSVP**                      | Attendance name, normalized email, optional linked Clerk user ID, and optional frozen contestant display-name snapshot                                                                                 | Unique `(eventId, normalizedEmail)` and unique linked `(eventId, clerkUserId)`                                                                                                                   |
+| **Contestant entry**          | Stable candidate `_id`, `eventId`, `categoryId`, `entryType`, `displayName`, `ownerRsvpId`, readiness/consent, and contest-photo reference                                                             | `draft`, `ready`, `locked`, or `withdrawn`; unique `(eventId, ownerRsvpId, entryType)`; drafts remain private; ballots reference `_id`                                                           |
+| **Contest photo**             | One current authenticated Cloudinary asset for a contestant entry, with asset/public IDs, validated format/dimensions/bytes, upload time, and consent actor/time                                       | Scoped through entry and `eventId`; drafts never expose asset IDs; replacement or guest removal preserves contestant ID, queues cleanup, and never deletes an asset still referenced by an entry |
+| **Party album**               | One album-wide publication state and audit history per edition                                                                                                                                         | Unique `eventId`; no per-photo approval state                                                                                                                                                    |
+| **Party photo**               | Stable photo ID, `eventId`, uploader RSVP ID, authenticated Cloudinary asset ID/public ID, validated format/bytes/dimensions, and upload time; removal and cleanup state are added by album management | Uploader RSVP and asset must belong to the same edition; public delivery follows album publication; guest previews are short-lived and RSVP-authorized                                           |
+| **Voting round**              | Stable round ID, type (`primary` or `runoff`), manual state, and frozen category scope                                                                                                                 | Unique round type per edition; at most one open round per edition                                                                                                                                |
+| **Ballot**                    | Stable ballot ID, event, round, category, verified RSVP voter, and stable contestant candidate ID                                                                                                      | Unique `(eventId, roundId, categoryId, voterRsvpId)`; round, voter, category, and candidate all belong to the event                                                                              |
+| **Result publication**        | Edition-wide final-results publication state and actor/time audit                                                                                                                                      | Public only after final round ends and explicit publication                                                                                                                                      |
+| **Admin audit**               | Event, Clerk admin ID, action, target, timestamp, and safe before/after change summary                                                                                                                 | Event-scoped; covers lifecycle, publication, removal, and permitted corrections; never store credentials or duplicate sensitive payloads unnecessarily                                           |
+| **Request rate-limit bucket** | Event, action, HMAC identity, fixed-window count, and expiry                                                                                                                                           | Event/action/window-scoped; no raw email, Clerk ID, or IP; automatically removed by a TTL index                                                                                                  |
 
 ## Identity and references
 
@@ -40,11 +40,9 @@ An RSVP name/email change never silently changes a frozen contestant identity
 or ballot; after contestant enrollment closes, candidate and result views use
 the frozen display-name snapshot.
 
-Contestant ownership distinguishes individual entries, guardian-owned child
-entries (the `junior` category), and creator-owned couple/group entries. A
-guardian supplies consent for a child entry; a group creator owns the group
-entry. Guests may vote for their own individual entry, a group they created,
-and child entries for which they are the guardian. Voting identity always comes
+Contestant ownership distinguishes individual entries and creator-owned
+couple/group entries. A group creator owns the group entry. Guests may vote for
+their own individual entry or a group they created. Voting identity always comes
 from the server-verified Clerk-to-RSVP link, never a client-supplied email or
 voter ID. Each ballot records that linked RSVP ID, the open round ID, and the
 stable contestant entry ID; it never stores a candidate name or photo URL as
@@ -52,22 +50,20 @@ ballot identity.
 
 The `contestants` collection is separate from RSVP records. Every entry has a
 stable MongoDB `_id`, one `eventId`, one `categoryId`, an `entryType` of
-`individual`, `junior`, or `group`, and a `displayName`. Individual and group
-entries reference their creator through `ownerRsvpId`; junior entries reference
-their adult through `guardianRsvpId`. Both references point to an RSVP from the
-same event. New entries start as private `draft`s. Only complete, consented,
+`individual` or `group`, and a `displayName`. Entries reference their creator
+through `ownerRsvpId`, which points to an RSVP from the same event. New entries
+start as private `draft`s. Only complete, consented,
 photo-valid entries may transition to `ready`; freezing eligible entries sets
 them to `locked`. `withdrawn` entries are excluded from candidate listings.
 An individual entry's `categoryId` is its stable all-eligibility anchor; it
 does not restrict voting scope. Locked individual entries are candidates in
-every `all`-eligibility category, while group and junior entries remain scoped
-to their stored category.
+every `all`-eligibility category, while group entries remain scoped to their
+stored category.
 
 The unique adult ownership index includes `(eventId, ownerRsvpId, entryType)`
 and applies only to records with an ObjectId `ownerRsvpId`, so each adult may
-own one individual and one group entry per edition. Junior entries have a
-non-unique `(eventId, guardianRsvpId)` lookup index and may be multiple per
-guardian. Candidate lookup is indexed by `(eventId, status, entryType)`. Ballots
+own one individual and one group entry per edition. Candidate lookup is indexed
+by `(eventId, status, entryType)`. Ballots
 reference the contestant entry `_id`; RSVP IDs identify voters and owners, not
 candidate targets.
 

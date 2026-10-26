@@ -9,9 +9,7 @@ import {
 import type { ContestPhotoAsset } from "@/lib/contestant-photos";
 import { getCategories } from "@/util/get-categories";
 
-type ContestantOwnership =
-  | { ownerRsvpId: ObjectId; guardianRsvpId?: never }
-  | { guardianRsvpId: ObjectId; ownerRsvpId?: never };
+type ContestantOwnership = { ownerRsvpId: ObjectId };
 
 export type ContestantEntryDocument = {
   _id: ObjectId;
@@ -22,7 +20,6 @@ export type ContestantEntryDocument = {
   costumeTitle?: string;
   status: ContestantEntryStatus;
   ownerRsvpId?: ObjectId;
-  guardianRsvpId?: ObjectId;
   contestPhoto?: ContestPhotoAsset;
   createdAt: Date;
   updatedAt: Date;
@@ -61,7 +58,7 @@ export type VotingCandidate = {
 export function isContestantEntryType(
   value: unknown,
 ): value is ContestantEntryType {
-  return value === "individual" || value === "junior" || value === "group";
+  return value === "individual" || value === "group";
 }
 
 export function normalizeCostumeTitle(value: unknown): string | undefined {
@@ -82,9 +79,7 @@ export function contestantOwnership(
   }
   const ownerRsvpId = parseObjectId(rsvpId);
   if (!ownerRsvpId) throw new Error("INVALID_CONTESTANT_OWNER");
-  return entryType === "junior"
-    ? { guardianRsvpId: ownerRsvpId }
-    : { ownerRsvpId };
+  return { ownerRsvpId };
 }
 
 export function createContestantEntry(
@@ -142,7 +137,7 @@ export function contestantEntriesForRsvpQuery(
 
   return {
     eventId: eventObjectId,
-    $or: [{ ownerRsvpId: rsvpObjectId }, { guardianRsvpId: rsvpObjectId }],
+    ownerRsvpId: rsvpObjectId,
   };
 }
 
@@ -280,10 +275,7 @@ export async function getVotingCandidatesForCategory(
   if (allowedCandidateIds?.length === 0) return [];
   const entryQuery: Filter<ContestantEntryDocument> = {
     eventId: eventObjectId,
-    $or: [
-      { categoryId: categoryObjectId },
-      { entryType: "individual" },
-    ],
+    $or: [{ categoryId: categoryObjectId }, { entryType: "individual" }],
     status: "locked",
     ...(allowedCandidateIds ? { _id: { $in: allowedCandidateIds } } : {}),
   };
@@ -351,10 +343,7 @@ export async function getContestantEntryForVote(
       _id: entryObjectId,
       eventId: eventObjectId,
       status: "locked",
-      $or: [
-        { categoryId: categoryObjectId },
-        { entryType: "individual" },
-      ],
+      $or: [{ categoryId: categoryObjectId }, { entryType: "individual" }],
     });
   if (!entry) return null;
   const categoryDocument = await db

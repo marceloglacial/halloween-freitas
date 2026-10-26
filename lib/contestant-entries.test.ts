@@ -41,7 +41,7 @@ vi.mock("@/util/get-categories", () => ({
 describe("contestant entry schema and ownership", () => {
   it("accepts only the canonical contestant entry types", () => {
     expect(isContestantEntryType("individual")).toBe(true);
-    expect(isContestantEntryType("junior")).toBe(true);
+    expect(isContestantEntryType("junior")).toBe(false);
     expect(isContestantEntryType("group")).toBe(true);
     expect(isContestantEntryType("adult")).toBe(false);
   });
@@ -54,19 +54,13 @@ describe("contestant entry schema and ownership", () => {
     }
   });
 
-  it("assigns junior entries to a guardian RSVP", () => {
-    expect(contestantOwnership("junior", rsvpId.toString())).toEqual({
-      guardianRsvpId: rsvpId,
-    });
-  });
-
   it("creates new entries as drafts with stable IDs and normalized names", () => {
     const now = new Date("2026-10-09T12:00:00.000Z");
     const entry = createContestantEntry(
       {
         eventId: eventId.toString(),
         categoryId: categoryId.toString(),
-        entryType: "junior",
+        entryType: "individual",
         rsvpId: rsvpId.toString(),
         displayName: "  Ana   Freitas ",
       },
@@ -76,15 +70,15 @@ describe("contestant entry schema and ownership", () => {
     expect(entry).toMatchObject({
       eventId,
       categoryId,
-      entryType: "junior",
-      guardianRsvpId: rsvpId,
+      entryType: "individual",
+      ownerRsvpId: rsvpId,
       displayName: "Ana Freitas",
       status: "draft",
       createdAt: now,
       updatedAt: now,
     });
     expect(entry._id).toBeInstanceOf(ObjectId);
-    expect(entry).not.toHaveProperty("ownerRsvpId");
+    expect(entry).not.toHaveProperty("guardianRsvpId");
   });
 
   it("rejects malformed IDs, names, and entry types", () => {
@@ -111,12 +105,12 @@ describe("contestant entry schema and ownership", () => {
     );
   });
 
-  it("scopes owner and guardian lookups to the selected event", () => {
+  it("scopes owner lookups to the selected event", () => {
     expect(
       contestantEntriesForRsvpQuery(eventId.toString(), rsvpId.toString()),
     ).toEqual({
       eventId,
-      $or: [{ ownerRsvpId: rsvpId }, { guardianRsvpId: rsvpId }],
+      ownerRsvpId: rsvpId,
     });
     expect(() => contestantEntriesForRsvpQuery("bad", rsvpId)).toThrow(
       "INVALID_CONTESTANT_OWNERSHIP_QUERY",
@@ -159,7 +153,6 @@ describe("contestant entry schema and ownership", () => {
         displayName: "Ana",
         status: "ready",
         ownerRsvpId: rsvpId,
-        guardianRsvpId: undefined,
         privateField: "must not be serialized",
       },
     ]);
@@ -178,7 +171,7 @@ describe("contestant entry schema and ownership", () => {
     expect(dbMocks.find).toHaveBeenCalledWith(
       {
         eventId,
-        $or: [{ ownerRsvpId: rsvpId }, { guardianRsvpId: rsvpId }],
+        ownerRsvpId: rsvpId,
       },
       {
         projection: {
@@ -404,8 +397,8 @@ describe("contestant entry schema and ownership", () => {
     ]);
     expect(dbMocks.find).toHaveBeenCalledWith({
       eventId,
-      categoryId,
       status: "locked",
+      $or: [{ categoryId }, { entryType: "individual" }],
     });
     expect(candidatesFind.sort).toHaveBeenCalledWith({
       displayName: 1,

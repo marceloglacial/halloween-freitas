@@ -22,14 +22,13 @@ export async function getContestantEntryForPhoto(
     {
       _id: entryId,
       eventId,
-      $or: [{ ownerRsvpId: rsvpId }, { guardianRsvpId: rsvpId }],
+      ownerRsvpId: rsvpId,
     },
     {
       projection: {
         _id: 1,
         eventId: 1,
         ownerRsvpId: 1,
-        guardianRsvpId: 1,
         entryType: 1,
         status: 1,
         contestPhoto: 1,
@@ -59,7 +58,7 @@ export async function saveContestPhotoForGuest(
       const ownership = {
         _id: input.entryId,
         eventId: input.eventId,
-        $or: [{ ownerRsvpId: input.rsvpId }, { guardianRsvpId: input.rsvpId }],
+        ownerRsvpId: input.rsvpId,
       };
       const entry = await collection.findOne(ownership, {
         projection: { _id: 1, status: 1, contestPhoto: 1 },
@@ -123,7 +122,7 @@ export async function removeContestPhotoForGuest(
       const ownership = {
         _id: input.entryId,
         eventId: input.eventId,
-        $or: [{ ownerRsvpId: input.rsvpId }, { guardianRsvpId: input.rsvpId }],
+        ownerRsvpId: input.rsvpId,
       };
       const entry = await collection.findOne(ownership, {
         projection: { _id: 1, status: 1, contestPhoto: 1 },

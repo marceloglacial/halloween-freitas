@@ -33,14 +33,13 @@ describe("contestant photo ownership and persistence", () => {
       {
         _id: entryId,
         eventId,
-        $or: [{ ownerRsvpId: rsvpId }, { guardianRsvpId: rsvpId }],
+        ownerRsvpId: rsvpId,
       },
       {
         projection: {
           _id: 1,
           eventId: 1,
           ownerRsvpId: 1,
-          guardianRsvpId: 1,
           entryType: 1,
           status: 1,
           contestPhoto: 1,
@@ -102,7 +101,7 @@ describe("contestant photo ownership and persistence", () => {
       expect.objectContaining({
         _id: entryId,
         eventId,
-        $or: [{ ownerRsvpId: rsvpId }, { guardianRsvpId: rsvpId }],
+        ownerRsvpId: rsvpId,
         "contestPhoto.assetId": "old-asset",
       }),
       { $set: { contestPhoto: photo, status: "ready", updatedAt: now } },

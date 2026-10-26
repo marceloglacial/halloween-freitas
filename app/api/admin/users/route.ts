@@ -61,10 +61,9 @@ export async function POST(request: Request) {
       const created = await session.withTransaction(async () => {
         const now = new Date();
         await claimContestEntryWrite(db, eventId, session, now);
-        const duplicate = await db.collection("users").findOne(
-          { eventId, normalizedEmail },
-          { session },
-        );
+        const duplicate = await db
+          .collection("users")
+          .findOne({ eventId, normalizedEmail }, { session });
         if (duplicate) throw new DuplicateGuestEmailError();
         const result = await db.collection("users").insertOne(
           {
@@ -76,7 +75,6 @@ export async function POST(request: Request) {
             contestant: true,
             contestantName: fullName,
             group: Boolean(body.group),
-            junior: Boolean(body.junior),
             createdAt: now,
           },
           { session },
@@ -89,7 +87,6 @@ export async function POST(request: Request) {
           imageUrl: typeof body.imageUrl === "string" ? body.imageUrl : null,
           contestant: true,
           group: Boolean(body.group),
-          junior: Boolean(body.junior),
         };
       });
       if (!created) throw new Error("USER_NOT_CREATED");
@@ -139,7 +136,6 @@ export async function PUT(request: Request) {
       imageUrl: typeof body.imageUrl === "string" ? body.imageUrl : null,
       contestantName: fullName,
       group: Boolean(body.group),
-      junior: Boolean(body.junior),
       updatedAt: new Date(),
     };
     const eventObjectId = new ObjectId(event._id);
@@ -171,7 +167,6 @@ export async function PUT(request: Request) {
           "imageUrl",
           "contestantName",
           "group",
-          "junior",
         ] as const;
         const changes = correctionFields.filter(
           (field) => existing[field] !== update[field],
