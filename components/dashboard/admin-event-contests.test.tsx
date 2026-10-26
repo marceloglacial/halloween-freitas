@@ -45,6 +45,9 @@ describe("admin contest page", () => {
     expect(html).toContain("Edição arquivada");
     expect(html).toContain("Categorias do concurso");
     expect(html).toContain("Inscrições do concurso");
+    expect(html.indexOf("Inscrições do concurso")).toBeLessThan(
+      html.indexOf("Categorias do concurso"),
+    );
     expect(html).toContain("Ainda não há inscrições nesta edição");
     expect(html).toContain(
       "As inscrições não podem ser alteradas após a primeira abertura da votação.",

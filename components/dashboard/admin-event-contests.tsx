@@ -228,6 +228,120 @@ export default function AdminEventContests({
       </header>
 
       <section
+        aria-labelledby="contest-entry-heading"
+        className="space-y-4 rounded-xl bg-white/10 p-4 md:p-6"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 id="contest-entry-heading" className="text-2xl font-bold">
+              Inscrições do concurso
+            </h2>
+            <p className="mt-1 text-sm text-gray-300">
+              {enrollment.contestantState === "upcoming"
+                ? "As inscrições abrem no início programado desta edição."
+                : entryClosed
+                  ? "RSVPs e inscrições do concurso estão fechados para esta edição."
+                  : "RSVPs e inscrições do concurso estão abertos para esta edição."}
+            </p>
+            <p className="mt-1 text-sm text-gray-300">
+              Fechar inscrições interrompe novos RSVPs e alterações no concurso.
+              Ao iniciar a votação, a participação é congelada permanentemente.
+            </p>
+          </div>
+          <span
+            role="status"
+            className={`rounded-full px-3 py-1 text-sm font-semibold ${entryClosed || enrollment.contestantState === "upcoming" ? "bg-gray-700 text-gray-200" : "bg-green-700 text-green-100"}`}
+          >
+            {enrollment.contestantState === "upcoming"
+              ? "Agendadas"
+              : entryClosed
+                ? "Fechadas"
+                : "Abertas"}
+          </span>
+        </div>
+        <button
+          type="button"
+          disabled={busy || event.status !== "active" || locked}
+          onClick={() => void changeContestEntryStatus()}
+          className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
+        >
+          {busy
+            ? "Salvando…"
+            : entryClosed
+              ? "Reabrir inscrições"
+              : "Fechar inscrições"}
+        </button>
+        {event.status !== "active" && (
+          <p className="text-sm text-gray-300">
+            Ative esta edição para alterar as inscrições.
+          </p>
+        )}
+        {locked && (
+          <p className="text-sm text-gray-300">
+            As inscrições não podem ser alteradas após a primeira abertura da
+            votação.
+          </p>
+        )}
+        {error && (
+          <p role="alert" className="text-sm text-red-300">
+            {error}
+          </p>
+        )}
+        <div className="border-t border-white/15 pt-4">
+          <div className="mb-3">
+            <h3 className="text-lg font-semibold">
+              Inscrições recebidas · {entries.length}
+            </h3>
+            <p className="mt-1 text-sm text-gray-300">
+              Lista de inscrições desta edição. Rascunhos ficam visíveis apenas
+              para administradores; a edição das inscrições acontece no fluxo do
+              convidado.
+            </p>
+          </div>
+          {entries.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-white/20 p-5 text-center text-sm text-gray-300">
+              Ainda não há inscrições nesta edição.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {entries.map((entry) => (
+                <li
+                  key={entry._id}
+                  className="flex flex-col gap-3 rounded-lg border border-white/10 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold">{entry.displayName}</p>
+                    <p className="text-sm text-gray-300">
+                      {entry.costumeTitle || "Fantasia sem título"}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-400">
+                      {entry.categoryIcon} {entry.categoryTitle} ·{" "}
+                      {entry.entryType === "group"
+                        ? "Grupo ou dupla"
+                        : "Individual"}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-full bg-white/10 px-3 py-1">
+                      {entry.status === "draft"
+                        ? "Rascunho"
+                        : entry.status === "ready"
+                          ? "Pronta"
+                          : entry.status === "locked"
+                            ? "Congelada para votação"
+                            : "Retirada"}
+                    </span>
+                    <span className="rounded-full bg-white/10 px-3 py-1">
+                      {entry.hasPhoto ? "Foto autorizada" : "Foto pendente"}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+      <section
         aria-labelledby="contest-categories-heading"
         className="space-y-4 rounded-xl bg-white/10 p-4 md:p-6"
       >
@@ -402,121 +516,6 @@ export default function AdminEventContests({
             )}
           </>
         )}
-      </section>
-
-      <section
-        aria-labelledby="contest-entry-heading"
-        className="space-y-4 rounded-xl bg-white/10 p-4 md:p-6"
-      >
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 id="contest-entry-heading" className="text-2xl font-bold">
-              Inscrições do concurso
-            </h2>
-            <p className="mt-1 text-sm text-gray-300">
-              {enrollment.contestantState === "upcoming"
-                ? "As inscrições abrem no início programado desta edição."
-                : entryClosed
-                  ? "RSVPs e inscrições do concurso estão fechados para esta edição."
-                  : "RSVPs e inscrições do concurso estão abertos para esta edição."}
-            </p>
-            <p className="mt-1 text-sm text-gray-300">
-              Fechar inscrições interrompe novos RSVPs e alterações no concurso.
-              Ao iniciar a votação, a participação é congelada permanentemente.
-            </p>
-          </div>
-          <span
-            role="status"
-            className={`rounded-full px-3 py-1 text-sm font-semibold ${entryClosed || enrollment.contestantState === "upcoming" ? "bg-gray-700 text-gray-200" : "bg-green-700 text-green-100"}`}
-          >
-            {enrollment.contestantState === "upcoming"
-              ? "Agendadas"
-              : entryClosed
-                ? "Fechadas"
-                : "Abertas"}
-          </span>
-        </div>
-        <button
-          type="button"
-          disabled={busy || event.status !== "active" || locked}
-          onClick={() => void changeContestEntryStatus()}
-          className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
-        >
-          {busy
-            ? "Salvando…"
-            : entryClosed
-              ? "Reabrir inscrições"
-              : "Fechar inscrições"}
-        </button>
-        {event.status !== "active" && (
-          <p className="text-sm text-gray-300">
-            Ative esta edição para alterar as inscrições.
-          </p>
-        )}
-        {locked && (
-          <p className="text-sm text-gray-300">
-            As inscrições não podem ser alteradas após a primeira abertura da
-            votação.
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="text-sm text-red-300">
-            {error}
-          </p>
-        )}
-        <div className="border-t border-white/15 pt-4">
-          <div className="mb-3">
-            <h3 className="text-lg font-semibold">
-              Inscrições recebidas · {entries.length}
-            </h3>
-            <p className="mt-1 text-sm text-gray-300">
-              Lista de inscrições desta edição. Rascunhos ficam visíveis apenas
-              para administradores; a edição das inscrições acontece no fluxo do
-              convidado.
-            </p>
-          </div>
-          {entries.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-white/20 p-5 text-center text-sm text-gray-300">
-              Ainda não há inscrições nesta edição.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {entries.map((entry) => (
-                <li
-                  key={entry._id}
-                  className="flex flex-col gap-3 rounded-lg border border-white/10 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <p className="font-semibold">{entry.displayName}</p>
-                    <p className="text-sm text-gray-300">
-                      {entry.costumeTitle || "Fantasia sem título"}
-                    </p>
-                    <p className="mt-1 text-xs text-gray-400">
-                      {entry.categoryIcon} {entry.categoryTitle} ·{" "}
-                      {entry.entryType === "group"
-                        ? "Grupo ou dupla"
-                        : "Individual"}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="rounded-full bg-white/10 px-3 py-1">
-                      {entry.status === "draft"
-                        ? "Rascunho"
-                        : entry.status === "ready"
-                          ? "Pronta"
-                          : entry.status === "locked"
-                            ? "Congelada para votação"
-                            : "Retirada"}
-                    </span>
-                    <span className="rounded-full bg-white/10 px-3 py-1">
-                      {entry.hasPhoto ? "Foto autorizada" : "Foto pendente"}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       </section>
     </div>
   );
