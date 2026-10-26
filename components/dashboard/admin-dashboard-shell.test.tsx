@@ -21,6 +21,9 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@clerk/nextjs", () => ({ useUser: mocks.user }));
+vi.mock("@/util/fonts", () => ({
+  secondaryFont: { className: "font-metal-mania" },
+}));
 
 vi.mock("@/components/logout-button", () => ({
   default: () => <button type="button">Sair</button>,
@@ -39,7 +42,10 @@ describe("admin dashboard shell", () => {
     );
 
     expect(html).not.toContain("<h1");
-    expect(html).not.toContain("Halloween 2025");
+    expect(html).toContain("Halloween 2025");
+    expect(
+      html.match(/aria-hidden="true" class="text-gray-500">\|<\/span>/g),
+    ).toHaveLength(2);
     expect(html).toContain('aria-current="page"');
     expect(html).toContain('href="/dashboard/convidados?year=2025"');
     expect(html).not.toContain('aria-label="Seleção de edição"');
@@ -76,7 +82,7 @@ describe("admin dashboard shell", () => {
       /<div id="admin-account-menu"[^>]*>([\s\S]*?)<\/div>/,
     )?.[1];
     expect(accountMenu).not.toContain("Configurações");
-    expect(accountMenu).toContain("Ver site");
+    expect(accountMenu).not.toContain("Ver site");
     expect(accountMenu).toContain("Sair");
   });
 

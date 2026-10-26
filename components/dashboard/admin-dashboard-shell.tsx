@@ -11,6 +11,7 @@ import {
   AdminEventSelection,
   resolveAdminEvent,
 } from "@/lib/admin-event-selection";
+import { secondaryFont } from "@/util/fonts";
 
 type DashboardIconName =
   "overview" | "guests" | "contest" | "voting" | "gallery" | "settings";
@@ -110,7 +111,7 @@ function SiteLink({ className = "" }: { className?: string }) {
       href="/"
       target="_blank"
       rel="noreferrer"
-      className={`inline-flex min-h-11 items-center justify-center rounded-lg border border-orange-400/40 bg-orange-500/10 px-3 py-2 text-sm font-semibold whitespace-nowrap text-orange-200 transition-colors hover:bg-orange-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 motion-reduce:transition-none ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center px-1 py-2 text-sm font-semibold whitespace-nowrap text-orange-200 transition-colors hover:text-orange-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 motion-reduce:transition-none ${className}`}
     >
       Ver site
     </Link>
@@ -354,19 +355,25 @@ export default function AdminDashboardShell({
   return (
     <div className="min-h-screen bg-black text-white lg:grid lg:grid-cols-[16rem_minmax(0,1fr)]">
       <aside className="sticky top-0 hidden h-screen flex-col gap-6 overflow-y-auto border-r border-white/10 bg-zinc-950/95 px-5 py-6 lg:flex">
-        <Link
-          href={pathWithYear("/dashboard", selection.event?.year)}
-          className="flex items-center gap-3 rounded-xl px-3 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
-        >
-          <span className="text-3xl" aria-hidden="true">
-            🎃
-          </span>
-          <span>
-            <span className="block text-xs tracking-[0.18em] text-orange-300 uppercase">
-              Halloween
+        <div className="flex items-center gap-1">
+          <Link
+            href={pathWithYear("/dashboard", selection.event?.year)}
+            className="flex min-w-0 items-center gap-2 rounded-xl px-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+          >
+            <span className="text-3xl" aria-hidden="true">
+              🎃
             </span>
+            <span
+              className={`${secondaryFont.className} truncate text-2xl text-orange-300`}
+            >
+              Halloween{selection.event && ` ${selection.event.year}`}
+            </span>
+          </Link>
+          <span aria-hidden="true" className="text-gray-500">
+            |
           </span>
-        </Link>
+          <SiteLink />
+        </div>
         <NavigationLinks
           pathname={pathname}
           selectedYear={selection.event?.year}
@@ -386,16 +393,27 @@ export default function AdminDashboardShell({
                   className="grid-cols-[auto_auto]"
                 />
               )}
-              <SiteLink />
             </div>
-            <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-3 lg:hidden">
-              <Link
-                href={pathWithYear("/dashboard", selection.event?.year)}
-                className="flex min-w-0 items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
-              >
-                <span aria-hidden="true">🎃</span>
-                <span className="truncate font-semibold">Halloween</span>
-              </Link>
+            <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-3 lg:hidden">
+              <div className="flex min-w-0 items-center gap-1">
+                <Link
+                  href={pathWithYear("/dashboard", selection.event?.year)}
+                  className="flex min-w-0 items-center gap-1 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+                >
+                  <span aria-hidden="true" className="shrink-0 text-xl">
+                    🎃
+                  </span>
+                  <span
+                    className={`${secondaryFont.className} truncate text-xl text-orange-300`}
+                  >
+                    Halloween{selection.event && ` ${selection.event.year}`}
+                  </span>
+                </Link>
+                <span aria-hidden="true" className="text-gray-500">
+                  |
+                </span>
+                <SiteLink className="shrink-0" />
+              </div>
               <div ref={accountMenuRef} className="relative">
                 <button
                   ref={menuButtonRef}
@@ -438,7 +456,6 @@ export default function AdminDashboardShell({
                   hidden={!accountMenuOpen}
                   className="absolute top-full right-0 z-40 mt-2 grid w-56 gap-2 rounded-xl border border-white/15 bg-zinc-950 p-2 shadow-xl [&[hidden]]:hidden"
                 >
-                  <SiteLink className="w-full" />
                   <LogoutButton
                     className={logoutButtonClassName}
                     onClick={() => setAccountMenuOpen(false)}
