@@ -40,7 +40,7 @@ describe("public feature navigation", () => {
     });
   });
 
-  it("shows Dashboard in desktop and mobile navigation for a loaded admin", () => {
+  it("shows Dashboard in the mobile navigation for a loaded admin", () => {
     mocks.usePathname.mockReturnValue("/");
     mocks.useAuth.mockReturnValue({ isLoaded: true, isSignedIn: true });
     mocks.useUser.mockReturnValue({
@@ -52,8 +52,8 @@ describe("public feature navigation", () => {
       FeatureNavigation({ clerkEnabled: true }),
     );
 
-    expect(markup.match(/href="\/dashboard"/g)).toHaveLength(2);
-    expect(markup.match(/>Dashboard<\/a>/g)).toHaveLength(2);
+    expect(markup.match(/href="\/dashboard"/g)).toHaveLength(1);
+    expect(markup.match(/>Dashboard<\/a>/g)).toHaveLength(1);
   });
 
   it.each([

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import AdminAccessDenied from "@/components/dashboard/admin-access-denied";
 import AdminEventOverview from "@/components/dashboard/admin-event-overview";
@@ -51,6 +52,12 @@ export default async function DashboardPage({
           Crie uma edição em Configurações para acompanhar presenças, concurso e
           votação.
         </p>
+        <Link
+          href="/dashboard/configuracoes"
+          className="mt-4 inline-flex rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+        >
+          Abrir configurações
+        </Link>
       </section>
     );
   }

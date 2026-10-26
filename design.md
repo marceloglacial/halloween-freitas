@@ -166,24 +166,20 @@ Published results after voting ends, an archived event, or no current event show
 the post-event cards linking to results and photos. Those links do not bypass
 results publication checks.
 
-### Persistent feature navigation
+### Feature navigation
 
-At wide desktop widths, keep a centered pill sticky to the top of the viewport
-and overlay it on the homepage hero so no empty background band precedes the
-image. Use a glossy translucent glass surface with a light and orange sheen, no
-dark fill, rounded controls, orange edge glow, and readable icon-and-label links.
-Preserve normal top spacing on internal pages. At tablet widths, use a
-compact brand header and a right-side modal drawer. On narrow phones, present
-the same menu as a bottom-inset panel matching the mobile reference. Both
-layouts use a labeled menu button, close button, overlay dismissal, Escape
-handling, focus management, and reduced-motion support. Keep safe-area insets
-clear.
+Do not render the public horizontal feature menu at wide desktop widths. At
+tablet and narrow widths, use a compact brand header and a menu button that
+opens a right-side modal drawer; on narrow phones, present the same menu as a
+bottom-inset panel matching the mobile reference. The mobile menu uses a labeled
+menu button, close button, overlay dismissal, Escape handling, focus management,
+and reduced-motion support. Keep safe-area insets clear.
 
 Before and during an active edition, show the ordered public links Início,
 Informações, Programação, and Confirme sua presença. Omit the RSVP link when
-the server says registration is unavailable. Keep Entrar separate and aligned
-to the desktop navigation's right edge; include it after the ordered links in
-the mobile menu. Once signed in, replace Entrar with the existing Sair action.
+the server says registration is unavailable. Include Entrar after the ordered
+links in the mobile menu. Once signed in, replace Entrar with the existing Sair
+action.
 Show Dashboard beside Sair only after Clerk confirms the signed-in user's
 public role is admin; keep it hidden while the user or role is loading and for
 all other roles. The `/dashboard` route remains protected by server-side admin
@@ -301,7 +297,8 @@ settings or guest routes while retaining the requested year.
 Guest management, voting/results, gallery, and settings routes reuse the
 existing edition-scoped controls. The overview aggregates the exact selected
 edition, labels its current lifecycle state, and links to relevant modules.
-When no edition exists, explain how to create the first one. Archived editions
+When no edition exists, explain how to create the first one and provide an
+“Abrir configurações” link to `/dashboard/configuracoes`. Archived editions
 remain available for historical reads and server-supported publication work;
 never suggest opening RSVP creation or the first voting round for an archived
 edition. Do not present planned controls as operational. Event settings show the timezone and the
