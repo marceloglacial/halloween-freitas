@@ -13,20 +13,22 @@ function dateLabel(value: string, timezone: string) {
 function Metric({
   label,
   value,
-  detail,
+  href,
 }: {
   label: string;
   value: number;
-  detail: string;
+  href: string;
 }) {
   return (
-    <article className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-      <p className="text-sm text-gray-300">{label}</p>
-      <p className="mt-2 text-3xl font-semibold tabular-nums">
+    <Link
+      href={href}
+      className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition hover:border-orange-400/60 hover:bg-white/[0.07] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+    >
+      <span className="block text-sm text-gray-300">{label}</span>
+      <span className="mt-2 block text-3xl font-semibold tabular-nums">
         {value.toLocaleString("pt-BR")}
-      </p>
-      <p className="mt-1 text-xs text-gray-400">{detail}</p>
-    </article>
+      </span>
+    </Link>
   );
 }
 
@@ -272,27 +274,27 @@ export default function AdminEventOverview({
 
       <section
         aria-label="Indicadores da edição"
-        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        className="grid grid-cols-2 gap-3"
       >
         <Metric
-          label="Presenças confirmadas"
+          label="Convidados"
           value={overview.confirmedRsvps}
-          detail="Inscrições não canceladas"
+          href={`/dashboard/convidados?year=${year}`}
         />
         <Metric
-          label="Participantes elegíveis"
+          label="Concorrendo"
           value={overview.eligibleContestants}
-          detail="Inscrições completas para o concurso"
+          href={`/dashboard/convidados?year=${year}&participants=true`}
         />
         <Metric
-          label="Votos registrados"
+          label="Votos"
           value={overview.votes}
-          detail="Cédulas desta edição, incluindo desempate"
+          href={`/dashboard/votacao?year=${year}`}
         />
         <Metric
           label="Categorias"
           value={overview.categories}
-          detail="Categorias configuradas para a edição"
+          href={`/dashboard/concursos?year=${year}`}
         />
       </section>
 
