@@ -1,6 +1,5 @@
 import { secondaryFont } from "@/util/fonts";
 import { FC, JSX } from "react";
-import Link from "next/link";
 import Countdown from "@/components/countdown";
 import BackgroundVideo from "@/components/background-video";
 import PartyPhotoAccessButton from "@/components/home/party-photo-access-button";
@@ -63,12 +62,12 @@ const Hero: FC<HeroProps> = ({
           (showRsvpCta || (showPartyPhotoCta && eventId && startsAt)) ? (
             <div className="flex flex-wrap items-center justify-center gap-4">
               {showRsvpCta && (
-                <Link
+                <a
                   href="#confirmacao"
                   className="min-h-12 rounded-xl bg-orange-500 px-8 py-3 text-lg font-bold text-black shadow-[0_0_24px_rgba(249,115,22,0.45)] transition hover:bg-orange-400 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300 lg:text-xl"
                 >
                   Confirme sua presença
-                </Link>
+                </a>
               )}
               {showPartyPhotoCta && eventId && startsAt ? (
                 <PartyPhotoAccessButton
