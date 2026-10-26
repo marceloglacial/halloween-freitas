@@ -205,6 +205,10 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const { userId: actorId } = await auth();
+    if (!actorId || !(await isAdmin(actorId))) {
+      return errorResponse("Não autorizado", 401);
+    }
     const body = await readJsonObject(request);
     if (!body) return errorResponse("Corpo da requisição inválido", 400);
     const event = await adminEvent(body.eventId);
@@ -261,12 +265,24 @@ export async function DELETE(request: Request) {
             { eventId: eventObjectId, ownerRsvpId: userId },
             { session },
           );
-        return {
-          hasVotes: false as const,
-          result: await db
-            .collection("users")
-            .deleteOne({ _id: userId, eventId: eventObjectId }, { session }),
-        };
+        const result = await db
+          .collection("users")
+          .deleteOne({ _id: userId, eventId: eventObjectId }, { session });
+        if (result.deletedCount) {
+          await db.collection("adminAudits").insertOne(
+            {
+              eventId: eventObjectId,
+              clerkUserId: actorId,
+              action: "guest_and_contestants_removed_by_admin",
+              targetType: "rsvp",
+              targetId: userId,
+              at: new Date(),
+              changes: { contestantEntriesRemoved: contestantEntries.length },
+            },
+            { session },
+          );
+        }
+        return { hasVotes: false as const, result };
       });
     } finally {
       await session.endSession();

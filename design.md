@@ -307,11 +307,16 @@ entry controls, voting round controls, results publication, and party album
 publication visibly distinct. Disabled controls and explanatory text
 communicate lifecycle restrictions; UI availability must match server rules.
 
-Guest and contestant dialogs make ownership and edition clear. Before the first
-voting opening, authorized actions follow the contestant-entry state. After it,
-administrators may correct existing records and replace existing contestant
-photos, with an audit record, while contestant membership remains fixed. Pending
-requests disable relevant inputs and show progress text; failures appear inline.
+Selecting a guest opens an edition-scoped detail page. Use labeled form fields
+for RSVP corrections and separate cards for each contestant entry, with its
+category, status, private photo, and photo controls. Keep adding or removing
+contestants subject to the enrollment cutoff and voting rules. Administrators
+may correct existing records and replace existing contestant photos after the
+first voting opening, with an audit record, while contestant membership remains
+fixed. New-photo uploads require an explicit confirmation that the guest
+authorized its contest use. Pending requests disable relevant inputs and show
+progress text; failures appear inline. Guest deletion and candidate deletion
+must identify the affected records and explain lifecycle restrictions.
 
 ## Responsive and interaction patterns
 

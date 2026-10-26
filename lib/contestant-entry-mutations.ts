@@ -27,6 +27,7 @@ export async function createIndividualContestantEntryWithPhoto(
     displayName: string;
     costumeTitle?: string;
     photo: ContestPhotoAsset;
+    adminActorId?: string;
     now: Date;
   },
 ) {
@@ -76,6 +77,20 @@ export async function createIndividualContestantEntryWithPhoto(
       await db
         .collection<ContestantEntryDocument>("contestants")
         .insertOne(entry, { session });
+      if (input.adminActorId) {
+        await db.collection("adminAudits").insertOne(
+          {
+            eventId: input.eventId,
+            clerkUserId: input.adminActorId,
+            action: "contestant_created_by_admin",
+            targetType: "contestant",
+            targetId: entry._id,
+            at: input.now,
+            changes: { entryType: entry.entryType },
+          },
+          { session },
+        );
+      }
     });
   } finally {
     await session.endSession();
@@ -94,6 +109,7 @@ export async function createGroupContestantEntry(
     ownerRsvpId: ObjectId;
     groupName: string;
     costumeTitle?: string;
+    adminActorId?: string;
     now: Date;
   },
 ) {
@@ -146,6 +162,20 @@ export async function createGroupContestantEntry(
       await db
         .collection<ContestantEntryDocument>("contestants")
         .insertOne(entry, { session });
+      if (input.adminActorId) {
+        await db.collection("adminAudits").insertOne(
+          {
+            eventId: input.eventId,
+            clerkUserId: input.adminActorId,
+            action: "contestant_created_by_admin",
+            targetType: "contestant",
+            targetId: entry._id,
+            at: input.now,
+            changes: { entryType: entry.entryType },
+          },
+          { session },
+        );
+      }
     });
   } finally {
     await session.endSession();

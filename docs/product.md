@@ -91,8 +91,11 @@ and is separate from contestant entries, contest photos, and voting candidates.
 
 Administrators manage editions, schedules, RSVP availability, contestant entry,
 voting rounds, result publication, contestant corrections, and party album
-publication. All privileged decisions are enforced server-side and recorded in
-an audit history where specified by the lifecycle and architecture contracts.
+publication. Selecting a guest opens an edition-scoped detail page for RSVP
+corrections, registering individual and group costumes, contestant photo
+management, and permitted costume or guest removal. All privileged decisions
+are enforced server-side and recorded in an audit history where specified by
+the lifecycle and architecture contracts.
 After voting first opens, an administrator may correct existing guest or
 contestant information and photos, but cannot add or delete contestant entries.
 Every newly created edition starts with these six event-scoped costume

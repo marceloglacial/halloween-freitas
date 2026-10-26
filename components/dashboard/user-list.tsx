@@ -2,7 +2,6 @@
 
 import React, { useEffect } from "react";
 import { UserListItem } from "./user-list-item";
-import { UserEditModal } from "./user-edit-modal";
 import { useUsers } from "@/hooks/useUsers";
 import { UserListSearch } from "./user-list-search";
 import Link from "next/link";
@@ -19,21 +18,12 @@ export default function UserList({
   const canChangeMembership = enrollmentControls.canChangeContestantMembership;
   const membershipHelpId = "contestant-membership-lock-reason";
   const {
-    closeModal,
     error,
     fetchUsers,
     filteredUsers,
-    handleDelete,
-    handleEdit,
-    handleCreate,
-    handleResetAccess,
     loading,
-    modalUser,
-    openEditModal,
     search,
-    setModalUser,
     setSearch,
-    showModal,
     users,
   } = useUsers(event._id);
 
@@ -46,17 +36,14 @@ export default function UserList({
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h2 className="text-2xl font-semibold">{users.length} convidados</h2>
         <div className="flex flex-wrap justify-between gap-2">
-          <button
-            type="button"
-            disabled={!canChangeMembership || loading}
-            aria-describedby={
-              !canChangeMembership ? membershipHelpId : undefined
-            }
-            className="self-end rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
-            onClick={() => openEditModal(null)}
+          <Link
+            href={`/dashboard/convidados/novo?year=${event.year}`}
+            aria-disabled={!canChangeMembership || loading}
+            tabIndex={!canChangeMembership || loading ? -1 : undefined}
+            className={`self-end rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 ${!canChangeMembership || loading ? "pointer-events-none opacity-50" : ""}`}
           >
             Adicionar participante
-          </button>
+          </Link>
           <Link
             href={`/resultados?event=${event.slug}`}
             className="cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
@@ -92,28 +79,10 @@ export default function UserList({
           </li>
         ) : (
           filteredUsers.map((user: AdminUser) => (
-            <UserListItem
-              key={user._id}
-              user={user}
-              openEditModal={openEditModal}
-              handleDelete={handleDelete}
-              canDelete={canChangeMembership && !loading}
-              disabledDescriptionId={membershipHelpId}
-            />
+            <UserListItem key={user._id} user={user} year={event.year} />
           ))
         )}
       </ul>
-      <UserEditModal
-        showModal={showModal}
-        modalUser={modalUser}
-        setModalUser={setModalUser}
-        handleEdit={handleEdit}
-        handleCreate={handleCreate}
-        handleResetAccess={handleResetAccess}
-        closeModal={closeModal}
-        loading={loading}
-        error={error}
-      />
     </div>
   );
 }

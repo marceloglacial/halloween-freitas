@@ -3,8 +3,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 const mocks = vi.hoisted(() => ({
   useUsers: vi.fn(),
-  openEditModal: vi.fn(),
-  handleDelete: vi.fn(),
   fetchUsers: vi.fn(),
 }));
 
@@ -21,10 +19,6 @@ vi.mock("next/link", () => ({
 vi.mock("next-cloudinary", () => ({
   CldImage: ({ alt }: { alt: string }) => <span aria-label={alt} />,
 }));
-vi.mock("@/components/dashboard/user-edit-modal", () => ({
-  UserEditModal: () => null,
-}));
-
 import UserList from "@/components/dashboard/user-list";
 
 const event: HalloweenEvent = {
@@ -54,17 +48,9 @@ describe("admin guest management membership controls", () => {
       error: "",
       fetchUsers: mocks.fetchUsers,
       filteredUsers: [user],
-      handleDelete: mocks.handleDelete,
-      handleEdit: vi.fn(),
-      handleCreate: vi.fn(),
-      handleResetAccess: vi.fn(),
       loading: false,
-      modalUser: {},
-      openEditModal: mocks.openEditModal,
       search: "",
-      setModalUser: vi.fn(),
       setSearch: vi.fn(),
-      showModal: false,
       users: [user],
     });
 
@@ -76,11 +62,12 @@ describe("admin guest management membership controls", () => {
     expect(markup).toContain(
       'aria-describedby="contestant-membership-lock-reason"',
     );
-    expect(markup).toMatch(
-      /<button[^>]*disabled=""[^>]*>Adicionar participante/,
+    expect(markup).toContain('href="/dashboard/convidados/novo?year=2026"');
+    expect(markup).toContain('aria-disabled="true"');
+    expect(markup).toContain(
+      'href="/dashboard/convidados/507f1f77bcf86cd799439012?year=2026"',
     );
-    expect(markup).toMatch(/<button[^>]*disabled=""[^>]*>Excluir/);
-    expect(markup).toContain(">Editar</button>");
+    expect(markup).not.toContain("user-edit-modal");
     expect(markup).toContain(
       "As correções de participantes existentes continuam disponíveis.",
     );
