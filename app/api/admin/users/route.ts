@@ -16,6 +16,7 @@ import {
   logServerError,
 } from "@/lib/http";
 import { getAdminUsersForEvent } from "@/lib/users";
+import { getAdminParticipantRsvpIdsForEvent } from "@/lib/contestant-entries";
 import type { ContestantEntryDocument } from "@/lib/contestant-entries";
 import { enqueueContestPhotoCleanup } from "@/lib/contestant-photo-cleanup";
 
@@ -32,11 +33,17 @@ async function adminEvent(eventId: unknown) {
 
 export async function GET(request: Request) {
   try {
-    const event = await adminEvent(
-      new URL(request.url).searchParams.get("eventId"),
-    );
+    const params = new URL(request.url).searchParams;
+    const event = await adminEvent(params.get("eventId"));
     if (event instanceof Response) return event;
-    return Response.json(await getAdminUsersForEvent(event._id));
+    const users = await getAdminUsersForEvent(event._id);
+    if (params.get("participantsOnly") !== "true") {
+      return Response.json(users);
+    }
+    const participantIds = new Set(
+      await getAdminParticipantRsvpIdsForEvent(event._id),
+    );
+    return Response.json(users.filter((user) => participantIds.has(user._id)));
   } catch (error) {
     logServerError("Admin user listing failed", error);
     return errorResponse("Não foi possível carregar os usuários", 500);

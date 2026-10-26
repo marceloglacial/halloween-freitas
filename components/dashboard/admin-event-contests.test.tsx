@@ -29,11 +29,11 @@ const event: HalloweenEvent = {
 };
 
 describe("admin contest page", () => {
-  it("keeps archived edition categories and entries in their own section", () => {
+  it("keeps archived edition categories and participant controls in their own section", () => {
     const html = renderToStaticMarkup(
       createElement(AdminEventContests, {
         event,
-        entries: [],
+        participantCount: 0,
         confirmedRsvps: 0,
         now: "2025-11-01T01:00:00.000Z",
       }),
@@ -44,11 +44,11 @@ describe("admin contest page", () => {
     expect(html).not.toContain(event.title);
     expect(html).toContain("Edição arquivada");
     expect(html).toContain("Categorias do concurso");
-    expect(html).toContain("Inscrições do concurso");
-    expect(html.indexOf("Inscrições do concurso")).toBeLessThan(
+    expect(html).toContain(">Inscrições</h2>");
+    expect(html).toContain("role=\"status\"");
+    expect(html.indexOf("0 participantes")).toBeLessThan(
       html.indexOf("Categorias do concurso"),
     );
-    expect(html).toContain("Ainda não há inscrições nesta edição");
     expect(html).toContain(
       "As inscrições não podem ser alteradas após a primeira abertura da votação.",
     );

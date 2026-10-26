@@ -7,7 +7,7 @@ async function responseError(response: Response, fallback: string) {
   return body?.error || fallback;
 }
 
-export function useUsers(eventId: string) {
+export function useUsers(eventId: string, participantsOnly = false) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,8 +17,10 @@ export function useUsers(eventId: string) {
     setLoading(true);
     setError("");
     try {
+      const params = new URLSearchParams({ eventId });
+      if (participantsOnly) params.set("participantsOnly", "true");
       const response = await fetch(
-        `/api/admin/users?eventId=${encodeURIComponent(eventId)}`,
+        `/api/admin/users?${params.toString()}`,
         { cache: "no-store" },
       );
       if (!response.ok) {
@@ -40,7 +42,7 @@ export function useUsers(eventId: string) {
     } finally {
       setLoading(false);
     }
-  }, [eventId]);
+  }, [eventId, participantsOnly]);
 
   const query = search.trim().toLocaleLowerCase("pt-BR");
   const filteredUsers = query

@@ -4,7 +4,7 @@ import {
   contestantEntriesForRsvpQuery,
   contestantOwnership,
   createContestantEntry,
-  getAdminContestantEntriesForEvent,
+  getAdminParticipantRsvpIdsForEvent,
   getContestantEntriesForRsvp,
   getVotingCandidatesForCategory,
   isContestantEntryType,
@@ -188,7 +188,7 @@ describe("contestant entry schema and ownership", () => {
     expect(dbMocks.sort).toHaveBeenCalledWith({ createdAt: 1, _id: 1 });
   });
 
-  it("lists admin contestant entries only for the edition and omits private ownership and asset fields", async () => {
+  it("returns RSVP IDs for participants with consented contest photos", async () => {
     const secondCategoryId = new ObjectId("507f1f77bcf86cd799439017");
     const entries = {
       toArray: vi.fn().mockResolvedValue([
@@ -203,7 +203,7 @@ describe("contestant entry schema and ownership", () => {
           ownerRsvpId: rsvpId,
           contestPhoto: {
             assetId: "private-asset",
-            publicId: "private-cloudinary-id",
+            publicId: `contest-photos/${eventId.toString()}/private-cloudinary-id`,
             consentAt: new Date("2026-10-01T00:00:00.000Z"),
             consentByRsvpId: rsvpId.toString(),
           },
@@ -222,62 +222,20 @@ describe("contestant entry schema and ownership", () => {
       ]),
     };
     dbMocks.find.mockReturnValue(entries);
-    dbMocks.getCategories.mockResolvedValue([
-      {
-        _id: secondCategoryId.toString(),
-        eventId: eventId.toString(),
-        title: "Grupo",
-        icon: "👯",
-        order: 1,
-        eligibility: "group",
-      },
-      {
-        _id: categoryId.toString(),
-        eventId: eventId.toString(),
-        title: "Individual",
-        icon: "🎃",
-        order: 0,
-        eligibility: "all",
-      },
-    ]);
-
-    const entriesForAdmin = await getAdminContestantEntriesForEvent(
+    const participantIds = await getAdminParticipantRsvpIdsForEvent(
       eventId.toString(),
     );
 
-    expect(entriesForAdmin.map((entry) => entry.displayName)).toEqual([
-      "Ana",
-      "Freitas",
-    ]);
-    expect(entriesForAdmin[0]).toMatchObject({
-      categoryTitle: "Individual",
-      status: "draft",
-      hasPhoto: false,
-    });
-    expect(entriesForAdmin[1]).toMatchObject({
-      categoryTitle: "Grupo",
-      status: "ready",
-      hasPhoto: true,
-    });
+    expect(participantIds).toEqual([rsvpId.toString()]);
     expect(dbMocks.find).toHaveBeenCalledWith(
       { eventId },
       {
         projection: {
-          _id: 1,
-          categoryId: 1,
-          entryType: 1,
-          displayName: 1,
-          costumeTitle: 1,
+          ownerRsvpId: 1,
           status: 1,
           contestPhoto: 1,
-          createdAt: 1,
         },
       },
-    );
-    expect(JSON.stringify(entriesForAdmin)).not.toContain("ownerRsvpId");
-    expect(JSON.stringify(entriesForAdmin)).not.toContain("private-asset");
-    expect(JSON.stringify(entriesForAdmin)).not.toContain(
-      "private-cloudinary-id",
     );
   });
 

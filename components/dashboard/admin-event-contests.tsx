@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { toast } from "sonner";
 import { getAdminEnrollmentControls } from "@/util/admin-enrollment-controls";
 import type { EventCategoryInput } from "@/lib/event-categories";
-import type { AdminContestantEntrySummary } from "@/lib/contestant-entries";
 
 type EditableCategory = EventCategoryInput & { _id?: string };
 
@@ -29,12 +29,12 @@ export function closeEnrollmentPrompt(confirmedRsvps: number) {
 
 export default function AdminEventContests({
   event: initialEvent,
-  entries,
+  participantCount,
   confirmedRsvps,
   now,
 }: {
   event: HalloweenEvent;
-  entries: AdminContestantEntrySummary[];
+  participantCount: number;
   confirmedRsvps: number;
   now: string;
 }) {
@@ -231,46 +231,54 @@ export default function AdminEventContests({
         aria-labelledby="contest-entry-heading"
         className="space-y-4 rounded-xl bg-white/10 p-4 md:p-6"
       >
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 id="contest-entry-heading" className="text-2xl font-bold">
-              Inscrições do concurso
+              Inscrições
             </h2>
-            <p className="mt-1 text-sm text-gray-300">
+            <span
+              role="status"
+              className={`rounded-full px-3 py-1 text-sm font-semibold ${entryClosed || enrollment.contestantState === "upcoming" ? "bg-gray-700 text-gray-200" : "bg-green-700 text-green-100"}`}
+            >
               {enrollment.contestantState === "upcoming"
-                ? "As inscrições abrem no início programado desta edição."
+                ? "Agendadas"
                 : entryClosed
-                  ? "RSVPs e inscrições do concurso estão fechados para esta edição."
-                  : "RSVPs e inscrições do concurso estão abertos para esta edição."}
-            </p>
-            <p className="mt-1 text-sm text-gray-300">
-              Fechar inscrições interrompe novos RSVPs e alterações no concurso.
-              Ao iniciar a votação, a participação é congelada permanentemente.
-            </p>
+                  ? "Fechadas"
+                  : "Abertas"}
+            </span>
           </div>
-          <span
-            role="status"
-            className={`rounded-full px-3 py-1 text-sm font-semibold ${entryClosed || enrollment.contestantState === "upcoming" ? "bg-gray-700 text-gray-200" : "bg-green-700 text-green-100"}`}
-          >
+          <p className="text-sm text-gray-300">
             {enrollment.contestantState === "upcoming"
-              ? "Agendadas"
+              ? "As inscrições abrem no início programado desta edição."
               : entryClosed
-                ? "Fechadas"
-                : "Abertas"}
-          </span>
+                ? "RSVPs e inscrições do concurso estão fechados para esta edição."
+                : "RSVPs e inscrições do concurso estão abertos para esta edição."}
+          </p>
+          <p className="text-sm text-gray-300">
+            Fechar inscrições interrompe novos RSVPs e alterações no concurso.
+            Ao iniciar a votação, a participação é congelada permanentemente.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={busy || event.status !== "active" || locked}
+              onClick={() => void changeContestEntryStatus()}
+              className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
+            >
+              {busy
+                ? "Salvando…"
+                : entryClosed
+                  ? "Reabrir inscrições"
+                  : "Fechar inscrições"}
+            </button>
+            <Link
+              href={`/dashboard/convidados?year=${event.year}&participants=true`}
+              className="inline-flex items-center rounded-lg border border-white/30 bg-white/5 px-4 py-2 font-semibold text-white hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+            >
+              {participantCount} participante{participantCount === 1 ? "" : "s"}
+            </Link>
+          </div>
         </div>
-        <button
-          type="button"
-          disabled={busy || event.status !== "active" || locked}
-          onClick={() => void changeContestEntryStatus()}
-          className="rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-50"
-        >
-          {busy
-            ? "Salvando…"
-            : entryClosed
-              ? "Reabrir inscrições"
-              : "Fechar inscrições"}
-        </button>
         {event.status !== "active" && (
           <p className="text-sm text-gray-300">
             Ative esta edição para alterar as inscrições.
@@ -287,59 +295,6 @@ export default function AdminEventContests({
             {error}
           </p>
         )}
-        <div className="border-t border-white/15 pt-4">
-          <div className="mb-3">
-            <h3 className="text-lg font-semibold">
-              Inscrições recebidas · {entries.length}
-            </h3>
-            <p className="mt-1 text-sm text-gray-300">
-              Lista de inscrições desta edição. Rascunhos ficam visíveis apenas
-              para administradores; a edição das inscrições acontece no fluxo do
-              convidado.
-            </p>
-          </div>
-          {entries.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-white/20 p-5 text-center text-sm text-gray-300">
-              Ainda não há inscrições nesta edição.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {entries.map((entry) => (
-                <li
-                  key={entry._id}
-                  className="flex flex-col gap-3 rounded-lg border border-white/10 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0">
-                    <p className="font-semibold">{entry.displayName}</p>
-                    <p className="text-sm text-gray-300">
-                      {entry.costumeTitle || "Fantasia sem título"}
-                    </p>
-                    <p className="mt-1 text-xs text-gray-400">
-                      {entry.categoryIcon} {entry.categoryTitle} ·{" "}
-                      {entry.entryType === "group"
-                        ? "Grupo ou dupla"
-                        : "Individual"}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="rounded-full bg-white/10 px-3 py-1">
-                      {entry.status === "draft"
-                        ? "Rascunho"
-                        : entry.status === "ready"
-                          ? "Pronta"
-                          : entry.status === "locked"
-                            ? "Congelada para votação"
-                            : "Retirada"}
-                    </span>
-                    <span className="rounded-full bg-white/10 px-3 py-1">
-                      {entry.hasPhoto ? "Foto autorizada" : "Foto pendente"}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       </section>
       <section
         aria-labelledby="contest-categories-heading"

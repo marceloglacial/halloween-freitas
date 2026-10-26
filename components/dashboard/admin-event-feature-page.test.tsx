@@ -17,7 +17,7 @@ vi.mock("@/lib/auth/admin-page", () => ({
 }));
 vi.mock("@/lib/events", () => ({ getEvents: mocks.getEvents }));
 vi.mock("@/lib/contestant-entries", () => ({
-  getAdminContestantEntriesForEvent: mocks.getEntries,
+  getAdminParticipantRsvpIdsForEvent: mocks.getEntries,
 }));
 vi.mock("@/lib/users", () => ({
   countConfirmedRsvpsForEvent: mocks.countRsvps,

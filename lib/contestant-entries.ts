@@ -7,7 +7,6 @@ import {
   isCompleteContestantEntry,
 } from "@/lib/contestant-entry-freeze";
 import type { ContestPhotoAsset } from "@/lib/contestant-photos";
-import { getCategories } from "@/util/get-categories";
 
 type ContestantOwnership = { ownerRsvpId: ObjectId };
 
@@ -33,19 +32,6 @@ export type OwnedContestantEntry = {
   costumeTitle?: string;
   status: ContestantEntryStatus;
   contestPhoto?: ContestPhotoAsset;
-};
-
-export type AdminContestantEntrySummary = {
-  _id: string;
-  categoryId: string;
-  categoryTitle: string;
-  categoryIcon: string;
-  entryType: ContestantEntryType;
-  displayName: string;
-  costumeTitle?: string;
-  status: ContestantEntryStatus;
-  hasPhoto: boolean;
-  createdAt: string;
 };
 
 export type VotingCandidate = {
@@ -173,76 +159,42 @@ export async function getContestantEntriesForRsvp(
   }));
 }
 
-export async function getAdminContestantEntriesForEvent(
+export async function getAdminParticipantRsvpIdsForEvent(
   eventId: string,
-): Promise<AdminContestantEntrySummary[]> {
+): Promise<string[]> {
   const eventObjectId = parseObjectId(eventId);
   if (!eventObjectId) throw new Error("INVALID_CONTESTANT_EVENT_QUERY");
 
-  const db = await getDb();
-  const [entries, categories] = await Promise.all([
-    db
-      .collection<ContestantEntryDocument>("contestants")
-      .find(
-        { eventId: eventObjectId },
-        {
-          projection: {
-            _id: 1,
-            categoryId: 1,
-            entryType: 1,
-            displayName: 1,
-            costumeTitle: 1,
-            status: 1,
-            contestPhoto: 1,
-            createdAt: 1,
-          },
-        },
-      )
-      .toArray(),
-    getCategories(eventId),
-  ]);
-  const categoryById = new Map(
-    categories.map((category) => [category._id, category]),
-  );
-
-  return entries
-    .map((entry) => {
-      const category = categoryById.get(entry.categoryId.toString());
-      const photo = entry.contestPhoto;
-      return {
-        _id: entry._id.toString(),
-        categoryId: entry.categoryId.toString(),
-        categoryTitle: category?.title ?? "Categoria indisponível",
-        categoryIcon: category?.icon ?? "",
-        entryType: entry.entryType,
-        displayName: entry.displayName,
-        ...(entry.costumeTitle ? { costumeTitle: entry.costumeTitle } : {}),
-        status: entry.status,
-        hasPhoto: Boolean(
-          photo?.assetId && photo.consentAt && photo.consentByRsvpId,
-        ),
-        createdAt: entry.createdAt.toISOString(),
-        categoryOrder: category?.order ?? Number.MAX_SAFE_INTEGER,
-      };
-    })
-    .sort(
-      (left, right) =>
-        left.categoryOrder - right.categoryOrder ||
-        left.createdAt.localeCompare(right.createdAt) ||
-        left._id.localeCompare(right._id),
+  const entries = await (await getDb())
+    .collection<ContestantEntryDocument>("contestants")
+    .find(
+      { eventId: eventObjectId },
+      { projection: { ownerRsvpId: 1, status: 1, contestPhoto: 1 } },
     )
-    .map((entry) => ({
-      _id: entry._id,
-      categoryId: entry.categoryId,
-      categoryTitle: entry.categoryTitle,
-      categoryIcon: entry.categoryIcon,
-      entryType: entry.entryType,
-      displayName: entry.displayName,
-      ...(entry.costumeTitle ? { costumeTitle: entry.costumeTitle } : {}),
-      status: entry.status,
-      hasPhoto: entry.hasPhoto,
-      createdAt: entry.createdAt,
-    }));
+    .toArray();
+
+  return [
+    ...new Set(
+      entries
+        .filter((entry) => isAdminParticipantEntry(entry, eventObjectId))
+        .map((entry) => entry.ownerRsvpId!.toString()),
+    ),
+  ];
+}
+
+function isAdminParticipantEntry(
+  entry: ContestantEntryDocument,
+  eventId: ObjectId,
+) {
+  const photo = entry.contestPhoto;
+  return Boolean(
+    entry.status !== "withdrawn" &&
+      entry.ownerRsvpId &&
+      photo?.assetId &&
+      photo.publicId?.startsWith(`contest-photos/${eventId}/`) &&
+      photo.consentAt instanceof Date &&
+      photo.consentByRsvpId === entry.ownerRsvpId.toString(),
+  );
 }
 
 export async function getVotingCandidatesForCategory(

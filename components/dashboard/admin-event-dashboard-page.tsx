@@ -44,7 +44,11 @@ export default async function AdminEventDashboardPage({
       );
     }
     return (
-      <AdminEventGuests event={selectedEvent} now={new Date().toISOString()} />
+      <AdminEventGuests
+        event={selectedEvent}
+        now={new Date().toISOString()}
+        participantsOnly={query.participants === "true"}
+      />
     );
   }
 

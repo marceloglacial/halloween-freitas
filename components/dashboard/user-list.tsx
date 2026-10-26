@@ -10,9 +10,11 @@ import { getAdminEnrollmentControls } from "@/util/admin-enrollment-controls";
 export default function UserList({
   event,
   now,
+  participantsOnly = false,
 }: {
   event: HalloweenEvent;
   now: string;
+  participantsOnly?: boolean;
 }) {
   const enrollmentControls = getAdminEnrollmentControls(event, new Date(now));
   const canChangeMembership = enrollmentControls.canChangeContestantMembership;
@@ -25,7 +27,7 @@ export default function UserList({
     search,
     setSearch,
     users,
-  } = useUsers(event._id);
+  } = useUsers(event._id, participantsOnly);
 
   useEffect(() => {
     fetchUsers();
@@ -33,25 +35,31 @@ export default function UserList({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h2 className="text-2xl font-semibold">{users.length} convidados</h2>
-        <div className="flex flex-wrap justify-between gap-2">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="min-w-0 truncate text-xl font-semibold sm:text-2xl">
+          {participantsOnly
+            ? `${users.length} participantes com foto`
+            : `${users.length} convidados`}
+        </h2>
+        <div className="flex shrink-0 gap-2">
           <Link
             href={`/dashboard/convidados/novo?year=${event.year}`}
             aria-disabled={!canChangeMembership || loading}
             tabIndex={!canChangeMembership || loading ? -1 : undefined}
-            className={`self-end rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 ${!canChangeMembership || loading ? "pointer-events-none opacity-50" : ""}`}
+            className={`shrink-0 rounded-lg bg-orange-400 px-2 py-2 text-sm whitespace-nowrap text-black transition hover:bg-orange-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-200 sm:px-4 sm:text-base ${!canChangeMembership || loading ? "pointer-events-none opacity-50" : ""}`}
           >
             Adicionar participante
           </Link>
-          <Link
-            href={`/resultados?event=${event.slug}`}
-            className="cursor-pointer rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
-          >
-            Resultados
-          </Link>
         </div>
       </div>
+      {participantsOnly && (
+        <Link
+          href={`/dashboard/convidados?year=${event.year}`}
+          className="text-sm text-orange-200 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+        >
+          Ver todos os convidados
+        </Link>
+      )}
       {!canChangeMembership && (
         <p
           id={membershipHelpId}
@@ -75,7 +83,9 @@ export default function UserList({
           </li>
         ) : filteredUsers.length === 0 ? (
           <li className="text-center text-gray-400">
-            Nenhum convidado encontrado.
+            {participantsOnly
+              ? "Nenhum participante com foto encontrado."
+              : "Nenhum convidado encontrado."}
           </li>
         ) : (
           filteredUsers.map((user: AdminUser) => (

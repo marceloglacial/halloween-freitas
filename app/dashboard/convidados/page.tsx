@@ -5,6 +5,7 @@ export default function GuestsPage({
 }: {
   searchParams: Promise<{
     year?: string | string[];
+    participants?: string | string[];
     [key: string]: string | string[] | undefined;
   }>;
 }) {

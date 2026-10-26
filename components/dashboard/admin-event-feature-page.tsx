@@ -6,7 +6,7 @@ import AdminVoting from "@/components/dashboard/admin-voting";
 import { authorizeAdminPage } from "@/lib/auth/admin-page";
 import { resolveAdminEvent } from "@/lib/admin-event-selection";
 import { getEvents } from "@/lib/events";
-import { getAdminContestantEntriesForEvent } from "@/lib/contestant-entries";
+import { getAdminParticipantRsvpIdsForEvent } from "@/lib/contestant-entries";
 import { countConfirmedRsvpsForEvent } from "@/lib/users";
 
 export type AdminEventFeature = "contests" | "voting" | "gallery";
@@ -63,15 +63,15 @@ export default async function AdminEventFeaturePage({
   }
 
   if (feature === "contests") {
-    const [entries, confirmedRsvps] = await Promise.all([
-      getAdminContestantEntriesForEvent(event._id),
+    const [participantIds, confirmedRsvps] = await Promise.all([
+      getAdminParticipantRsvpIdsForEvent(event._id),
       countConfirmedRsvpsForEvent(event._id),
     ]);
     return (
       <AdminEventContests
         key={event._id}
         event={event}
-        entries={entries}
+        participantCount={participantIds.length}
         confirmedRsvps={confirmedRsvps}
         now={new Date().toISOString()}
       />
