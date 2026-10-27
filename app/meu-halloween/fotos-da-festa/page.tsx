@@ -2,6 +2,7 @@ import FeatureUnavailable from "@/components/feature-unavailable";
 import GuestFlowShell from "@/components/guest/guest-flow-shell";
 import PartyPhotoUpload from "@/components/guest/party-photo-upload";
 import { getGuestPageContext } from "@/app/meu-halloween/guest-page-context";
+import { isVotingOpen } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
@@ -24,12 +25,14 @@ export default async function PartyPhotosPage({
   const { event, guest } = context;
   const now = new Date();
   const eventStarted = now.getTime() >= new Date(event.eventStartsAt).getTime();
+  const votingOpen = isVotingOpen(event) && eventStarted;
 
   return (
     <GuestFlowShell
-      eventTitle={event.title}
       eventId={event._id}
+      eventYear={event.year}
       guestName={guest.fullName}
+      votingOpen={votingOpen}
       title="Fotos da festa"
       description="Este espaço é para fotos gerais da festa, separado das fotos das fantasias do concurso."
     >

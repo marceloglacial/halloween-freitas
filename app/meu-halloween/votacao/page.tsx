@@ -40,9 +40,10 @@ export default async function GuestVotingPage({
         : "A votação ficará disponível quando o evento começar e a organização abri-la.";
     return (
       <GuestFlowShell
-        eventTitle={event.title}
         eventId={event._id}
+        eventYear={event.year}
         guestName={guest.fullName}
+        votingOpen={false}
         title="Votação"
         description={message}
       >
@@ -59,10 +60,18 @@ export default async function GuestVotingPage({
   ]);
   if (!round) {
     return (
-      <FeatureUnavailable
+      <GuestFlowShell
+        eventId={event._id}
+        eventYear={event.year}
+        guestName={guest.fullName}
+        votingOpen
         title="Votação indisponível"
-        message="A votação está aberta, mas não encontramos uma rodada ativa. Tente novamente em instantes."
-      />
+        description="A votação está aberta, mas não encontramos uma rodada ativa. Tente novamente em instantes."
+      >
+        <p role="status" className="rounded-2xl border border-white/10 bg-stone-900 p-5 text-center text-stone-300">
+          A votação está temporariamente indisponível.
+        </p>
+      </GuestFlowShell>
     );
   }
 
@@ -82,9 +91,10 @@ export default async function GuestVotingPage({
 
   return (
     <GuestFlowShell
-      eventTitle={event.title}
       eventId={event._id}
+      eventYear={event.year}
       guestName={guest.fullName}
+      votingOpen={votingOpen}
       title="Votação"
       description="Escolha uma categoria para ver as fantasias e registrar seu voto."
     >

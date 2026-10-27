@@ -4,6 +4,7 @@ import GroupEntryControls from "@/components/guest/group-entry-controls";
 import GuestFlowShell from "@/components/guest/guest-flow-shell";
 import { getGuestEntriesWithPhotos } from "@/app/meu-halloween/guest-entry-data";
 import { getGuestPageContext } from "@/app/meu-halloween/guest-page-context";
+import { isVotingOpen } from "@/lib/events";
 import { getContestEntryState } from "@/util/contest-entry-state";
 import { getCategories } from "@/util/get-categories";
 
@@ -38,13 +39,17 @@ export default async function GroupCostumePage({
   const category = entry
     ? categories.find((item) => item._id === entry.categoryId)
     : undefined;
-  const entryOpen = getContestEntryState(event, new Date()) === "open";
+  const now = new Date();
+  const eventStarted = now.getTime() >= new Date(event.eventStartsAt).getTime();
+  const votingOpen = isVotingOpen(event) && eventStarted;
+  const entryOpen = getContestEntryState(event, now) === "open";
 
   return (
     <GuestFlowShell
-      eventTitle={event.title}
       eventId={event._id}
+      eventYear={event.year}
       guestName={guest.fullName}
+      votingOpen={votingOpen}
       title="Fantasia em grupo"
       description="Informe o nome da fantasia do grupo. A categoria compatível é selecionada automaticamente; depois, envie a foto no painel."
     >

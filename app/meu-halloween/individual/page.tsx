@@ -4,6 +4,7 @@ import GuestFlowShell from "@/components/guest/guest-flow-shell";
 import IndividualEntryControls from "@/components/guest/individual-entry-controls";
 import { getGuestEntriesWithPhotos } from "@/app/meu-halloween/guest-entry-data";
 import { getGuestPageContext } from "@/app/meu-halloween/guest-page-context";
+import { isVotingOpen } from "@/lib/events";
 import { getContestEntryState } from "@/util/contest-entry-state";
 
 export const dynamic = "force-dynamic";
@@ -28,12 +29,17 @@ export default async function IndividualCostumePage({
   const entries = await getGuestEntriesWithPhotos(event._id, guest.userId);
   const entry =
     entries.find((candidate) => candidate.entryType === "individual") ?? null;
-  const entryOpen = getContestEntryState(event, new Date()) === "open";
+  const now = new Date();
+  const eventStarted = now.getTime() >= new Date(event.eventStartsAt).getTime();
+  const votingOpen = isVotingOpen(event) && eventStarted;
+  const entryOpen = getContestEntryState(event, now) === "open";
 
   return (
     <GuestFlowShell
-      eventTitle={event.title}
       eventId={event._id}
+      eventYear={event.year}
+      guestName={guest.fullName}
+      votingOpen={votingOpen}
       title="Fantasia individual"
       description=""
     >

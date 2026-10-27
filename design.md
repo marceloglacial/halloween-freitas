@@ -211,6 +211,14 @@ an RSVP for the selected edition. The portal acts as a simple hub with separate
 links for individual and group costume registration and party-photo uploads.
 Each flow has its own page, shows only entries owned by that RSVP, and keeps a
 contestant's photo upload beside its registration.
+Use the same edition brand and guest account menu in the top header on the hub
+and every participant flow. Align each flow's title and description to the left.
+On narrow screens, keep a fixed bottom navigation across the hub and participant
+flows, with links to the hub, individual and group costume pages, and party
+photos. Show voting only after the event starts and voting opens. Preserve the
+selected event in every destination, mark the current page with `aria-current`,
+and leave enough bottom padding for the menu and device safe area. Hide this
+navigation at `lg` and wider, matching the admin dashboard's mobile navigation.
 Contestant status remains private to its owner. Show the voting page link in
 the hub only after the event starts and voting opens. The separate voting page
 is available to every linked attendee, whether or not they have a contestant

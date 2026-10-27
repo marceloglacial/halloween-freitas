@@ -1,6 +1,6 @@
 import Link from "next/link";
-import LogoutButton from "@/components/logout-button";
-import GuestEventHeaderLink from "@/components/guest/guest-event-header-link";
+import GuestBottomNavigation from "@/components/guest/guest-bottom-navigation";
+import GuestHeader from "@/components/guest/guest-header";
 import { isVotingOpen } from "@/lib/events";
 import { getContestEntryState } from "@/util/contest-entry-state";
 import type { OwnedContestantEntry } from "@/lib/contestant-entries";
@@ -79,46 +79,40 @@ export default function GuestPortal({
   ];
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-8 px-4 py-12 text-white sm:px-8 lg:py-16">
-      <div className="flex justify-end">
-        <LogoutButton className="rounded-lg border border-white/15 px-4 py-2 text-sm text-stone-300 transition hover:border-orange-300/60 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:cursor-wait disabled:opacity-60" />
-      </div>
-      <header className="grid gap-3 text-center">
-        <GuestEventHeaderLink eventId={event._id} eventTitle={event.title} />
-        <h1 className="text-5xl lg:text-7xl">Meu Halloween</h1>
-        <p className="text-lg text-stone-300">
-          Olá, {guestName}. Escolha o que deseja fazer.
-        </p>
-      </header>
+    <div className="min-h-screen bg-black text-white">
+      <GuestHeader
+        eventId={event._id}
+        eventYear={event.year}
+        guestName={guestName}
+      />
 
-      <section aria-label="Fluxos do Meu Halloween" className="grid gap-4">
-        <ul className="grid gap-4 sm:grid-cols-2">
-          {flows.map((flow) => (
-            <li key={flow.href}>
-              <Link
-                href={flow.href}
-                className="grid h-full min-h-40 gap-3 rounded-2xl border border-white/10 bg-stone-900 p-5 transition hover:border-orange-300/60 hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300"
-              >
-                <span className="text-3xl" aria-hidden="true">
-                  {flow.icon}
-                </span>
-                <span className="text-xl font-semibold">{flow.title}</span>
-                <span className="text-sm text-stone-300">
-                  {flow.description}
-                </span>
-                <span className="text-sm text-orange-300">{flow.status}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 pt-8 pb-24 text-white sm:px-8 lg:py-12">
+        <section aria-label="Fluxos do Meu Halloween" className="grid gap-4">
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {flows.map((flow) => (
+              <li key={flow.href}>
+                <Link
+                  href={flow.href}
+                  className="grid h-full min-h-40 gap-3 rounded-2xl border border-white/10 bg-stone-900 p-5 transition hover:border-orange-300/60 hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300"
+                >
+                  <span className="text-3xl" aria-hidden="true">
+                    {flow.icon}
+                  </span>
+                  <span className="text-xl font-semibold">{flow.title}</span>
+                  <span className="text-sm text-stone-300">
+                    {flow.description}
+                  </span>
+                  <span className="text-sm text-orange-300">
+                    {flow.status}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-      <Link
-        href="/"
-        className="w-fit text-orange-300 underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300"
-      >
-        Voltar ao início
-      </Link>
-    </main>
+      </main>
+      <GuestBottomNavigation eventId={event._id} votingOpen={votingOpen} />
+    </div>
   );
 }
