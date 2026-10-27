@@ -3,6 +3,7 @@ import { FC, JSX } from "react";
 const BackgroundVideo: FC = (): JSX.Element => {
   return (
     <video
+      aria-hidden="true"
       autoPlay
       playsInline
       loop

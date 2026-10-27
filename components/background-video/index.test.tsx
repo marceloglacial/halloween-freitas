@@ -9,5 +9,10 @@ describe("background video motion preference", () => {
 
     expect(html).toContain("motion-reduce:hidden");
     expect(html).toContain('src="/hero-video.mp4"');
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).toContain("autoPlay=");
+    expect(html).toContain("playsInline=");
+    expect(html).toContain("loop");
+    expect(html).toContain("muted");
   });
 });

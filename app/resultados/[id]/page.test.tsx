@@ -14,6 +14,9 @@ vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 vi.mock("@/components/back-button", () => ({
   default: ({ href }: { href: string }) => <a href={href}>Voltar</a>,
 }));
+vi.mock("@/util/fonts", () => ({
+  secondaryFont: { className: "theme-font" },
+}));
 vi.mock("@/components/feature-unavailable", () => ({
   default: ({ title, message }: { title: string; message: string }) => (
     <main>
@@ -23,8 +26,15 @@ vi.mock("@/components/feature-unavailable", () => ({
   ),
 }));
 vi.mock("@/components/results/result-list", () => ({
-  ResultList: ({ users, totalVotes }: Results) => (
+  ResultList: ({
+    users,
+    totalVotes,
+    eventTitle,
+    categoryTitle,
+  }: Results & { eventTitle: string; categoryTitle: string }) => (
     <section aria-label="Classificação final">
+      <h1>{categoryTitle}</h1>
+      <p>{eventTitle}</p>
       <p>{totalVotes} votos no total</p>
       {users.map((user) => (
         <p key={user._id}>{user.fullName}</p>
@@ -120,7 +130,10 @@ describe("public category results", () => {
       "round-final",
     );
     expect(html).toContain("Ana Freitas");
+    expect(html).toContain("Halloween 2026");
+    expect(html).toContain("Fantasia mais criativa");
     expect(html).toContain("4 votos no total");
+    expect(html).toContain('src="/hero-video.mp4"');
   });
 
   it("hides results when publication is revoked", async () => {
@@ -165,6 +178,33 @@ describe("public category results", () => {
     const html = renderToStaticMarkup(page);
 
     expect(html).toContain("Nenhum voto nesta categoria.");
+    expect(html).toContain("Halloween 2026");
+    expect(html).toContain('src="/hero-video.mp4"');
     expect(html).not.toContain("Classificação final");
+  });
+
+  it("keeps the zero-vote state when eligible candidates have no ballots", async () => {
+    mocks.getCategoryResults.mockResolvedValue({
+      users: [
+        {
+          _id: "candidate-without-votes",
+          eventId: event._id,
+          fullName: "Beatriz Freitas",
+          votes: 0,
+          imageUrl: null,
+        },
+      ],
+      totalVotes: 0,
+    });
+
+    const page = await ResultPage({
+      params: Promise.resolve({ id: category._id }),
+      searchParams: Promise.resolve({ event: event.slug }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain("Nenhum voto nesta categoria.");
+    expect(html).not.toContain("Classificação final");
+    expect(html).not.toContain("Beatriz Freitas");
   });
 });

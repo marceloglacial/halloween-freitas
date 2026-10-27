@@ -22,61 +22,66 @@ export async function getCategoryResults(
     );
   if (!category) return { users: [], totalVotes: 0 };
 
-  const rows = await db
+  const contestants = await db
+    .collection<{
+      _id: ObjectId;
+      eventId: ObjectId;
+      categoryId: ObjectId;
+      entryType: ContestantEntryType;
+      displayName: string;
+      status: ContestantEntryStatus;
+      contestPhoto?: {
+        publicId: string;
+        format: ContestPhotoFormat;
+      };
+    }>("contestants")
+    .find({
+      eventId: eventObjectId,
+      status: "locked",
+      ...(category.eligibility === "group"
+        ? { categoryId: categoryObjectId, entryType: "group" }
+        : {
+            $or: [
+              { categoryId: categoryObjectId },
+              { entryType: "individual" },
+            ],
+          }),
+    })
+    .toArray();
+
+  if (!contestants.length) return { users: [], totalVotes: 0 };
+
+  const counts = await db
     .collection("votes")
-    .aggregate<{
-      _id: string;
-      eventId: string;
-      fullName: string;
-      contestPhoto?: { publicId: string; format: ContestPhotoFormat };
-      votes: number;
-    }>([
+    .aggregate<{ _id: ObjectId; votes: number }>([
       {
         $match: {
           eventId: eventObjectId,
           roundId: roundObjectId,
           categoryId: categoryObjectId,
+          candidateId: { $in: contestants.map((contestant) => contestant._id) },
         },
       },
       { $group: { _id: "$candidateId", votes: { $sum: 1 } } },
-      {
-        $lookup: {
-          from: "contestants",
-          localField: "_id",
-          foreignField: "_id",
-          as: "candidate",
-        },
-      },
-      { $unwind: "$candidate" },
-      {
-        $match: {
-          "candidate.eventId": eventObjectId,
-          "candidate.status": "locked",
-          ...(category.eligibility === "group"
-            ? {
-                "candidate.categoryId": categoryObjectId,
-                "candidate.entryType": "group",
-              }
-            : {
-                $or: [
-                  { "candidate.categoryId": categoryObjectId },
-                  { "candidate.entryType": "individual" },
-                ],
-              }),
-        },
-      },
-      {
-        $project: {
-          _id: { $toString: "$candidate._id" },
-          eventId: { $toString: "$candidate.eventId" },
-          fullName: "$candidate.displayName",
-          contestPhoto: "$candidate.contestPhoto",
-          votes: 1,
-        },
-      },
-      { $sort: { votes: -1, fullName: 1 } },
     ])
     .toArray();
+  const votesByCandidate = new Map(
+    counts.map((count) => [count._id.toString(), count.votes]),
+  );
+  const rows = contestants
+    .map((contestant) => ({
+      _id: contestant._id.toString(),
+      eventId: contestant.eventId.toString(),
+      fullName: contestant.displayName,
+      contestPhoto: contestant.contestPhoto,
+      votes: votesByCandidate.get(contestant._id.toString()) ?? 0,
+    }))
+    .sort(
+      (a, b) =>
+        b.votes - a.votes ||
+        (a.fullName < b.fullName ? -1 : a.fullName > b.fullName ? 1 : 0),
+    );
+
   return {
     users: rows.map(({ contestPhoto, ...candidate }) => ({
       ...candidate,
