@@ -260,8 +260,9 @@ offers “Voltar” to the category list. Failure displays an error toast.
 
 ### Results and photo galleries
 
-Results category tiles reuse the purple category treatment. Published result
-details show the real event and category names over the muted homepage video,
+Results category tiles reuse the purple category treatment over the muted
+homepage video and a dark overlay. Published result details show the real event
+and category names over the muted homepage video,
 which ends at the podium base; the ranking below uses a solid black background,
 like the homepage's content sections. A floating “Voltar” action stays at the
 bottom left. A responsive silver, gold, and bronze podium

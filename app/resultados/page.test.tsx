@@ -19,7 +19,11 @@ vi.mock("next/link", () => ({
   ),
 }));
 vi.mock("@/components/back-button", () => ({
-  default: ({ href }: { href: string }) => <a href={href}>Voltar</a>,
+  default: ({ href, floating }: { href: string; floating?: boolean }) => (
+    <a href={href} data-floating={floating ? "true" : undefined}>
+      Voltar
+    </a>
+  ),
 }));
 vi.mock("@/components/feature-unavailable", () => ({
   default: ({ title, message }: { title: string; message: string }) => (
@@ -101,6 +105,11 @@ describe("public results overview", () => {
     expect(mocks.getCategories).toHaveBeenCalledWith(publishedEvent._id);
     expect(html).toContain("Halloween 2026");
     expect(html).toContain("Halloween 2025");
+    expect(html).not.toContain("🏆");
+    expect(html.indexOf("Halloween 2026")).toBeLessThan(
+      html.indexOf("Resultados"),
+    );
+    expect(html).toContain('data-floating="true"');
     expect(html).not.toContain("Halloween 2027");
     expect(html).toContain('aria-label="Edições com resultados publicados"');
     expect(html).toContain('aria-current="page"');
@@ -110,6 +119,7 @@ describe("public results overview", () => {
       `/resultados/${category._id}?event=${publishedEvent.slug}`,
     );
     expect(html).toContain("Fantasia mais criativa");
+    expect(html).toContain('src="/hero-video.mp4"');
   });
 
   it("does not expose an unpublished edition or its categories", async () => {
