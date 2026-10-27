@@ -87,6 +87,11 @@ and is separate from contestant entries, contest photos, and voting candidates.
   safely.
 - Show public results and party photos only when their independent publication
   controls allow them.
+- Present published category results as a manual reveal: podium places appear
+  third, second, and first using the keyboard's right and left arrow keys. Each
+  podium trophy is visible from the start; for each participant, reveal vote
+  totals before the full profile. The next reveal after the first-place group
+  shows all remaining participants together.
 
 ## Administrator experience
 

@@ -2,7 +2,7 @@
 
 import UserImageModal from "./UserImageModal";
 import UserImage from "./UserImage";
-import { CrownIcon } from "./award-icons";
+import { CrownIcon, TrophyIcon } from "./award-icons";
 import { FC, JSX, useState } from "react";
 
 interface ResultsUserProps {
@@ -10,27 +10,35 @@ interface ResultsUserProps {
   totalVotes: number;
   position: number;
   podium?: boolean;
+  hidePodiumPlatform?: boolean;
+  compactPodium?: boolean;
+  animateReveal?: boolean;
+  revealDelayMs?: number;
+  revealBlurred?: boolean;
+  showTrophy?: boolean;
+  showVotes?: boolean;
 }
 
-const podiumColors: Record<1 | 2 | 3, { label: string; stage: string }> = {
-  1: {
-    label: "text-amber-200",
-    stage:
-      "h-24 border-amber-300/60 bg-gradient-to-b from-amber-300/35 to-orange-800/40 shadow-[0_0_30px_rgba(251,146,60,0.18)] sm:h-32",
-  },
-  2: {
-    label: "text-slate-200",
-    stage:
-      "h-16 border-slate-200/45 bg-gradient-to-b from-slate-200/20 to-zinc-700/50 sm:h-24",
-  },
-  3: {
-    label: "text-orange-200",
-    stage:
-      "h-12 border-orange-700/50 bg-gradient-to-b from-orange-700/30 to-amber-950/60 sm:h-20",
-  },
-};
+export const podiumColors: Record<1 | 2 | 3, { label: string; stage: string }> =
+  {
+    1: {
+      label: "text-amber-200",
+      stage:
+        "h-44 border-amber-300/60 bg-gradient-to-b from-amber-300/35 to-orange-800/40 shadow-[0_0_30px_rgba(251,146,60,0.18)] sm:h-52",
+    },
+    2: {
+      label: "text-slate-200",
+      stage:
+        "h-36 border-slate-200/45 bg-gradient-to-b from-slate-200/20 to-zinc-700/50 sm:h-44",
+    },
+    3: {
+      label: "text-orange-200",
+      stage:
+        "h-28 border-orange-700/50 bg-gradient-to-b from-orange-700/30 to-amber-950/60 sm:h-36",
+    },
+  };
 
-const podiumWidths: Record<1 | 2 | 3, string> = {
+export const podiumWidths: Record<1 | 2 | 3, string> = {
   1: "w-full max-w-64",
   2: "w-full max-w-52",
   3: "w-full max-w-48",
@@ -41,6 +49,13 @@ export const ResultsUser: FC<ResultsUserProps> = ({
   totalVotes,
   position,
   podium = false,
+  hidePodiumPlatform = false,
+  compactPodium = false,
+  animateReveal = false,
+  revealDelayMs = 0,
+  revealBlurred = false,
+  showTrophy = !revealBlurred,
+  showVotes = !revealBlurred,
 }): JSX.Element => {
   const [modalOpen, setModalOpen] = useState(false);
   const percentage = totalVotes > 0 ? (user.votes / totalVotes) * 100 : 0;
@@ -55,38 +70,80 @@ export const ResultsUser: FC<ResultsUserProps> = ({
 
     return (
       <article
-        aria-label={`${position}º lugar: ${user.fullName}`}
-        className="flex h-full min-w-0 flex-col items-center justify-end text-center"
+        aria-label={
+          revealBlurred
+            ? `${position}º lugar reservado`
+            : `${position}º lugar: ${user.fullName}`
+        }
+        style={
+          animateReveal ? { animationDelay: `${revealDelayMs}ms` } : undefined
+        }
+        className={`relative isolate flex h-full min-w-0 flex-col items-center justify-end text-center ${animateReveal && !revealBlurred ? "motion-safe:animate-[award-reveal_450ms_ease-out_both]" : ""}`}
       >
         <div className="relative mb-3 flex flex-col items-center sm:mb-4">
-          {place === 1 && <CrownIcon />}
-          <UserImage
-            imageSrc={user.imageUrl}
-            podiumPlace={place}
-            alt={imageAlt}
-            name={user.fullName}
-            onClick={() => setModalOpen(true)}
-          />
+          {place === 1 && (
+            <span
+              aria-hidden="true"
+              className="mb-1 flex h-6 w-8 items-center justify-center sm:h-8 sm:w-10"
+            >
+              {!revealBlurred && <CrownIcon />}
+            </span>
+          )}
+          <div className="relative">
+            <UserImage
+              imageSrc={user.imageUrl}
+              podiumPlace={place}
+              compactPodium={compactPodium}
+              disabled={revealBlurred}
+              blurred={revealBlurred}
+              alt={revealBlurred ? `Foto do ${position}º lugar` : imageAlt}
+              name={revealBlurred ? `${position}º lugar` : user.fullName}
+              onClick={() => setModalOpen(true)}
+            />
+            {revealBlurred && (
+              <span
+                aria-hidden="true"
+                className={`absolute inset-0 z-10 flex items-center justify-center rounded-full border bg-zinc-950/60 shadow-inner backdrop-blur-xl ${place === 1 ? "border-amber-300/80 text-amber-200" : place === 2 ? "border-slate-200/75 text-slate-100" : "border-orange-700/80 text-orange-200"}`}
+              >
+                {showTrophy && <TrophyIcon />}
+              </span>
+            )}
+          </div>
         </div>
-        <h2 className="mb-1 max-w-full text-sm font-semibold break-words text-white sm:text-lg lg:text-xl">
-          {user.fullName}
-        </h2>
-        <p className="text-xs text-stone-200 sm:text-sm">
-          {votesLabel} <span className="text-white/50">·</span>{" "}
-          {percentageLabel}
-        </p>
-        <div
-          className={`${podiumWidths[place]} ${colors.stage} mt-3 flex flex-col items-center justify-center rounded-t-xl border-x border-t px-2 text-center shadow-lg sm:mt-4`}
+        <h2
+          aria-hidden={revealBlurred || undefined}
+          className={`mb-1 line-clamp-2 flex h-[2.5em] max-w-full items-center justify-center overflow-hidden text-center leading-tight font-semibold break-words text-white ${compactPodium ? "text-[0.65rem] sm:text-xs" : "text-sm sm:text-lg lg:text-xl"} ${revealBlurred ? "text-stone-300 blur-sm select-none" : ""}`}
         >
-          <span
-            className={`text-4xl leading-none font-bold sm:text-6xl ${colors.label}`}
+          {revealBlurred ? "Pessoa misteriosa" : user.fullName}
+        </h2>
+        <p
+          aria-hidden={!showVotes}
+          className={`whitespace-nowrap text-stone-200 ${compactPodium ? "text-[0.55rem] sm:text-[0.65rem]" : "text-xs sm:text-sm"} ${showVotes ? (revealBlurred ? "motion-safe:animate-[votes-reveal_400ms_ease-out_both]" : "") : "blur-sm select-none"}`}
+        >
+          {showVotes ? (
+            <>
+              {votesLabel}
+              <span className="text-white/50"> · </span>
+              {percentageLabel}
+            </>
+          ) : (
+            "00 votos · 00.00%"
+          )}
+        </p>
+        {!hidePodiumPlatform && (
+          <div
+            className={`${podiumWidths[place]} ${colors.stage} mt-5 flex flex-col items-center justify-center rounded-t-xl border-x border-t px-2 py-3 text-center shadow-lg sm:mt-6 sm:py-4`}
           >
-            {position}º
-          </span>
-          <span className="mt-1 text-xs font-semibold tracking-[0.16em] text-white/90 uppercase sm:text-sm">
-            lugar
-          </span>
-        </div>
+            <span
+              className={`text-4xl leading-none font-bold sm:text-6xl ${colors.label}`}
+            >
+              {position}º
+            </span>
+            <span className="mt-3 block text-xs font-semibold tracking-[0.16em] text-white/90 uppercase sm:mt-4 sm:text-sm">
+              lugar
+            </span>
+          </div>
+        )}
         <UserImageModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
@@ -100,7 +157,10 @@ export const ResultsUser: FC<ResultsUserProps> = ({
   return (
     <article
       aria-label={`${position}º lugar: ${user.fullName}`}
-      className="min-w-0 rounded-xl border border-l-2 border-zinc-700 border-l-orange-400/80 bg-zinc-900 p-3 shadow-md shadow-black/30 sm:p-4"
+      style={
+        animateReveal ? { animationDelay: `${revealDelayMs}ms` } : undefined
+      }
+      className={`relative isolate min-w-0 rounded-xl border border-l-2 border-zinc-700 border-l-orange-400/80 bg-zinc-900 p-3 shadow-md shadow-black/30 sm:p-4 ${animateReveal && !revealBlurred ? "motion-safe:animate-[award-reveal_450ms_ease-out_both]" : ""}`}
     >
       <div className="flex min-w-0 items-center gap-3 sm:gap-4">
         <span className="w-10 shrink-0 text-lg font-bold text-orange-200 tabular-nums sm:text-xl">
@@ -108,6 +168,7 @@ export const ResultsUser: FC<ResultsUserProps> = ({
         </span>
         <UserImage
           imageSrc={user.imageUrl}
+          disabled={revealBlurred}
           alt={imageAlt}
           name={user.fullName}
           onClick={() => setModalOpen(true)}

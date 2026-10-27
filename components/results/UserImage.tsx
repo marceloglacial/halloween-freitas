@@ -3,6 +3,9 @@ import React from "react";
 interface UserImageProps {
   imageSrc?: string | null;
   podiumPlace?: 1 | 2 | 3;
+  compactPodium?: boolean;
+  disabled?: boolean;
+  blurred?: boolean;
   alt: string;
   name: string;
   onClick: () => void;
@@ -23,12 +26,17 @@ const podiumImageBorders: Record<1 | 2 | 3, string> = {
 const UserImage: React.FC<UserImageProps> = ({
   imageSrc,
   podiumPlace,
+  compactPodium = false,
+  disabled = false,
+  blurred = false,
   alt,
   name,
   onClick,
 }) => {
   const imageSize = podiumPlace
-    ? podiumImageSizes[podiumPlace]
+    ? compactPodium
+      ? "size-12 sm:size-16"
+      : podiumImageSizes[podiumPlace]
     : "size-12 sm:size-14";
   const imageBorder = podiumPlace
     ? podiumImageBorders[podiumPlace]
@@ -43,7 +51,7 @@ const UserImage: React.FC<UserImageProps> = ({
         loading="lazy"
         decoding="async"
         alt={alt}
-        className={`${imageSize} ${imageBorder} rounded-full object-cover`}
+        className={`${imageSize} ${imageBorder} rounded-full object-cover ${blurred ? "blur-md" : ""}`}
       />
       <span className="sr-only">Ampliar foto de {name}</span>
     </>
@@ -56,14 +64,14 @@ const UserImage: React.FC<UserImageProps> = ({
     </span>
   );
 
-  if (!imageSrc) return image;
+  if (!imageSrc || disabled) return image;
 
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={`Ampliar foto de ${name}`}
-      className="shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300"
+      className="flex h-fit w-fit shrink-0 appearance-none rounded-full border-0 bg-transparent p-0 leading-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300"
     >
       {image}
     </button>

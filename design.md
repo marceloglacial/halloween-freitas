@@ -266,14 +266,27 @@ and category names over the muted homepage video,
 which ends at the podium base; the ranking below uses a solid black background,
 like the homepage's content sections. A floating “Voltar” action stays at the
 bottom left. A responsive silver, gold, and bronze podium
-highlights the first three placements; ties keep their shared competition rank,
-with one representative per podium place and any other tied candidates retained
-in the ranking below. Remaining eligible candidates appear in dark cards with
-their photo, vote count, percentage, and proportional bar. A candidate with no
-photo receives a text placeholder, never a substitute image. When a category
-has ballots, its ranking includes every locked eligible candidate, including
-those with zero votes. Categories with no votes retain an explicit empty state.
-Public views exclude email addresses and preserve event publication checks.
+keeps its platforms visible while the keyboard's right and left arrow keys
+reveal third, second, and first place in order and hide the latest reveal in
+reverse order. Every podium trophy is visible from the start; for each
+participant, vote totals appear before the full profile. Reserved slots for the
+crown, name, and vote details keep the podium stable between reveal steps.
+The vote details animate into view, respecting reduced-motion settings. Generic
+names and vote placeholders remain blurred until their respective reveal step;
+the unrevealed photo stays blurred beneath a semitransparent trophy badge.
+Tied podium participants
+reveal individually, keep their shared competition rank, and remain visible
+together. A separate right-arrow press after the first-place group reveals all
+remaining eligible participants together in rank order, with a brief staggered
+entrance effect. The first, second, and third podium platforms have clearly
+distinct heights, with extra room above and below their centered placement
+number and label; the podium also leaves a wider gap between each profile and
+its platform. Cards show each photo, vote count, percentage, and proportional bar.
+A candidate with no photo receives a text placeholder, never a substitute image.
+When a category has ballots, its ranking includes every locked eligible
+candidate, including those with zero votes. Categories with no votes retain an
+explicit empty state. Public views exclude email addresses and preserve event
+publication checks.
 
 The contestant photo gallery shows only eligible contestant imagery and remains
 separate from party photos. Its existing gallery lists entries with photos,

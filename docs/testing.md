@@ -109,6 +109,23 @@ pending, denied, and published/private states. Check keyboard access and
 Portuguese messages. For runtime-sensitive changes, follow the
 [Next.js development loop](../.agents/skills/next-dev-loop/SKILL.md).
 
+For published results, verify every podium trophy is visible initially, then
+each right-arrow press reveals vote totals and the next press reveals the full
+profile. Confirm blurred placeholders fill the name and vote slots without
+changing podium height. The left arrow hides each stage in reverse. Reveal tied podium
+participants individually without changing their shared rank. After the
+first-place group is complete, verify a separate
+right-arrow press reveals all remaining participants together in rank order; a
+left-arrow press hides that group before undoing the first place. Confirm names
+and vote totals stay blurred until their stages, while photos remain blurred
+beneath the trophy badge. Verify the podium height stays steady during each
+reveal and vote details animate into view unless reduced motion is requested.
+Verify remaining cards enter with a short stagger from the same reveal step and
+confirm clearly different podium column heights, extra room above the placement
+labels, and the wider gap above podium platforms. Cover
+missing podium places, fewer than three participants, keyboard focus in
+editable fields and the photo dialog.
+
 For persistent navigation, verify the floating desktop pill stays at the top of
 the viewport on the homepage and internal routes. At tablet widths, exercise the
 right-side drawer; on phones, exercise the bottom-inset menu panel. Open and

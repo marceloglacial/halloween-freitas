@@ -4,7 +4,7 @@ export function TrophyIcon() {
       aria-hidden="true"
       viewBox="0 0 32 32"
       fill="none"
-      className="inline-block size-7 shrink-0 align-[-0.12em] text-amber-300 sm:size-9"
+      className="inline-block size-10 shrink-0 text-current sm:size-12"
     >
       <path
         d="M10 5h12v6c0 4.2-2.6 7-6 7s-6-2.8-6-7V5Z"
@@ -29,7 +29,7 @@ export function CrownIcon() {
       aria-hidden="true"
       viewBox="0 0 32 24"
       fill="none"
-      className="mb-1 h-6 w-8 text-amber-200 drop-shadow-[0_0_12px_rgba(251,191,36,0.65)] sm:h-8 sm:w-10"
+      className="h-6 w-8 text-amber-200 drop-shadow-[0_0_12px_rgba(251,191,36,0.65)] sm:h-8 sm:w-10"
     >
       <path
         d="m3 7 6 5 7-9 7 9 6-5-3 14H6L3 7Z"
