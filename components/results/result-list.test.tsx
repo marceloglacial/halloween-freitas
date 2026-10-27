@@ -60,6 +60,10 @@ describe("public results ranking", () => {
     expect(html).toContain('aria-label="2º lugar sem participante"');
     expect(html).toContain("Demais participantes");
     expect(html).toContain("Halloween 2026");
+    expect(html.indexOf("Halloween 2026")).toBeLessThan(
+      html.indexOf("Melhor Fantasia"),
+    );
+    expect(html).not.toContain("🎭");
     expect(html).toContain('aria-label="Ampliar foto de Ana Freitas"');
     expect(html).toContain("ana-photo");
     expect(html).toContain("Foto indisponível");

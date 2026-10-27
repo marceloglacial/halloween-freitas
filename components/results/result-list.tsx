@@ -1,6 +1,7 @@
 import React, { FC, JSX } from "react";
 import { secondaryFont } from "@/util/fonts";
-import { PumpkinIcon, TrophyIcon } from "./award-icons";
+import BackgroundVideo from "@/components/background-video";
+import { PumpkinIcon } from "./award-icons";
 import { ResultsUser } from "./results-user";
 
 interface ResultListProps extends Results {
@@ -88,60 +89,64 @@ export const ResultList: FC<ResultListProps> = ({
     );
 
   return (
-    <div
-      role="region"
-      aria-label="Classificação final"
-      className="mx-auto w-full max-w-6xl"
-    >
-      <header className="mx-auto mb-8 max-w-3xl text-center sm:mb-12">
-        <h1
-          className={`${secondaryFont.className} flex items-center justify-center gap-2 text-4xl leading-tight text-white uppercase drop-shadow-[0_2px_18px_rgba(0,0,0,0.9)] sm:gap-3 sm:text-5xl lg:text-7xl`}
-        >
-          <TrophyIcon />
-          <span>{categoryTitle}</span>
-        </h1>
-        <p className="mt-2 text-base font-medium text-orange-100 sm:mt-3 sm:text-xl">
-          {eventTitle}
-        </p>
-      </header>
+    <div role="region" aria-label="Classificação final" className="w-full">
+      <section className="relative isolate -mx-4 -mt-24 overflow-hidden bg-black px-4 pt-24 sm:-mx-8 sm:-mt-28 sm:px-8 sm:pt-28">
+        <BackgroundVideo />
+        <div aria-hidden="true" className="absolute inset-0 z-0 bg-black/70" />
+        <div className="relative z-10 mx-auto w-full max-w-6xl pt-1">
+          <header className="@container mx-auto mb-8 max-w-3xl text-center sm:mb-12">
+            <p className="mb-2 text-base font-medium text-orange-100 sm:mb-3 sm:text-xl">
+              {eventTitle}
+            </p>
+            <h1
+              className={`${secondaryFont.className} w-full text-center leading-tight whitespace-nowrap text-white uppercase drop-shadow-[0_2px_18px_rgba(0,0,0,0.9)]`}
+              style={{
+                fontSize: `clamp(1.1rem, ${170 / Math.max(categoryTitle.length, 1)}cqi, 3.75rem)`,
+              }}
+            >
+              {categoryTitle}
+            </h1>
+          </header>
 
-      <section aria-label="Pódio dos três primeiros colocados">
-        <ol className="mx-auto grid w-full max-w-4xl grid-cols-[1fr_1.2fr_1fr] items-end gap-2 sm:gap-5">
-          {podiumUsers.map(({ position, entry }) => (
-            <li key={position} className="min-w-0">
-              {entry ? (
-                <ResultsUser
-                  podium
-                  position={entry.position}
-                  user={entry.user}
-                  totalVotes={totalVotes}
-                />
-              ) : (
-                <EmptyPodiumPlace
-                  position={position}
-                  skippedByTie={hasTieBefore(position)}
-                />
-              )}
-            </li>
-          ))}
-        </ol>
+          <section aria-label="Pódio dos três primeiros colocados">
+            <ol className="mx-auto grid w-full max-w-4xl grid-cols-[1fr_1.2fr_1fr] items-end gap-2 sm:gap-5">
+              {podiumUsers.map(({ position, entry }) => (
+                <li key={position} className="min-w-0">
+                  {entry ? (
+                    <ResultsUser
+                      podium
+                      position={entry.position}
+                      user={entry.user}
+                      totalVotes={totalVotes}
+                    />
+                  ) : (
+                    <EmptyPodiumPlace
+                      position={position}
+                      skippedByTie={hasTieBefore(position)}
+                    />
+                  )}
+                </li>
+              ))}
+            </ol>
+          </section>
+        </div>
       </section>
 
       {remainingUsers.length > 0 && (
         <section
           aria-labelledby="other-participants-heading"
-          className="mx-auto mt-10 max-w-5xl border-t border-white/10 pt-7 sm:mt-14 sm:pt-10"
+          className="-mx-4 mt-0 border-t border-white/10 bg-black px-4 pt-8 sm:-mx-8 sm:px-8 sm:pt-10"
         >
           <h2
             id="other-participants-heading"
-            className={`${secondaryFont.className} mb-5 flex items-center justify-center gap-2 text-center text-3xl text-orange-100 sm:mb-7 sm:text-4xl`}
+            className={`${secondaryFont.className} mx-auto mb-5 flex max-w-5xl items-center justify-center gap-2 text-center text-3xl text-orange-100 sm:mb-7 sm:text-4xl`}
           >
             <PumpkinIcon />
             <span>Demais participantes</span>
           </h2>
           <ol
             aria-label={`Classificação de ${categoryTitle} em ${eventTitle}`}
-            className="grid gap-3 sm:gap-4 lg:grid-cols-2"
+            className="mx-auto grid max-w-5xl gap-3 sm:gap-4 lg:grid-cols-2"
           >
             {remainingUsers.map(({ user, position }) => (
               <li key={user._id}>

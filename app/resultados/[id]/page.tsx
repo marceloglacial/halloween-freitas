@@ -8,7 +8,6 @@ import { getCategoryResults } from "@/lib/results";
 import { getFinalVotingRoundForCategory } from "@/lib/voting-rounds";
 import { getCategoryById } from "@/util/get-categories";
 import { secondaryFont } from "@/util/fonts";
-import { TrophyIcon } from "@/components/results/award-icons";
 
 export const dynamic = "force-dynamic";
 
@@ -45,11 +44,9 @@ export default async function ResultPage({
     : { users: [], totalVotes: 0 };
   const backHref = `/resultados?event=${event.slug}`;
   return (
-    <main className="relative isolate min-h-screen w-full overflow-hidden bg-black text-white">
-      <BackgroundVideo />
-      <div aria-hidden="true" className="absolute inset-0 z-0 bg-black/70" />
-      <BackButton href={backHref} />
-      <div className="relative z-10 mx-auto min-h-screen w-full max-w-7xl px-4 pt-24 pb-8 sm:px-8 sm:pt-28 lg:pb-12">
+    <main className="min-h-screen w-full overflow-hidden bg-black text-white">
+      <BackButton href={backHref} floating />
+      <div className="relative z-10 mx-auto min-h-screen w-full px-4 pt-24 pb-8 sm:px-8 sm:pt-28 lg:pb-12">
         {results.totalVotes > 0 && results.users.length > 0 ? (
           <ResultList
             users={results.users}
@@ -58,18 +55,25 @@ export default async function ResultPage({
             categoryTitle={category.title}
           />
         ) : (
-          <section className="mx-auto flex min-h-[60vh] max-w-3xl flex-col items-center justify-center gap-4 text-center">
-            <h1
-              className={`${secondaryFont.className} flex items-center justify-center gap-2 text-4xl text-white uppercase drop-shadow-[0_2px_18px_rgba(0,0,0,0.9)] sm:gap-3 sm:text-5xl lg:text-7xl`}
-            >
-              <TrophyIcon />
-              <span>{category.title}</span>
-            </h1>
-            <p className="text-base font-medium text-orange-100 sm:text-xl">
+          <section className="@container relative isolate -mx-4 -mt-24 flex min-h-[60vh] flex-col items-center justify-center gap-4 overflow-hidden px-4 pt-24 text-center sm:-mx-8 sm:-mt-28 sm:px-8 sm:pt-28">
+            <BackgroundVideo />
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 z-0 bg-black/70"
+            />
+            <p className="relative z-10 text-base font-medium text-orange-100 sm:text-xl">
               {event.title}
             </p>
+            <h1
+              className={`${secondaryFont.className} relative z-10 w-full text-center leading-tight whitespace-nowrap text-white uppercase drop-shadow-[0_2px_18px_rgba(0,0,0,0.9)]`}
+              style={{
+                fontSize: `clamp(1.1rem, ${170 / Math.max(category.title.length, 1)}cqi, 3.75rem)`,
+              }}
+            >
+              {category.title}
+            </h1>
             <p
-              className="mt-3 text-lg text-orange-200 sm:text-2xl"
+              className="relative z-10 mt-3 text-lg text-orange-200 sm:text-2xl"
               role="status"
             >
               Nenhum voto nesta categoria.

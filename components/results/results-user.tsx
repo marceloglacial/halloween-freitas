@@ -100,7 +100,7 @@ export const ResultsUser: FC<ResultsUserProps> = ({
   return (
     <article
       aria-label={`${position}º lugar: ${user.fullName}`}
-      className="min-w-0 rounded-xl border border-l-2 border-white/10 border-l-orange-400/70 bg-zinc-950/65 p-3 shadow-sm shadow-black/20 sm:p-4"
+      className="min-w-0 rounded-xl border border-l-2 border-zinc-700 border-l-orange-400/80 bg-zinc-900 p-3 shadow-md shadow-black/30 sm:p-4"
     >
       <div className="flex min-w-0 items-center gap-3 sm:gap-4">
         <span className="w-10 shrink-0 text-lg font-bold text-orange-200 tabular-nums sm:text-xl">

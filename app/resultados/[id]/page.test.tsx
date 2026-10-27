@@ -31,10 +31,13 @@ vi.mock("@/components/results/result-list", () => ({
     totalVotes,
     eventTitle,
     categoryTitle,
-  }: Results & { eventTitle: string; categoryTitle: string }) => (
+  }: Results & {
+    eventTitle: string;
+    categoryTitle: string;
+  }) => (
     <section aria-label="Classificação final">
-      <h1>{categoryTitle}</h1>
       <p>{eventTitle}</p>
+      <h1>{categoryTitle}</h1>
       <p>{totalVotes} votos no total</p>
       {users.map((user) => (
         <p key={user._id}>{user.fullName}</p>
@@ -132,8 +135,11 @@ describe("public category results", () => {
     expect(html).toContain("Ana Freitas");
     expect(html).toContain("Halloween 2026");
     expect(html).toContain("Fantasia mais criativa");
+    expect(html.indexOf("Halloween 2026")).toBeLessThan(
+      html.indexOf("Fantasia mais criativa"),
+    );
+    expect(html).not.toContain("🧙");
     expect(html).toContain("4 votos no total");
-    expect(html).toContain('src="/hero-video.mp4"');
   });
 
   it("hides results when publication is revoked", async () => {
@@ -179,6 +185,9 @@ describe("public category results", () => {
 
     expect(html).toContain("Nenhum voto nesta categoria.");
     expect(html).toContain("Halloween 2026");
+    expect(html.indexOf("Halloween 2026")).toBeLessThan(
+      html.indexOf("Fantasia mais criativa"),
+    );
     expect(html).toContain('src="/hero-video.mp4"');
     expect(html).not.toContain("Classificação final");
   });

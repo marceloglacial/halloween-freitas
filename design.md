@@ -261,8 +261,10 @@ offers “Voltar” to the category list. Failure displays an error toast.
 ### Results and photo galleries
 
 Results category tiles reuse the purple category treatment. Published result
-details reuse the muted homepage video behind a dark overlay and show the real
-event and category names. A responsive silver, gold, and bronze podium
+details show the real event and category names over the muted homepage video,
+which ends at the podium base; the ranking below uses a solid black background,
+like the homepage's content sections. A floating “Voltar” action stays at the
+bottom left. A responsive silver, gold, and bronze podium
 highlights the first three placements; ties keep their shared competition rank,
 with one representative per podium place and any other tied candidates retained
 in the ranking below. Remaining eligible candidates appear in dark cards with
