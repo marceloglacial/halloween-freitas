@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export default function ContestantEntryEditor({
   eventId,
@@ -33,8 +34,6 @@ export default function ContestantEntryEditor({
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [consent, setConsent] = useState(false);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
   useEffect(
     () => () => {
@@ -47,8 +46,6 @@ export default function ContestantEntryEditor({
     event.preventDefault();
     if (pending || !enabled || (photo && !consent)) return;
     setPending(true);
-    setError("");
-    setMessage("");
     try {
       const groupNameChanged =
         entryType === "group" && displayName !== savedDisplayName;
@@ -101,9 +98,9 @@ export default function ContestantEntryEditor({
         setConsent(false);
         if (photoInputRef.current) photoInputRef.current.value = "";
       }
-      setMessage("Dados salvos.");
+      toast.success("Inscrição atualizada.");
     } catch (saveError) {
-      setError(
+      toast.error(
         saveError instanceof Error
           ? saveError.message
           : "Não foi possível conectar. Tente novamente.",
@@ -116,8 +113,6 @@ export default function ContestantEntryEditor({
   async function deletePhoto() {
     if (!photoUrl || pending || !enabled) return;
     setPending(true);
-    setError("");
-    setMessage("");
     try {
       const response = await fetch(
         `/api/contestants/${entryId}/photo?eventId=${encodeURIComponent(eventId)}`,
@@ -132,17 +127,17 @@ export default function ContestantEntryEditor({
         setPhotoUrl(null);
         if (entryType === "individual") router.refresh();
         if (result.cleanupPending) {
-          setMessage("Foto removida da inscrição.");
-          setError(
+          toast.success("Foto removida da inscrição.");
+          toast.error(
             result.error ?? "A exclusão no Cloudinary ainda está pendente.",
           );
-        } else setMessage("Foto excluída.");
+        } else toast.success("Foto excluída da inscrição.");
         return;
       }
       if (!response.ok)
         throw new Error(result.error ?? "Não foi possível excluir a foto.");
     } catch (deleteError) {
-      setError(
+      toast.error(
         deleteError instanceof Error
           ? deleteError.message
           : "Não foi possível conectar. Tente novamente.",
@@ -177,8 +172,6 @@ export default function ContestantEntryEditor({
             disabled={!enabled || pending}
             onChange={(event) => {
               setDisplayName(event.target.value);
-              setMessage("");
-              setError("");
             }}
             className="w-full rounded-lg border border-white/20 bg-black px-3 py-3 text-base font-normal text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-70"
           />
@@ -197,8 +190,6 @@ export default function ContestantEntryEditor({
             disabled={!enabled || pending}
             onChange={(event) => {
               setTitle(event.target.value);
-              setMessage("");
-              setError("");
             }}
             placeholder="Ex.: Pequena vampira"
             className="w-full rounded-lg border border-white/20 bg-black px-3 py-3 text-base font-normal text-white placeholder:text-stone-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:opacity-70"
@@ -229,8 +220,6 @@ export default function ContestantEntryEditor({
                 setPreviewUrl(previewUrlRef.current);
                 setPhoto(selectedPhoto);
                 setConsent(false);
-                setMessage("");
-                setError("");
               }}
               className="block w-full text-base text-stone-200 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-400 file:px-3 file:py-2 file:font-semibold file:text-black"
             />
@@ -313,16 +302,6 @@ export default function ContestantEntryEditor({
           As inscrições do concurso estão fechadas.
         </p>
       )}
-      {message ? (
-        <p role="status" className="text-sm text-green-300">
-          {message}
-        </p>
-      ) : null}
-      {error ? (
-        <p role="alert" className="text-sm text-red-300">
-          {error}
-        </p>
-      ) : null}
     </form>
   );
 }

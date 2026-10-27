@@ -1,5 +1,6 @@
-import Link from "next/link";
 import GuestBottomNavigation from "@/components/guest/guest-bottom-navigation";
+import GuestFlowCard from "@/components/guest/guest-flow-card";
+import type { GuestCardStatusTone } from "@/components/guest/guest-flow-card";
 import GuestHeader from "@/components/guest/guest-header";
 import { isVotingOpen } from "@/lib/events";
 import { getContestEntryState } from "@/util/contest-entry-state";
@@ -7,9 +8,23 @@ import type { OwnedContestantEntry } from "@/lib/contestant-entries";
 
 const entryStatusLabels: Record<ContestantEntryStatus, string> = {
   draft: "Inscrição em andamento",
-  ready: "Inscrição concluída",
+  ready: "Inscrição confirmada",
   locked: "Inscrição congelada para votação",
   withdrawn: "Inscrição retirada",
+};
+
+type FlowStatus = {
+  label: string;
+  tone: GuestCardStatusTone;
+};
+
+type GuestFlow = {
+  href: string;
+  icon: string;
+  title: string;
+  description: string;
+  status: FlowStatus;
+  inactiveReason?: string;
 };
 
 export default function GuestPortal({
@@ -26,44 +41,89 @@ export default function GuestPortal({
   const eventStarted =
     new Date(now).getTime() >= new Date(event.eventStartsAt).getTime();
   const votingOpen = isVotingOpen(event) && eventStarted;
-  const contestEntryOpen =
-    getContestEntryState(event, new Date(now)) === "open";
+  const contestEntryState = getContestEntryState(event, new Date(now));
   const individualEntry = entries.find(
     (entry) => entry.entryType === "individual",
   );
   const groupEntry = entries.find((entry) => entry.entryType === "group");
   const eventQuery = `?eventId=${event._id}`;
-  const entryStatus = (entry?: OwnedContestantEntry) =>
-    entry ? entryStatusLabels[entry.status] : "Ainda não cadastrada";
+  const entryStatus = (entry?: OwnedContestantEntry): FlowStatus => {
+    if (!entry) return { label: "Ainda não cadastrada", tone: "unavailable" };
+    const tone: FlowStatus["tone"] =
+      entry.status === "draft"
+        ? "in_progress"
+        : entry.status === "ready"
+          ? "available"
+          : "unavailable";
+    return { label: entryStatusLabels[entry.status], tone };
+  };
+  const closedStatus: FlowStatus = {
+    label:
+      event.votingStatus === "not_started"
+        ? "Inscrições encerradas"
+        : "Inscrições congeladas",
+    tone: "unavailable",
+  };
+  const upcomingStatus: FlowStatus = {
+    label: "Inscrições em breve",
+    tone: "unavailable",
+  };
+  const cardStatus = (entry?: OwnedContestantEntry): FlowStatus => {
+    if (contestEntryState === "closed") return closedStatus;
+    if (entry) return entryStatus(entry);
+    return contestEntryState === "upcoming"
+      ? upcomingStatus
+      : { label: "Ainda não cadastrada", tone: "unavailable" };
+  };
+  const entryDescription = (
+    entry: OwnedContestantEntry | undefined,
+    entryType: "individual" | "group",
+  ) => {
+    if (entry?.status === "ready") {
+      if (contestEntryState === "closed") {
+        return "Sua inscrição está confirmada e a fantasia está pronta para participar da votação. Não é mais possível editá-la nesta edição.";
+      }
+      return "Sua inscrição está confirmada e a fantasia está pronta para participar da votação. Você ainda pode editá-la enquanto as inscrições estiverem abertas.";
+    }
+    if (entry?.status === "draft") {
+      return "Finalize o cadastro e envie uma foto para confirmar sua inscrição.";
+    }
+    return entryType === "individual"
+      ? "Cadastre sua fantasia e envie uma foto para confirmar sua inscrição no concurso."
+      : "Cadastre a fantasia do grupo e envie uma foto para confirmar a inscrição no concurso.";
+  };
+  const inactiveReason =
+    event.votingStatus === "not_started"
+      ? "As inscrições para o concurso estão encerradas e esta fantasia não pode mais ser alterada."
+      : "As inscrições para o concurso estão congeladas desde o início da votação e esta fantasia não pode mais ser alterada.";
 
-  const flows = [
+  const flows: GuestFlow[] = [
     {
       href: `/meu-halloween/individual${eventQuery}`,
       icon: "🧙",
       title: "Fantasia individual",
-      description:
-        "Seu RSVP já permite concorrer; envie a foto para confirmar a participação.",
-      status:
-        individualEntry || contestEntryOpen
-          ? entryStatus(individualEntry)
-          : "Inscrições encerradas",
+      description: entryDescription(individualEntry, "individual"),
+      status: cardStatus(individualEntry),
+      inactiveReason:
+        contestEntryState === "closed" ? inactiveReason : undefined,
     },
     {
       href: `/meu-halloween/grupo${eventQuery}`,
       icon: "👯",
       title: "Fantasia em grupo",
-      description: "Cadastre o grupo e envie a foto da fantasia.",
-      status:
-        groupEntry || contestEntryOpen
-          ? entryStatus(groupEntry)
-          : "Inscrições encerradas",
+      description: entryDescription(groupEntry, "group"),
+      status: cardStatus(groupEntry),
+      inactiveReason:
+        contestEntryState === "closed" ? inactiveReason : undefined,
     },
     {
       href: `/meu-halloween/fotos-da-festa${eventQuery}`,
       icon: "📸",
       title: "Fotos da festa",
       description: "Envie fotos gerais para o álbum da festa.",
-      status: eventStarted ? "Envio disponível" : "Abre quando a festa começar",
+      status: eventStarted
+        ? { label: "Envio disponível", tone: "available" }
+        : { label: "Abre quando a festa começar", tone: "unavailable" },
     },
     ...(votingOpen
       ? [
@@ -72,7 +132,7 @@ export default function GuestPortal({
             icon: "🗳️",
             title: "Votação",
             description: "Escolha uma categoria e vote nas fantasias.",
-            status: "Votação aberta",
+            status: { label: "Votação aberta", tone: "available" as const },
           },
         ]
       : []),
@@ -91,28 +151,24 @@ export default function GuestPortal({
           <ul className="grid gap-4 sm:grid-cols-2">
             {flows.map((flow) => (
               <li key={flow.href}>
-                <Link
+                <GuestFlowCard
                   href={flow.href}
-                  className="grid h-full min-h-40 gap-3 rounded-2xl border border-white/10 bg-stone-900 p-5 transition hover:border-orange-300/60 hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300"
-                >
-                  <span className="text-3xl" aria-hidden="true">
-                    {flow.icon}
-                  </span>
-                  <span className="text-xl font-semibold">{flow.title}</span>
-                  <span className="text-sm text-stone-300">
-                    {flow.description}
-                  </span>
-                  <span className="text-sm text-orange-300">
-                    {flow.status}
-                  </span>
-                </Link>
+                  icon={flow.icon}
+                  title={flow.title}
+                  description={flow.description}
+                  status={flow.status}
+                  inactiveReason={flow.inactiveReason}
+                />
               </li>
             ))}
           </ul>
         </section>
-
       </main>
-      <GuestBottomNavigation eventId={event._id} votingOpen={votingOpen} />
+      <GuestBottomNavigation
+        eventId={event._id}
+        votingOpen={votingOpen}
+        contestEntryClosed={contestEntryState === "closed"}
+      />
     </div>
   );
 }

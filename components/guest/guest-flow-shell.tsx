@@ -7,6 +7,7 @@ export default function GuestFlowShell({
   eventYear,
   guestName,
   votingOpen,
+  contestEntryClosed,
   title,
   description,
   children,
@@ -15,6 +16,7 @@ export default function GuestFlowShell({
   eventYear: number;
   guestName: string;
   votingOpen: boolean;
+  contestEntryClosed: boolean;
   title: string;
   description: string;
   children: ReactNode;
@@ -35,7 +37,11 @@ export default function GuestFlowShell({
         {children}
 
       </main>
-      <GuestBottomNavigation eventId={eventId} votingOpen={votingOpen} />
+      <GuestBottomNavigation
+        eventId={eventId}
+        votingOpen={votingOpen}
+        contestEntryClosed={contestEntryClosed}
+      />
     </div>
   );
 }

@@ -26,13 +26,35 @@ export default async function IndividualCostumePage({
   }
 
   const { event, guest } = context;
-  const entries = await getGuestEntriesWithPhotos(event._id, guest.userId);
-  const entry =
-    entries.find((candidate) => candidate.entryType === "individual") ?? null;
   const now = new Date();
   const eventStarted = now.getTime() >= new Date(event.eventStartsAt).getTime();
   const votingOpen = isVotingOpen(event) && eventStarted;
-  const entryOpen = getContestEntryState(event, now) === "open";
+  const entryState = getContestEntryState(event, now);
+  const entryOpen = entryState === "open";
+
+  if (entryState === "closed") {
+    return (
+      <GuestFlowShell
+        eventId={event._id}
+        eventYear={event.year}
+        guestName={guest.fullName}
+        votingOpen={votingOpen}
+        contestEntryClosed
+        title="Fantasia individual"
+        description=""
+      >
+        <p role="status" className="text-stone-300">
+          {event.votingStatus === "not_started"
+            ? "As inscrições para o concurso foram encerradas. Este cadastro não está disponível nesta edição."
+            : "As inscrições para o concurso estão congeladas desde o início da votação. Este cadastro não está disponível nesta edição."}
+        </p>
+      </GuestFlowShell>
+    );
+  }
+
+  const entries = await getGuestEntriesWithPhotos(event._id, guest.userId);
+  const entry =
+    entries.find((candidate) => candidate.entryType === "individual") ?? null;
 
   return (
     <GuestFlowShell
@@ -40,6 +62,7 @@ export default async function IndividualCostumePage({
       eventYear={event.year}
       guestName={guest.fullName}
       votingOpen={votingOpen}
+      contestEntryClosed={false}
       title="Fantasia individual"
       description=""
     >
@@ -55,8 +78,7 @@ export default async function IndividualCostumePage({
           <IndividualEntryControls eventId={event._id} enabled={entryOpen} />
         ) : (
           <p role="status" className="text-stone-300">
-            As inscrições foram encerradas. Apenas participações com foto salva
-            antes do fechamento concorrem nesta edição.
+            As inscrições ainda não foram abertas.
           </p>
         )}
       </section>

@@ -6,6 +6,7 @@ import { getGuestPageContext } from "@/app/meu-halloween/guest-page-context";
 import { getDb } from "@/lib/db";
 import { isVotingOpen } from "@/lib/events";
 import { getOpenVotingRound } from "@/lib/voting-rounds";
+import { getContestEntryState } from "@/util/contest-entry-state";
 import { getCategories } from "@/util/get-categories";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ export default async function GuestVotingPage({
   const now = new Date();
   const eventStarted = now.getTime() >= new Date(event.eventStartsAt).getTime();
   const votingOpen = isVotingOpen(event) && eventStarted;
+  const contestEntryClosed = getContestEntryState(event, now) === "closed";
 
   if (!votingOpen) {
     const message =
@@ -44,6 +46,7 @@ export default async function GuestVotingPage({
         eventYear={event.year}
         guestName={guest.fullName}
         votingOpen={false}
+        contestEntryClosed={contestEntryClosed}
         title="Votação"
         description={message}
       >
@@ -65,6 +68,7 @@ export default async function GuestVotingPage({
         eventYear={event.year}
         guestName={guest.fullName}
         votingOpen
+        contestEntryClosed={contestEntryClosed}
         title="Votação indisponível"
         description="A votação está aberta, mas não encontramos uma rodada ativa. Tente novamente em instantes."
       >
@@ -95,6 +99,7 @@ export default async function GuestVotingPage({
       eventYear={event.year}
       guestName={guest.fullName}
       votingOpen={votingOpen}
+      contestEntryClosed={contestEntryClosed}
       title="Votação"
       description="Escolha uma categoria para ver as fantasias e registrar seu voto."
     >

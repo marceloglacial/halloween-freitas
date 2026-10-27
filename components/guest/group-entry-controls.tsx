@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 type GroupEntry = {
   _id: string;
@@ -21,15 +22,11 @@ export default function GroupEntryControls({
   const router = useRouter();
   const [groupName, setGroupName] = useState("");
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
   async function createEntry(eventObject: React.FormEvent<HTMLFormElement>) {
     eventObject.preventDefault();
     if (pending || !enabled || entry || !categoryAvailable) return;
     setPending(true);
-    setError("");
-    setMessage("");
     try {
       const response = await fetch("/api/contestant-entries", {
         method: "POST",
@@ -42,16 +39,16 @@ export default function GroupEntryControls({
       });
       const result: { error?: string } = await response.json();
       if (!response.ok) {
-        setError(result.error ?? "Não foi possível inscrever o grupo.");
+        toast.error(result.error ?? "Não foi possível inscrever o grupo.");
         return;
       }
       setGroupName("");
-      setMessage(
+      toast.success(
         "Inscrição criada. Envie a foto no painel para concluir o cadastro.",
       );
       router.refresh();
     } catch {
-      setError("Não foi possível conectar. Tente novamente.");
+      toast.error("Não foi possível conectar. Tente novamente.");
     } finally {
       setPending(false);
     }
@@ -89,12 +86,6 @@ export default function GroupEntryControls({
           </button>
         </form>
       )}
-      {message ? <p role="status">{message}</p> : null}
-      {error ? (
-        <p role="alert" className="text-red-300">
-          {error}
-        </p>
-      ) : null}
     </div>
   );
 }

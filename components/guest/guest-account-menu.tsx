@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import LogoutButton from "@/components/logout-button";
 
 export default function GuestAccountMenu({ guestName }: { guestName: string }) {
@@ -73,6 +74,15 @@ export default function GuestAccountMenu({ guestName }: { guestName: string }) {
         hidden={!open}
         className="absolute top-full right-0 z-40 mt-2 grid w-56 gap-2 rounded-xl border border-white/15 bg-zinc-950 p-2 shadow-xl [&[hidden]]:hidden"
       >
+        <Link
+          href="/"
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => setOpen(false)}
+          className="flex min-h-11 items-center rounded-xl px-4 py-2 font-semibold text-orange-200 transition hover:bg-white/5 hover:text-orange-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 motion-reduce:transition-none"
+        >
+          Ver site
+        </Link>
         <LogoutButton
           onClick={() => setOpen(false)}
           className="min-h-11 w-full rounded-xl border border-red-400/30 bg-red-950/60 px-4 py-2 text-left font-semibold text-red-100 transition hover:border-red-300/50 hover:bg-red-900/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300 motion-reduce:transition-none"

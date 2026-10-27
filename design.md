@@ -212,7 +212,16 @@ links for individual and group costume registration and party-photo uploads.
 Each flow has its own page, shows only entries owned by that RSVP, and keeps a
 contestant's photo upload beside its registration.
 Use the same edition brand and guest account menu in the top header on the hub
-and every participant flow. Align each flow's title and description to the left.
+and every participant flow. Keep the header fixed at the top while the page
+scrolls. Align each flow's title and description to the left.
+Place each hub card's status badge beside its icon. Use green for available,
+open, or complete states, gray for waiting or unavailable states, and orange
+for entries in progress; allow longer badge labels to wrap on narrow screens.
+When contestant enrollment is closed or frozen, make the individual and group
+costume cards and corresponding bottom-navigation items visibly inactive and
+show an explanatory toast when activated.
+Keep cards navigable before the scheduled enrollment opening so guests can see
+when registration becomes available.
 On narrow screens, keep a fixed bottom navigation across the hub and participant
 flows, with links to the hub, individual and group costume pages, and party
 photos. Show voting only after the event starts and voting opens. Preserve the

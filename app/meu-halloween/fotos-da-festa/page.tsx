@@ -3,6 +3,7 @@ import GuestFlowShell from "@/components/guest/guest-flow-shell";
 import PartyPhotoUpload from "@/components/guest/party-photo-upload";
 import { getGuestPageContext } from "@/app/meu-halloween/guest-page-context";
 import { isVotingOpen } from "@/lib/events";
+import { getContestEntryState } from "@/util/contest-entry-state";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export default async function PartyPhotosPage({
   const now = new Date();
   const eventStarted = now.getTime() >= new Date(event.eventStartsAt).getTime();
   const votingOpen = isVotingOpen(event) && eventStarted;
+  const contestEntryClosed = getContestEntryState(event, now) === "closed";
 
   return (
     <GuestFlowShell
@@ -33,6 +35,7 @@ export default async function PartyPhotosPage({
       eventYear={event.year}
       guestName={guest.fullName}
       votingOpen={votingOpen}
+      contestEntryClosed={contestEntryClosed}
       title="Fotos da festa"
       description="Este espaço é para fotos gerais da festa, separado das fotos das fantasias do concurso."
     >

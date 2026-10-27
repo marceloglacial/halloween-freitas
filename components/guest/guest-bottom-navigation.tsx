@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 import type { ReactNode } from "react";
 
 type GuestNavigationIcon = "home" | "individual" | "group" | "photos" | "voting";
@@ -42,9 +43,11 @@ const icons: Record<GuestNavigationIcon, ReactNode> = {
 export default function GuestBottomNavigation({
   eventId,
   votingOpen,
+  contestEntryClosed,
 }: {
   eventId: string;
   votingOpen: boolean;
+  contestEntryClosed: boolean;
 }) {
   const pathname = usePathname();
   const eventQuery = `?eventId=${encodeURIComponent(eventId)}`;
@@ -52,17 +55,20 @@ export default function GuestBottomNavigation({
     href: string;
     label: string;
     icon: GuestNavigationIcon;
+      blockedByContestClosure?: boolean;
   }[] = [
     { href: "/meu-halloween", label: "Início", icon: "home" },
     {
       href: "/meu-halloween/individual",
       label: "Fantasia individual",
       icon: "individual",
+      blockedByContestClosure: true,
     },
     {
       href: "/meu-halloween/grupo",
       label: "Fantasia em grupo",
       icon: "group",
+      blockedByContestClosure: true,
     },
     {
       href: "/meu-halloween/fotos-da-festa",
@@ -91,32 +97,60 @@ export default function GuestBottomNavigation({
       >
         {sections.map((section) => {
           const active = pathname === section.href;
+          const inactive =
+            contestEntryClosed && section.blockedByContestClosure === true;
+          const className = `flex min-h-14 flex-col items-center justify-center gap-1 border-t-2 px-1 text-xl transition focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-orange-300 motion-reduce:transition-none ${
+            inactive
+              ? "cursor-not-allowed border-transparent text-gray-500"
+              : active
+                ? "border-orange-400 text-orange-300"
+                : "border-transparent text-gray-300 hover:bg-white/5 hover:text-white"
+          }`;
+          const content = (
+            <>
+              <svg
+                aria-hidden="true"
+                className="size-6 shrink-0"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.8"
+                viewBox="0 0 24 24"
+              >
+                {icons[section.icon]}
+              </svg>
+              <span className="sr-only">{section.label}</span>
+            </>
+          );
+
           return (
             <li key={section.href}>
-              <Link
-                href={`${section.href}${eventQuery}`}
-                aria-current={active ? "page" : undefined}
-                aria-label={section.label}
-                className={`flex min-h-14 flex-col items-center justify-center gap-1 border-t-2 px-1 text-xl transition focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-orange-300 motion-reduce:transition-none ${
-                  active
-                    ? "border-orange-400 text-orange-300"
-                    : "border-transparent text-gray-300 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <svg
-                  aria-hidden="true"
-                  className="size-6 shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.8"
-                  viewBox="0 0 24 24"
+              {inactive ? (
+                <button
+                  type="button"
+                  aria-disabled="true"
+                  aria-current={active ? "page" : undefined}
+                  aria-label={section.label}
+                  onClick={() =>
+                    toast.warning(
+                      "Esta opção está indisponível porque as inscrições para o concurso estão encerradas ou congeladas.",
+                    )
+                  }
+                  className={`${className} w-full border-x-0 border-b-0 bg-transparent p-0`}
                 >
-                  {icons[section.icon]}
-                </svg>
-                <span className="sr-only">{section.label}</span>
-              </Link>
+                  {content}
+                </button>
+              ) : (
+                <Link
+                  href={`${section.href}${eventQuery}`}
+                  aria-current={active ? "page" : undefined}
+                  aria-label={section.label}
+                  className={className}
+                >
+                  {content}
+                </Link>
+              )}
             </li>
           );
         })}

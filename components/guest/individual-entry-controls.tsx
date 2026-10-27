@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export default function IndividualEntryControls({
   eventId,
@@ -19,7 +20,6 @@ export default function IndividualEntryControls({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(
     () => () => {
@@ -32,7 +32,6 @@ export default function IndividualEntryControls({
     eventObject.preventDefault();
     if (pending || !enabled || !photo || !consent) return;
     setPending(true);
-    setError("");
     try {
       const body = new FormData();
       body.set("image", photo);
@@ -54,9 +53,10 @@ export default function IndividualEntryControls({
       setPhoto(null);
       setConsent(false);
       if (photoInputRef.current) photoInputRef.current.value = "";
+      toast.success("Inscrição individual confirmada.");
       router.refresh();
     } catch (failure) {
-      setError(
+      toast.error(
         failure instanceof Error
           ? failure.message
           : "Não foi possível conectar. Tente novamente.",
@@ -111,7 +111,6 @@ export default function IndividualEntryControls({
             setPreviewUrl(previewUrlRef.current);
             setPhoto(selected);
             setConsent(false);
-            setError("");
           }}
           className="block w-full text-base text-stone-200 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-400 file:px-3 file:py-2 file:font-semibold file:text-black"
         />
@@ -149,11 +148,6 @@ export default function IndividualEntryControls({
       >
         {pending ? "Salvando…" : "Salvar participação"}
       </button>
-      {error ? (
-        <p role="alert" className="text-sm text-red-300">
-          {error}
-        </p>
-      ) : null}
     </form>
   );
 }

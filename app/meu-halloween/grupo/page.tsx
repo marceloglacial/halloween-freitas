@@ -27,6 +27,32 @@ export default async function GroupCostumePage({
   }
 
   const { event, guest } = context;
+  const now = new Date();
+  const eventStarted = now.getTime() >= new Date(event.eventStartsAt).getTime();
+  const votingOpen = isVotingOpen(event) && eventStarted;
+  const entryState = getContestEntryState(event, now);
+  const entryOpen = entryState === "open";
+
+  if (entryState === "closed") {
+    return (
+      <GuestFlowShell
+        eventId={event._id}
+        eventYear={event.year}
+        guestName={guest.fullName}
+        votingOpen={votingOpen}
+        contestEntryClosed
+        title="Fantasia em grupo"
+        description="Informe o nome da fantasia do grupo. A categoria compatível é selecionada automaticamente; depois, envie a foto no painel."
+      >
+        <p role="status" className="text-stone-300">
+          {event.votingStatus === "not_started"
+            ? "As inscrições para o concurso foram encerradas. Este cadastro não está disponível nesta edição."
+            : "As inscrições para o concurso estão congeladas desde o início da votação. Este cadastro não está disponível nesta edição."}
+        </p>
+      </GuestFlowShell>
+    );
+  }
+
   const [entries, categories] = await Promise.all([
     getGuestEntriesWithPhotos(event._id, guest.userId),
     getCategories(event._id),
@@ -39,10 +65,6 @@ export default async function GroupCostumePage({
   const category = entry
     ? categories.find((item) => item._id === entry.categoryId)
     : undefined;
-  const now = new Date();
-  const eventStarted = now.getTime() >= new Date(event.eventStartsAt).getTime();
-  const votingOpen = isVotingOpen(event) && eventStarted;
-  const entryOpen = getContestEntryState(event, now) === "open";
 
   return (
     <GuestFlowShell
@@ -50,6 +72,7 @@ export default async function GroupCostumePage({
       eventYear={event.year}
       guestName={guest.fullName}
       votingOpen={votingOpen}
+      contestEntryClosed={false}
       title="Fantasia em grupo"
       description="Informe o nome da fantasia do grupo. A categoria compatível é selecionada automaticamente; depois, envie a foto no painel."
     >
@@ -70,7 +93,7 @@ export default async function GroupCostumePage({
           />
         ) : !entryOpen ? (
           <p role="status" className="text-stone-300">
-            As inscrições do concurso foram encerradas.
+            As inscrições do concurso ainda não foram abertas.
           </p>
         ) : null}
       </section>
