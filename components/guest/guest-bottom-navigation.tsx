@@ -55,7 +55,8 @@ export default function GuestBottomNavigation({
     href: string;
     label: string;
     icon: GuestNavigationIcon;
-      blockedByContestClosure?: boolean;
+    blockedByContestClosure?: boolean;
+    blockedByVotingClosure?: boolean;
   }[] = [
     { href: "/meu-halloween", label: "Início", icon: "home" },
     {
@@ -75,15 +76,12 @@ export default function GuestBottomNavigation({
       label: "Fotos da festa",
       icon: "photos",
     },
-    ...(votingOpen
-      ? [
-          {
-            href: "/meu-halloween/votacao",
-            label: "Votação",
-            icon: "voting" as const,
-          },
-        ]
-      : []),
+    {
+      href: "/meu-halloween/votacao",
+      label: "Votação",
+      icon: "voting",
+      blockedByVotingClosure: true,
+    },
   ];
 
   return (
@@ -96,9 +94,12 @@ export default function GuestBottomNavigation({
         style={{ gridTemplateColumns: `repeat(${sections.length}, minmax(0, 1fr))` }}
       >
         {sections.map((section) => {
-          const active = pathname === section.href;
+          const active =
+            pathname === section.href ||
+            (section.icon === "voting" && pathname.startsWith("/votacao"));
           const inactive =
-            contestEntryClosed && section.blockedByContestClosure === true;
+            (contestEntryClosed && section.blockedByContestClosure === true) ||
+            (!votingOpen && section.blockedByVotingClosure === true);
           const className = `flex min-h-14 flex-col items-center justify-center gap-1 border-t-2 px-1 text-xl transition focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-orange-300 motion-reduce:transition-none ${
             inactive
               ? "cursor-not-allowed border-transparent text-gray-500"
@@ -134,7 +135,9 @@ export default function GuestBottomNavigation({
                   aria-label={section.label}
                   onClick={() =>
                     toast.warning(
-                      "Esta opção está indisponível porque as inscrições para o concurso estão encerradas ou congeladas.",
+                      section.blockedByVotingClosure
+                        ? "A votação não está ativa no momento."
+                        : "Esta opção está indisponível porque as inscrições para o concurso estão encerradas ou congeladas.",
                     )
                   }
                   className={`${className} w-full border-x-0 border-b-0 bg-transparent p-0`}

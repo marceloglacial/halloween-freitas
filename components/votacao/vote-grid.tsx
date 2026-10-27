@@ -98,7 +98,7 @@ export default function VoteGrid({
         Escolha uma pessoa para esta categoria. Você poderá conferir sua escolha
         antes de confirmar.
       </p>
-      <div className="sticky top-4 z-40 mb-12 flex justify-center">
+      <div className="sticky top-20 z-40 mb-12 flex justify-center">
         <input
           type="text"
           aria-label="Buscar candidato por nome"
@@ -135,7 +135,7 @@ export default function VoteGrid({
       {selectedUserId && (
         <button
           type="button"
-          className="fixed bottom-6 left-1/2 z-50 w-full max-w-xs -translate-x-1/2 rounded-2xl bg-orange-400 px-16 py-3 text-black shadow-lg lg:py-4 lg:text-xl"
+          className="fixed bottom-20 left-1/2 z-50 w-full max-w-xs -translate-x-1/2 rounded-2xl bg-orange-400 px-16 py-3 text-black shadow-lg lg:bottom-6 lg:py-4 lg:text-xl"
           onClick={() => void handleVote()}
           disabled={loading}
         >

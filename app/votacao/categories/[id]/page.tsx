@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import BackButton from "@/components/back-button";
+import GuestFlowShell from "@/components/guest/guest-flow-shell";
 import VoteGrid from "@/components/votacao/vote-grid";
 import FeatureUnavailable from "@/components/feature-unavailable";
 import {
@@ -72,19 +73,22 @@ export default async function CategoryPage({
     )
   ) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 text-center">
-        <h1 className="text-4xl">Categoria concluída</h1>
-        <p className="max-w-xl text-xl text-orange-100">
-          Seu voto nesta categoria já foi registrado. Continue pelas categorias
-          que ainda estão abertas.
-        </p>
+      <GuestFlowShell
+        eventId={event._id}
+        eventYear={event.year}
+        guestName={session.fullName}
+        votingOpen
+        contestEntryClosed
+        title="Categoria concluída"
+        description="Seu voto nesta categoria já foi registrado. Continue pelas categorias que ainda estão abertas."
+      >
         <Link
-          className="rounded-xl bg-orange-400 px-5 py-3 font-semibold text-black focus-visible:outline-2"
+          className="inline-flex min-h-11 items-center justify-center self-start rounded-xl bg-orange-400 px-5 py-3 font-semibold text-black focus-visible:outline-2"
           href={`/votacao/categories?eventId=${event._id}`}
         >
           Voltar às categorias
         </Link>
-      </main>
+      </GuestFlowShell>
     );
   }
 
@@ -96,17 +100,22 @@ export default async function CategoryPage({
   );
 
   return (
-    <section className="min-h-screen w-full px-8 py-16 text-center">
+    <GuestFlowShell
+      eventId={event._id}
+      eventYear={event.year}
+      guestName={session.fullName}
+      votingOpen
+      contestEntryClosed
+      title={`${category.icon} ${category.title}`}
+      description="Escolha a fantasia que receberá seu voto nesta categoria."
+    >
       <BackButton href={`/votacao/categories?eventId=${event._id}`} />
-      <h1 className="mt-8 mb-8 text-4xl lg:text-6xl">
-        {category.icon} {category.title}
-      </h1>
       <VoteGrid
         users={users}
         categoryId={category._id}
         roundId={round._id.toString()}
         eventId={event._id}
       />
-    </section>
+    </GuestFlowShell>
   );
 }

@@ -1,8 +1,8 @@
 import { ObjectId } from "mongodb";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import CategoryList from "@/components/votacao/category-list";
 import FeatureUnavailable from "@/components/feature-unavailable";
+import GuestFlowShell from "@/components/guest/guest-flow-shell";
+import CategoryList from "@/components/votacao/category-list";
 import {
   getGuestRegistration,
   GuestAccessError,
@@ -74,33 +74,28 @@ export default async function VotingCategoriesPage({
   );
 
   return (
-    <section className="flex min-h-screen w-full flex-col items-center justify-center gap-8 p-8 text-center">
-      <h1 className="text-5xl">
-        Bem-vindo, <br />
-        {session.fullName}!
-      </h1>
-      <p className="mt-2 max-w-2xl text-xl text-orange-100 lg:text-2xl">
-        Você pode votar na mesma pessoa em mais de uma categoria. Escolha uma
-        categoria, confira seu voto antes de confirmar e volte aqui para
-        continuar quando quiser.
-      </p>
+    <GuestFlowShell
+      eventId={event._id}
+      eventYear={event.year}
+      guestName={session.fullName}
+      votingOpen
+      contestEntryClosed
+      title="Votação"
+      description="Escolha uma categoria para ver as fantasias e registrar seu voto. Você pode votar na mesma pessoa em mais de uma categoria."
+    >
       <p className="font-semibold text-orange-300" aria-live="polite">
         {votedCategoryIds.size} de {categories.length} categorias concluídas
       </p>
-      <Link
-        href={`/meu-halloween?${new URLSearchParams({ eventId: event._id })}`}
-        className="text-orange-300 underline focus-visible:outline-2"
-      >
-        Meu Halloween
-      </Link>
       {categories.length ? (
         <CategoryList
           categories={categories}
           votedCategoryIds={votedCategoryIds}
         />
       ) : (
-        <p>Nenhuma categoria encontrada.</p>
+        <p className="rounded-2xl border border-white/10 bg-stone-900 p-5 text-stone-300">
+          Nenhuma categoria encontrada.
+        </p>
       )}
-    </section>
+    </GuestFlowShell>
   );
 }

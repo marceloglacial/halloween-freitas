@@ -2,7 +2,7 @@ import GuestBottomNavigation from "@/components/guest/guest-bottom-navigation";
 import GuestFlowCard from "@/components/guest/guest-flow-card";
 import type { GuestCardStatusTone } from "@/components/guest/guest-flow-card";
 import GuestHeader from "@/components/guest/guest-header";
-import { isVotingOpen } from "@/lib/events";
+import { isVotingOpen, resultsArePublic } from "@/lib/events";
 import { getContestEntryState } from "@/util/contest-entry-state";
 import type { OwnedContestantEntry } from "@/lib/contestant-entries";
 
@@ -41,6 +41,7 @@ export default function GuestPortal({
   const eventStarted =
     new Date(now).getTime() >= new Date(event.eventStartsAt).getTime();
   const votingOpen = isVotingOpen(event) && eventStarted;
+  const resultsPublished = resultsArePublic(event);
   const contestEntryState = getContestEntryState(event, new Date(now));
   const individualEntry = entries.find(
     (entry) => entry.entryType === "individual",
@@ -96,8 +97,38 @@ export default function GuestPortal({
     event.votingStatus === "not_started"
       ? "As inscrições para o concurso estão encerradas e esta fantasia não pode mais ser alterada."
       : "As inscrições para o concurso estão congeladas desde o início da votação e esta fantasia não pode mais ser alterada.";
+  const partyPhotoFlow: GuestFlow = {
+    href: `/meu-halloween/fotos-da-festa${eventQuery}`,
+    icon: "📸",
+    title: "Fotos da festa",
+    description: "Envie fotos gerais para o álbum da festa.",
+    status: eventStarted
+      ? { label: "Envio disponível", tone: "available" }
+      : { label: "Abre quando a festa começar", tone: "unavailable" },
+  };
+  const votingFlow: GuestFlow | null = votingOpen
+    ? {
+        href: `/meu-halloween/votacao${eventQuery}`,
+        icon: "🗳️",
+        title: "Votação",
+        description: "Escolha uma categoria e vote nas fantasias.",
+        status: { label: "Votação aberta", tone: "available" },
+      }
+    : null;
+  const resultsFlow: GuestFlow | null = resultsPublished
+    ? {
+        href: `/resultados?event=${encodeURIComponent(event.slug)}`,
+        icon: "🏆",
+        title: "Resultados",
+        description: "Confira os resultados públicos desta edição.",
+        status: { label: "Resultados publicados", tone: "available" },
+      }
+    : null;
 
   const flows: GuestFlow[] = [
+    ...(resultsFlow ? [resultsFlow] : []),
+    ...(votingFlow ? [votingFlow] : []),
+    ...(contestEntryState !== "open" ? [partyPhotoFlow] : []),
     {
       href: `/meu-halloween/individual${eventQuery}`,
       icon: "🧙",
@@ -116,26 +147,7 @@ export default function GuestPortal({
       inactiveReason:
         contestEntryState === "closed" ? inactiveReason : undefined,
     },
-    {
-      href: `/meu-halloween/fotos-da-festa${eventQuery}`,
-      icon: "📸",
-      title: "Fotos da festa",
-      description: "Envie fotos gerais para o álbum da festa.",
-      status: eventStarted
-        ? { label: "Envio disponível", tone: "available" }
-        : { label: "Abre quando a festa começar", tone: "unavailable" },
-    },
-    ...(votingOpen
-      ? [
-          {
-            href: `/meu-halloween/votacao${eventQuery}`,
-            icon: "🗳️",
-            title: "Votação",
-            description: "Escolha uma categoria e vote nas fantasias.",
-            status: { label: "Votação aberta", tone: "available" as const },
-          },
-        ]
-      : []),
+    ...(contestEntryState === "open" ? [partyPhotoFlow] : []),
   ];
 
   return (

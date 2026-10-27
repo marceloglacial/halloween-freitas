@@ -96,7 +96,16 @@ export default function AdminVoting({
   return (
     <div className="space-y-6">
       <header className="rounded-2xl border border-white/10 bg-stone-950/80 p-5 sm:p-6">
-        <h1 className="text-4xl text-orange-300 sm:text-5xl">Votação</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-4xl text-orange-300 sm:text-5xl">Votação</h1>
+          <p
+            role="status"
+            aria-label={`Estado da votação: ${statusLabel}`}
+            className="ml-auto inline-flex rounded-full bg-orange-300/15 px-3 py-1 font-semibold text-orange-100"
+          >
+            {statusLabel}
+          </p>
+        </div>
         {event.status === "archived" && (
           <p className="mt-3 rounded-lg border border-amber-300/20 bg-amber-300/5 p-3 text-sm text-amber-100">
             Edição arquivada. Estado e apuração históricos permanecem
@@ -118,13 +127,6 @@ export default function AdminVoting({
             congela inscrições e confirmações desta edição.
           </p>
         </div>
-        <p
-          role="status"
-          aria-label={`Estado da votação: ${statusLabel}`}
-          className="inline-flex rounded-full bg-orange-300/15 px-3 py-1 font-semibold text-orange-100"
-        >
-          {statusLabel}
-        </p>
         {event.votingStatus === "not_started" && (
           <p className="text-sm text-gray-300">
             {event.status !== "active"
