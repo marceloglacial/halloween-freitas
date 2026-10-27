@@ -16,7 +16,10 @@ import {
   logServerError,
 } from "@/lib/http";
 import { getAdminUsersForEvent } from "@/lib/users";
-import { getAdminParticipantRsvpIdsForEvent } from "@/lib/contestant-entries";
+import {
+  getAdminGroupEntriesForEvent,
+  getAdminParticipantRsvpIdsForEvent,
+} from "@/lib/contestant-entries";
 import type { ContestantEntryDocument } from "@/lib/contestant-entries";
 import { enqueueContestPhotoCleanup } from "@/lib/contestant-photo-cleanup";
 
@@ -36,14 +39,34 @@ export async function GET(request: Request) {
     const params = new URL(request.url).searchParams;
     const event = await adminEvent(params.get("eventId"));
     if (event instanceof Response) return event;
-    const users = await getAdminUsersForEvent(event._id);
-    if (params.get("participantsOnly") !== "true") {
-      return Response.json(users);
+    const participantsOnly = params.get("participantsOnly") === "true";
+    const [users, groupEntries, participantIds] = await Promise.all([
+      getAdminUsersForEvent(event._id),
+      getAdminGroupEntriesForEvent(event._id, participantsOnly),
+      participantsOnly
+        ? getAdminParticipantRsvpIdsForEvent(event._id)
+        : Promise.resolve(null),
+    ]);
+    const groupsByOwner = new Map<
+      string,
+      Array<{ displayName: string; status: ContestantEntryStatus }>
+    >();
+    for (const entry of groupEntries) {
+      const entries = groupsByOwner.get(entry.ownerRsvpId) ?? [];
+      entries.push({ displayName: entry.displayName, status: entry.status });
+      groupsByOwner.set(entry.ownerRsvpId, entries);
     }
-    const participantIds = new Set(
-      await getAdminParticipantRsvpIdsForEvent(event._id),
+    const visibleUsers = participantIds
+      ? users.filter((user) => participantIds.includes(user._id))
+      : users;
+    return Response.json(
+      visibleUsers.map((user) => ({
+        ...user,
+        ...(groupsByOwner.has(user._id)
+          ? { groupEntries: groupsByOwner.get(user._id) }
+          : {}),
+      })),
     );
-    return Response.json(users.filter((user) => participantIds.has(user._id)));
   } catch (error) {
     logServerError("Admin user listing failed", error);
     return errorResponse("Não foi possível carregar os usuários", 500);

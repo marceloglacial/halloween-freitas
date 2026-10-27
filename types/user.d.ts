@@ -10,11 +10,18 @@ type User = {
 };
 
 type PublicUser = Omit<User, "email" | "status" | "contestant">;
-type AdminUser = User & { clerkUserId?: string };
+type AdminUser = User & {
+  clerkUserId?: string;
+  groupEntries?: Array<{
+    displayName: string;
+    status: ContestantEntryStatus;
+  }>;
+};
 
 interface UserListItemProps {
-  user: User;
+  user: AdminUser;
   year: number;
+  groupEntry?: NonNullable<AdminUser["groupEntries"]>[number];
 }
 
 interface UserListSearchProps {

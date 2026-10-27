@@ -165,7 +165,9 @@ export async function getAdminParticipantRsvpIdsForEvent(
   const eventObjectId = parseObjectId(eventId);
   if (!eventObjectId) throw new Error("INVALID_CONTESTANT_EVENT_QUERY");
 
-  const entries = await (await getDb())
+  const entries = await (
+    await getDb()
+  )
     .collection<ContestantEntryDocument>("contestants")
     .find(
       { eventId: eventObjectId },
@@ -182,6 +184,43 @@ export async function getAdminParticipantRsvpIdsForEvent(
   ];
 }
 
+export async function getAdminGroupEntriesForEvent(
+  eventId: string,
+  participantsOnly = false,
+): Promise<
+  Array<{
+    ownerRsvpId: string;
+    displayName: string;
+    status: ContestantEntryStatus;
+  }>
+> {
+  const eventObjectId = parseObjectId(eventId);
+  if (!eventObjectId) throw new Error("INVALID_CONTESTANT_EVENT_QUERY");
+
+  const entries = await (
+    await getDb()
+  )
+    .collection<ContestantEntryDocument>("contestants")
+    .find({
+      eventId: eventObjectId,
+      entryType: "group",
+      status: { $ne: "withdrawn" },
+    })
+    .toArray();
+
+  return entries
+    .filter(
+      (entry) =>
+        entry.ownerRsvpId &&
+        (!participantsOnly || isAdminParticipantEntry(entry, eventObjectId)),
+    )
+    .map((entry) => ({
+      ownerRsvpId: entry.ownerRsvpId!.toString(),
+      displayName: entry.displayName,
+      status: entry.status,
+    }));
+}
+
 function isAdminParticipantEntry(
   entry: ContestantEntryDocument,
   eventId: ObjectId,
@@ -189,11 +228,11 @@ function isAdminParticipantEntry(
   const photo = entry.contestPhoto;
   return Boolean(
     entry.status !== "withdrawn" &&
-      entry.ownerRsvpId &&
-      photo?.assetId &&
-      photo.publicId?.startsWith(`contest-photos/${eventId}/`) &&
-      photo.consentAt instanceof Date &&
-      photo.consentByRsvpId === entry.ownerRsvpId.toString(),
+    entry.ownerRsvpId &&
+    photo?.assetId &&
+    photo.publicId?.startsWith(`contest-photos/${eventId}/`) &&
+    photo.consentAt instanceof Date &&
+    photo.consentByRsvpId === entry.ownerRsvpId.toString(),
   );
 }
 

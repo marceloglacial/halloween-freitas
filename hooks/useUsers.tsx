@@ -19,10 +19,9 @@ export function useUsers(eventId: string, participantsOnly = false) {
     try {
       const params = new URLSearchParams({ eventId });
       if (participantsOnly) params.set("participantsOnly", "true");
-      const response = await fetch(
-        `/api/admin/users?${params.toString()}`,
-        { cache: "no-store" },
-      );
+      const response = await fetch(`/api/admin/users?${params.toString()}`, {
+        cache: "no-store",
+      });
       if (!response.ok) {
         throw new Error(
           await responseError(
@@ -47,9 +46,11 @@ export function useUsers(eventId: string, participantsOnly = false) {
   const query = search.trim().toLocaleLowerCase("pt-BR");
   const filteredUsers = query
     ? users.filter((user) =>
-        [user.fullName, user.email].some((field) =>
-          field.toLocaleLowerCase("pt-BR").includes(query),
-        ),
+        [
+          user.fullName,
+          user.email,
+          ...(user.groupEntries ?? []).map((entry) => entry.displayName),
+        ].some((field) => field.toLocaleLowerCase("pt-BR").includes(query)),
       )
     : users;
 

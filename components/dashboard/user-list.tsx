@@ -28,6 +28,9 @@ export default function UserList({
     setSearch,
     users,
   } = useUsers(event._id, participantsOnly);
+  const participantCount =
+    users.length +
+    users.reduce((total, user) => total + (user.groupEntries?.length ?? 0), 0);
 
   useEffect(() => {
     fetchUsers();
@@ -38,7 +41,7 @@ export default function UserList({
       <div className="flex items-center justify-between gap-3">
         <h2 className="min-w-0 truncate text-xl font-semibold sm:text-2xl">
           {participantsOnly
-            ? `${users.length} participantes com foto`
+            ? `${participantCount} participantes com foto`
             : `${users.length} convidados`}
         </h2>
         <div className="flex shrink-0 gap-2">
@@ -88,9 +91,21 @@ export default function UserList({
               : "Nenhum convidado encontrado."}
           </li>
         ) : (
-          filteredUsers.map((user: AdminUser) => (
-            <UserListItem key={user._id} user={user} year={event.year} />
-          ))
+          filteredUsers.flatMap((user: AdminUser) => [
+            <UserListItem
+              key={`guest-${user._id}`}
+              user={user}
+              year={event.year}
+            />,
+            ...(user.groupEntries ?? []).map((groupEntry, index) => (
+              <UserListItem
+                key={`group-${user._id}-${index}`}
+                user={user}
+                year={event.year}
+                groupEntry={groupEntry}
+              />
+            )),
+          ])
         )}
       </ul>
     </div>
