@@ -65,6 +65,12 @@ does not trust client-supplied `x-forwarded-for`. Local development uses one
 shared development bucket when no address header is present. Never forward an
 untrusted client value as `x-real-ip`.
 
+Party-photo cleanup removes authenticated Cloudinary assets sequentially, with
+at least 250 ms between deletion requests and batches of up to ten assets.
+Bulk guest deletion drains due cleanup jobs through those throttled batches.
+Failed Cloudinary deletions remain event-scoped in the retry queue and use
+exponential backoff.
+
 ### Issue worktrees
 
 Keep local development credentials at the canonical checkout's `.env.local`;

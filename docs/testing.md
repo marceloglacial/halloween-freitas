@@ -81,9 +81,14 @@ cross-edition isolation cases where they apply.
   until album publication.
 - Verify guest photo reads return only that RSVP's event-scoped photos with
   short-lived private preview URLs, never Cloudinary asset/public IDs.
+- Verify guests can remove their own party photos individually or all at once;
+  reject removal of another RSVP's photos and hide removed photos immediately.
 - Verify the upload rate limits are event-scoped, concurrency-safe, expire, and
   store only HMAC identities; verify failed metadata writes enqueue orphan
   cleanup and retry Cloudinary deletion safely.
+- Verify Cloudinary cleanup runs sequentially with the configured throttle,
+  bulk deletion drains due jobs in bounded batches, and failures remain queued
+  for backoff retries.
 - Verify post-publication uploads appear by default, album unpublish revokes
   public API/rendered/cache access, and republish exposes only retained photos.
 - Verify the public party-gallery route and API return no photos, photo IDs,

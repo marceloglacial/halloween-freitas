@@ -107,9 +107,10 @@ contestant photos, contestant readiness, or ballots.
 All party photos remain private until an administrator publishes the edition's
 album. One album-wide control publishes or hides all retained photos; there is
 no per-photo approval step. Uploads added after publication appear under the
-published album by default. Removing a photo makes it unavailable from
-application responses immediately and queues safe Cloudinary cleanup with
-retry. Hiding the album revokes public access
+published album by default. A guest may remove only their own photos, one at a
+time or all together; administrators may remove any photo from the edition.
+Removing a photo makes it unavailable from application responses immediately
+and queues safe Cloudinary cleanup with retry. Hiding the album revokes public access
 through routes, delivery URLs, server rendering, and cache revalidation.
 
 ## Transition overview

@@ -17,6 +17,9 @@ import {
 import {
   enqueuePartyPhotoCleanup,
   getPartyPhotosForGuest,
+  PARTY_PHOTO_CLEANUP_BATCH_SIZE,
+  PartyAlbumWriteError,
+  removeGuestPartyPhotos,
   retryPartyPhotoCleanup,
   savePartyPhoto,
   serializePartyPhotoForGuest,
@@ -38,6 +41,9 @@ function apiError(message: string, status: number) {
 }
 
 function failure(error: unknown) {
+  if (error instanceof PartyAlbumWriteError) {
+    return apiError(error.message, error.status);
+  }
   if (error instanceof GuestAccessError) {
     return Response.json(
       { error: error.message, code: error.code },
@@ -235,6 +241,65 @@ export async function POST(request: Request) {
         // The invalid asset remains authenticated if cleanup cannot be queued.
       }
     }
+    return failure(error);
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const params = new URL(request.url).searchParams;
+    const eventId = eventIdFromRequest(request);
+    if (!eventId) return apiError("Evento inválido", 400);
+    const requestedPhotoIds = params.getAll("photoId");
+    if (requestedPhotoIds.some((photoId) => !ObjectId.isValid(photoId))) {
+      return apiError("Foto inválida", 400);
+    }
+
+    if (!(await getEventById(eventId))) {
+      return apiError("Evento não encontrado", 404);
+    }
+    const guest = await getGuestRegistration(eventId);
+    const db = await getDb();
+    const now = new Date();
+    const photoIds = [
+      ...new Set(
+        requestedPhotoIds.map((photoId) => new ObjectId(photoId).toString()),
+      ),
+    ].map((photoId) => new ObjectId(photoId));
+    const removedCount = await removeGuestPartyPhotos(
+      await getMongoClient(),
+      db,
+      {
+        eventId: new ObjectId(eventId),
+        uploaderRsvpId: new ObjectId(guest.userId),
+        ...(photoIds.length > 0 ? { photoIds } : {}),
+        now,
+      },
+    );
+
+    try {
+      if (removedCount > 0) {
+        const cleanupThrottle = { lastRequestAt: null as number | null };
+        let cleanedBatchSize: number;
+        do {
+          cleanedBatchSize = await retryPartyPhotoCleanup(
+            db,
+            new ObjectId(eventId),
+            deletePartyPhotoAsset,
+            now,
+            cleanupThrottle,
+          );
+        } while (
+          (photoIds.length === 0 || photoIds.length > 1) &&
+          cleanedBatchSize === PARTY_PHOTO_CLEANUP_BATCH_SIZE
+        );
+      }
+    } catch (error) {
+      logServerError("Guest party photo cleanup retry failed", error);
+    }
+
+    return Response.json({ removed: true, removedCount }, { headers: noStore });
+  } catch (error) {
     return failure(error);
   }
 }

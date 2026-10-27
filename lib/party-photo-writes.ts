@@ -48,6 +48,11 @@ export type PartyPhotoCleanupDocument = {
   lastErrorCode?: string;
 };
 
+export const PARTY_PHOTO_CLEANUP_BATCH_SIZE = 10;
+export const PARTY_PHOTO_CLEANUP_THROTTLE_MS = 250;
+
+type PartyPhotoCleanupThrottleState = { lastRequestAt: number | null };
+
 export async function savePartyPhoto(
   client: MongoClient,
   db: Db,
@@ -103,6 +108,86 @@ export async function getPartyPhotosForGuest(
     .sort({ uploadedAt: -1, _id: -1 })
     .limit(100)
     .toArray();
+}
+
+export async function removeGuestPartyPhotos(
+  client: MongoClient,
+  db: Db,
+  input: {
+    eventId: ObjectId;
+    uploaderRsvpId: ObjectId;
+    photoIds?: ObjectId[];
+    now: Date;
+  },
+) {
+  const session = client.startSession();
+  let removedCount = 0;
+  const photoIds = input.photoIds
+    ? [...new Map(input.photoIds.map((id) => [id.toString(), id])).values()]
+    : undefined;
+
+  try {
+    await session.withTransaction(async () => {
+      let attemptRemovedCount = 0;
+      const photos = db.collection<PartyPhotoDocument>("partyPhotos");
+      const ownerQuery = {
+        eventId: input.eventId,
+        uploaderRsvpId: input.uploaderRsvpId,
+        removedAt: { $exists: false },
+      };
+      const entries = await photos
+        .find(
+          {
+            ...ownerQuery,
+            ...(photoIds ? { _id: { $in: photoIds } } : {}),
+          },
+          { session },
+        )
+        .toArray();
+
+      if (photoIds && entries.length !== photoIds.length) {
+        throw new PartyAlbumWriteError(404, "Foto não encontrada.");
+      }
+
+      for (const photo of entries) {
+        if (!photo) continue;
+        const changed = await photos.updateOne(
+          {
+            _id: photo._id,
+            ...ownerQuery,
+            assetId: photo.assetId,
+          },
+          { $set: { removedAt: input.now } },
+          { session },
+        );
+        if (!changed.matchedCount) continue;
+
+        await enqueuePartyPhotoCleanup(
+          db,
+          {
+            eventId: input.eventId,
+            assetId: photo.assetId,
+            publicId: photo.publicId,
+            now: input.now,
+          },
+          session,
+        );
+        attemptRemovedCount += 1;
+      }
+
+      if (photoIds && attemptRemovedCount !== photoIds.length) {
+        throw new PartyAlbumWriteError(
+          409,
+          "Atualize suas fotos e tente novamente.",
+        );
+      }
+      removedCount = attemptRemovedCount;
+    });
+  } finally {
+    await session.endSession();
+  }
+
+  return removedCount;
 }
 
 export async function getPartyAlbumForAdmin(db: Db, eventId: ObjectId) {
@@ -406,13 +491,14 @@ export async function retryPartyPhotoCleanup(
   eventId: ObjectId,
   deleteAsset: (publicId: string) => Promise<unknown>,
   now = new Date(),
+  throttleState: PartyPhotoCleanupThrottleState = { lastRequestAt: null },
 ) {
   const collection =
     db.collection<PartyPhotoCleanupDocument>("partyPhotoCleanups");
   const jobs = await collection
     .find({ eventId, nextAttemptAt: { $lte: now } })
     .sort({ nextAttemptAt: 1, _id: 1 })
-    .limit(10)
+    .limit(PARTY_PHOTO_CLEANUP_BATCH_SIZE)
     .toArray();
 
   for (const job of jobs) {
@@ -437,9 +523,19 @@ export async function retryPartyPhotoCleanup(
     }
 
     try {
+      if (throttleState.lastRequestAt !== null) {
+        const remainingDelay =
+          PARTY_PHOTO_CLEANUP_THROTTLE_MS -
+          (Date.now() - throttleState.lastRequestAt);
+        if (remainingDelay > 0) {
+          await new Promise((resolve) => setTimeout(resolve, remainingDelay));
+        }
+      }
       await deleteAsset(job.publicId);
+      throttleState.lastRequestAt = Date.now();
       await collection.deleteOne({ _id: job._id, eventId });
     } catch {
+      throttleState.lastRequestAt = Date.now();
       const attempts = job.attempts + 1;
       await collection.updateOne(
         { _id: job._id, eventId },
@@ -455,6 +551,8 @@ export async function retryPartyPhotoCleanup(
       );
     }
   }
+
+  return jobs.length;
 }
 
 export function serializePartyPhotoForGuest(

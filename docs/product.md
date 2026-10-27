@@ -81,9 +81,10 @@ and is separate from contestant entries, contest photos, and voting candidates.
   category configuration once voting begins.
 - Let enrolled guests upload multiple party photos after `eventStartsAt`, even
   after voting has frozen contest participation. Tell guests that photos become
-  visible to everyone if the administrator publishes the album. Enforce file
-  validation and abuse limits, and allow administrators to remove inappropriate
-  content safely.
+  visible to everyone if the administrator publishes the album. Let each guest
+  remove their own photos individually or all at once. Enforce file validation
+  and abuse limits, and allow administrators to remove inappropriate content
+  safely.
 - Show public results and party photos only when their independent publication
   controls allow them.
 

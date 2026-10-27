@@ -60,10 +60,17 @@ export default function PartyPhotoUpload({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const previewUrls = useRef<string[]>([]);
+  const nextPhotoId = useRef(0);
   const [selected, setSelected] = useState<SelectedPhoto[]>([]);
   const [photos, setPhotos] = useState<GuestPartyPhoto[]>([]);
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
+  const [allPhotosSelectedForDeletion, setAllPhotosSelectedForDeletion] =
+    useState(false);
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [pending, setPending] = useState(false);
+  const [deletePending, setDeletePending] = useState<string | "all" | null>(
+    null,
+  );
   const [loading, setLoading] = useState(available);
   const [errors, setErrors] = useState<string[]>([]);
   const [message, setMessage] = useState("");
@@ -104,6 +111,8 @@ export default function PartyPhotoUpload({
 
   function choosePhotos(files: FileList | null) {
     previewUrls.current.forEach((url) => URL.revokeObjectURL(url));
+    setSelectedPhotoIds([]);
+    setAllPhotosSelectedForDeletion(false);
     const fileList = Array.from(files ?? []);
     const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
     const validFiles = fileList.filter(
@@ -122,7 +131,7 @@ export default function PartyPhotoUpload({
         ),
     );
     const next = validFiles.map((file) => ({
-      id: crypto.randomUUID(),
+      id: String(++nextPhotoId.current),
       file,
       previewUrl: URL.createObjectURL(file),
     }));
@@ -130,6 +139,28 @@ export default function PartyPhotoUpload({
     setSelected(next);
     setProgress({});
     setMessage("");
+  }
+
+  function removeQueuedPhoto(photoId: string) {
+    if (pending) return;
+    const photo = selected.find((item) => item.id === photoId);
+    if (!photo) return;
+
+    URL.revokeObjectURL(photo.previewUrl);
+    previewUrls.current = previewUrls.current.filter(
+      (url) => url !== photo.previewUrl,
+    );
+    setSelected((current) => current.filter((item) => item.id !== photoId));
+    setProgress((current) =>
+      Object.fromEntries(
+        Object.entries(current).filter(([id]) => id !== photoId),
+      ),
+    );
+    setErrors((current) =>
+      current.filter((error) => !error.startsWith(`${photo.file.name}:`)),
+    );
+    setMessage("");
+    if (inputRef.current) inputRef.current.value = "";
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -171,6 +202,90 @@ export default function PartyPhotoUpload({
     setPending(false);
   }
 
+  function togglePhotoDeletionSelection(photoId: string) {
+    if (allPhotosSelectedForDeletion) {
+      setAllPhotosSelectedForDeletion(false);
+      setSelectedPhotoIds(
+        photos
+          .filter((photo) => photo.photoId !== photoId)
+          .map((photo) => photo.photoId),
+      );
+      return;
+    }
+
+    setSelectedPhotoIds((current) =>
+      current.includes(photoId)
+        ? current.filter((id) => id !== photoId)
+        : [...current, photoId],
+    );
+  }
+
+  function toggleAllPhotoDeletionSelection() {
+    if (allPhotosSelectedForDeletion) {
+      setAllPhotosSelectedForDeletion(false);
+      setSelectedPhotoIds([]);
+      return;
+    }
+    setAllPhotosSelectedForDeletion(true);
+    setSelectedPhotoIds(photos.map((photo) => photo.photoId));
+  }
+
+  async function deleteSelectedPhotos() {
+    if (pending || deletePending) return;
+    if (
+      allPhotosSelectedForDeletion &&
+      !window.confirm(
+        "Essa ação não pode ser desfeita. Apagar todas as fotos que você enviou para esta edição?",
+      )
+    ) {
+      return;
+    }
+    if (!allPhotosSelectedForDeletion && selectedPhotoIds.length === 0) return;
+
+    setDeletePending("selected");
+    setErrors([]);
+    setMessage("");
+    try {
+      const params = new URLSearchParams({ eventId });
+      if (!allPhotosSelectedForDeletion) {
+        selectedPhotoIds.forEach((photoId) =>
+          params.append("photoId", photoId),
+        );
+      }
+      const response = await fetch(`/api/party-photos?${params.toString()}`, {
+        method: "DELETE",
+      });
+      const result: { removedCount?: number; error?: string } =
+        await response.json();
+      if (!response.ok) {
+        throw new Error(result.error ?? "Não foi possível apagar as fotos.");
+      }
+
+      if (allPhotosSelectedForDeletion) {
+        setPhotos([]);
+      } else {
+        const deletingIds = new Set(selectedPhotoIds);
+        setPhotos((current) =>
+          current.filter((photo) => !deletingIds.has(photo.photoId)),
+        );
+      }
+      const removedCount = result.removedCount ?? 0;
+      setSelectedPhotoIds([]);
+      setAllPhotosSelectedForDeletion(false);
+      setMessage(
+        `${removedCount} ${removedCount === 1 ? "foto apagada" : "fotos apagadas"}.`,
+      );
+    } catch (error) {
+      setErrors([
+        error instanceof Error
+          ? error.message
+          : "Não foi possível apagar as fotos. Tente novamente.",
+      ]);
+    } finally {
+      setDeletePending(null);
+    }
+  }
+
   return (
     <section
       aria-labelledby="party-photos-heading"
@@ -200,7 +315,7 @@ export default function PartyPhotoUpload({
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 multiple
-                disabled={pending}
+                disabled={pending || deletePending !== null}
                 onChange={(event) => choosePhotos(event.target.files)}
                 className="block w-full text-sm text-stone-200 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-400 file:px-3 file:py-2 file:font-semibold file:text-black"
               />
@@ -212,14 +327,26 @@ export default function PartyPhotoUpload({
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {selected.map((photo) => (
                   <li key={photo.id} className="grid gap-2">
-                    <Image
-                      src={photo.previewUrl}
-                      alt={`Prévia: ${photo.file.name}`}
-                      width={480}
-                      height={360}
-                      unoptimized
-                      className="h-32 w-full rounded-lg object-cover"
-                    />
+                    <div className="relative">
+                      <Image
+                        src={photo.previewUrl}
+                        alt={`Prévia: ${photo.file.name}`}
+                        width={480}
+                        height={360}
+                        unoptimized
+                        className="h-32 w-full rounded-lg object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeQueuedPhoto(photo.id)}
+                        disabled={pending}
+                        aria-label={`Remover ${photo.file.name} da fila de envio`}
+                        title="Remover da fila"
+                        className="absolute top-2 right-2 flex size-9 items-center justify-center rounded-full bg-black/80 text-xl leading-none text-white shadow transition hover:bg-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        ×
+                      </button>
+                    </div>
                     <span className="truncate text-xs text-stone-300">
                       {photo.file.name}
                     </span>
@@ -237,7 +364,7 @@ export default function PartyPhotoUpload({
             ) : null}
             <button
               type="submit"
-              disabled={!selected.length || pending}
+              disabled={!selected.length || pending || deletePending !== null}
               className="w-fit rounded-lg bg-orange-400 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {pending ? "Enviando fotos…" : "Enviar fotos"}
@@ -254,7 +381,42 @@ export default function PartyPhotoUpload({
             </p>
           ))}
           <div className="grid gap-3">
-            <h3 className="text-xl font-semibold">Minhas fotos enviadas</h3>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-xl font-semibold">Minhas fotos enviadas</h3>
+              {photos.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleAllPhotoDeletionSelection}
+                    disabled={pending || deletePending !== null}
+                    className="rounded-lg border border-white/20 px-3 py-2 text-sm text-stone-200 transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {allPhotosSelectedForDeletion
+                      ? "Desmarcar todas"
+                      : "Selecionar todas"}
+                  </button>
+                  {selectedPhotoIds.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => void deleteSelectedPhotos()}
+                      disabled={pending || deletePending !== null}
+                      className="rounded-lg border border-red-300/50 px-3 py-2 text-sm text-red-200 transition hover:bg-red-400/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {deletePending === "selected"
+                        ? "Apagando…"
+                        : "Apagar selecionadas"}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+            {selectedPhotoIds.length > 0 ? (
+              <p role="status" className="text-sm text-stone-300">
+                {allPhotosSelectedForDeletion
+                  ? "Todas as fotos estão selecionadas."
+                  : `${selectedPhotoIds.length} ${selectedPhotoIds.length === 1 ? "foto selecionada" : "fotos selecionadas"}.`}
+              </p>
+            ) : null}
             {loading ? (
               <p role="status" className="text-sm text-stone-300">
                 Carregando suas fotos…
@@ -262,7 +424,10 @@ export default function PartyPhotoUpload({
             ) : photos.length ? (
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {photos.map((photo) => (
-                  <li key={photo.photoId}>
+                  <li
+                    key={photo.photoId}
+                    className={`relative overflow-hidden rounded-lg ${allPhotosSelectedForDeletion || selectedPhotoIds.includes(photo.photoId) ? "ring-2 ring-red-400" : ""}`}
+                  >
                     <Image
                       src={photo.previewUrl}
                       alt="Foto enviada para o álbum da festa"
@@ -271,6 +436,30 @@ export default function PartyPhotoUpload({
                       unoptimized
                       className="h-36 w-full rounded-lg object-cover"
                     />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        togglePhotoDeletionSelection(photo.photoId)
+                      }
+                      disabled={pending || deletePending !== null}
+                      aria-label={
+                        allPhotosSelectedForDeletion ||
+                        selectedPhotoIds.includes(photo.photoId)
+                          ? "Remover foto da seleção para apagar"
+                          : "Selecionar foto para apagar"
+                      }
+                      aria-pressed={
+                        allPhotosSelectedForDeletion ||
+                        selectedPhotoIds.includes(photo.photoId)
+                      }
+                      title="Selecionar para apagar"
+                      className={`absolute top-2 right-2 flex size-9 items-center justify-center rounded-full text-xl leading-none text-white shadow transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50 ${allPhotosSelectedForDeletion || selectedPhotoIds.includes(photo.photoId) ? "bg-red-600 hover:bg-red-500" : "bg-black/80 hover:bg-red-600"}`}
+                    >
+                      {allPhotosSelectedForDeletion ||
+                      selectedPhotoIds.includes(photo.photoId)
+                        ? "✓"
+                        : "×"}
+                    </button>
                   </li>
                 ))}
               </ul>
