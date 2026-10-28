@@ -4,7 +4,7 @@ export function TrophyIcon() {
       aria-hidden="true"
       viewBox="0 0 32 32"
       fill="none"
-      className="inline-block size-14 shrink-0 text-current sm:size-16 xl:size-18 2xl:size-24"
+      className="inline-block size-14 shrink-0 text-current min-[2560px]:size-24 sm:size-16 xl:size-18"
     >
       <path
         d="M10 5h12v6c0 4.2-2.6 7-6 7s-6-2.8-6-7V5Z"
@@ -29,7 +29,7 @@ export function CrownIcon() {
       aria-hidden="true"
       viewBox="0 0 32 24"
       fill="none"
-      className="h-6 w-8 text-amber-200 drop-shadow-[0_0_12px_rgba(251,191,36,0.65)] sm:h-8 sm:w-10 2xl:h-12 2xl:w-18"
+      className="h-6 w-8 text-amber-200 drop-shadow-[0_0_12px_rgba(251,191,36,0.65)] min-[2560px]:h-12 min-[2560px]:w-18 sm:h-8 sm:w-10"
     >
       <path
         d="m3 7 6 5 7-9 7 9 6-5-3 14H6L3 7Z"
@@ -49,7 +49,7 @@ export function PumpkinIcon() {
       aria-hidden="true"
       viewBox="0 0 32 32"
       fill="none"
-      className="inline-block size-8 shrink-0 align-[-0.12em] text-orange-300 sm:size-9 xl:size-10 2xl:size-16"
+      className="inline-block size-8 shrink-0 align-[-0.12em] text-orange-300 min-[2560px]:size-16 sm:size-9 xl:size-10"
     >
       <path
         d="M16 9c-5-3-12 1-12 9 0 6 4 10 12 10s12-4 12-10c0-8-7-12-12-9Z"

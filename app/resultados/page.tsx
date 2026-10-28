@@ -53,12 +53,14 @@ export default async function ResultsPage({
       <BackgroundVideo />
       <div aria-hidden="true" className="absolute inset-0 z-0 bg-black/70" />
       <BackButton href="/" floating />
-      <div className="relative z-10 mx-auto min-h-screen w-full max-w-7xl px-4 py-8 sm:px-8 lg:py-12 xl:max-w-[1440px] 2xl:max-w-[1680px] 2xl:px-12">
-        <header className="grid justify-items-center gap-5 pt-12 pb-10 text-center sm:pb-14 2xl:gap-7 2xl:pt-16 2xl:pb-16">
-          <p className="text-orange-300 sm:text-lg 2xl:text-2xl">
+      <div className="relative z-10 mx-auto min-h-screen w-full max-w-7xl px-4 py-8 min-[2560px]:max-w-[1680px] min-[2560px]:px-12 sm:px-8 lg:py-12 xl:max-w-[1440px]">
+        <header className="grid justify-items-center gap-5 pt-12 pb-10 text-center min-[2560px]:gap-7 min-[2560px]:pt-16 min-[2560px]:pb-16 sm:pb-14">
+          <p className="text-orange-300 min-[2560px]:text-2xl sm:text-lg">
             {event.title}
           </p>
-          <h1 className="text-5xl lg:text-7xl 2xl:text-8xl">Resultados</h1>
+          <h1 className="text-5xl min-[2560px]:text-8xl lg:text-7xl">
+            Resultados
+          </h1>
           {events.length > 1 ? (
             <nav
               aria-label="Edições com resultados publicados"
@@ -82,7 +84,7 @@ export default async function ResultsPage({
             Nenhum resultado publicado nesta edição.
           </p>
         ) : (
-          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-6 lg:gap-8 2xl:gap-10">
+          <ul className="grid grid-cols-1 gap-4 min-[2560px]:gap-10 sm:grid-cols-2 sm:gap-6 lg:grid-cols-6 lg:gap-8">
             {categories.map((category, index) => (
               <li
                 key={category._id}
@@ -90,15 +92,15 @@ export default async function ResultsPage({
               >
                 <Link
                   href={`/resultados/${category._id}?event=${encodeURIComponent(event.slug)}`}
-                  className={`flex min-h-24 w-full items-center justify-center gap-4 rounded-xl bg-purple-600 p-4 text-left hover:bg-purple-500 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300 sm:min-h-28 sm:gap-6 sm:p-6 xl:min-h-32 xl:p-8 2xl:min-h-40 2xl:gap-8 2xl:p-10 ${secondaryFont.className}`}
+                  className={`flex min-h-24 w-full items-center justify-center gap-4 rounded-xl bg-purple-600 p-4 text-left hover:bg-purple-500 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-orange-300 min-[2560px]:min-h-40 min-[2560px]:gap-8 min-[2560px]:p-10 sm:min-h-28 sm:gap-6 sm:p-6 xl:min-h-32 xl:p-8 ${secondaryFont.className}`}
                 >
                   <span
-                    className="shrink-0 text-4xl sm:text-5xl xl:text-6xl 2xl:text-7xl"
+                    className="shrink-0 text-4xl min-[2560px]:text-7xl sm:text-5xl xl:text-6xl"
                     aria-hidden="true"
                   >
                     {category.icon}
                   </span>
-                  <span className="min-w-0 text-lg break-words sm:text-xl xl:text-2xl 2xl:text-3xl">
+                  <span className="min-w-0 text-lg break-words min-[2560px]:text-3xl sm:text-xl xl:text-2xl">
                     {category.title}
                   </span>
                 </Link>

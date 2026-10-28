@@ -12,9 +12,9 @@ interface UserImageProps {
 }
 
 const podiumImageSizes: Record<1 | 2 | 3, string> = {
-  1: "size-20 sm:size-28 lg:size-36 2xl:size-48",
-  2: "size-16 sm:size-24 lg:size-28 2xl:size-36",
-  3: "size-16 sm:size-24 lg:size-28 2xl:size-36",
+  1: "size-20 sm:size-28 lg:size-36 min-[2560px]:size-48",
+  2: "size-16 sm:size-24 lg:size-28 min-[2560px]:size-36",
+  3: "size-16 sm:size-24 lg:size-28 min-[2560px]:size-36",
 };
 
 const podiumImageBorders: Record<1 | 2 | 3, string> = {
@@ -37,7 +37,7 @@ const UserImage: React.FC<UserImageProps> = ({
     ? compactPodium
       ? "size-12 sm:size-16"
       : podiumImageSizes[podiumPlace]
-    : "size-12 sm:size-14 2xl:size-16";
+    : "size-12 sm:size-14 min-[2560px]:size-16";
   const imageBorder = podiumPlace
     ? podiumImageBorders[podiumPlace]
     : "border-2 border-orange-400";
