@@ -283,6 +283,10 @@ distinct heights, with extra room above and below their centered placement
 number and label; the podium also leaves a wider gap between each profile and
 its platform. Cards show each photo, vote count, percentage, and proportional bar.
 A candidate with no photo receives a text placeholder, never a substitute image.
+On 1080p screens, the podium and ranking use the available desktop width with
+larger photos, type, and spacing. At 4K, content expands to a readable maximum
+width and scales the podium photos, placement labels, and ranking cards without
+stretching across the full display.
 When a category has ballots, its ranking includes every locked eligible
 candidate, including those with zero votes. Categories with no votes retain an
 explicit empty state. Public views exclude email addresses and preserve event
@@ -364,16 +368,16 @@ The project uses mobile-first utilities and Tailwind's default breakpoints:
 `sm` at 640px, `md` at 768px, `lg` at 1024px, and `2xl` at 1536px are used across
 the UI.
 
-| Pattern                      | Small screens                                                   | Larger screens                                                     |
-| ---------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Homepage information         | Stacked cards                                                   | Three columns at `lg`                                              |
-| Program and post-event links | One column                                                      | Two columns at `lg`                                                |
-| Voting categories            | One column                                                      | Two columns at `lg`, first tile spans both                         |
-| Candidate grid               | Two columns                                                     | Three at `sm`, four at `lg`                                        |
-| Results detail               | Three compact podium places; remaining candidates in one column | Three podium places; remaining candidates in two columns at `lg`   |
-| Photo grid                   | Two columns                                                     | Three at `md`, six at `2xl`                                        |
-| Admin dashboard shell        | Mobile header and modal drawer                                  | Sidebar at `lg`, edition dropdown in main bar, sign-out in sidebar |
-| Dashboard fields             | Stacked                                                         | Paired fields and horizontal layout at `md`                        |
+| Pattern                      | Small screens                                                   | Larger screens                                                                                                                      |
+| ---------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Homepage information         | Stacked cards                                                   | Three columns at `lg`                                                                                                               |
+| Program and post-event links | One column                                                      | Two columns at `lg`                                                                                                                 |
+| Voting categories            | One column                                                      | Two columns at `lg`, first tile spans both                                                                                          |
+| Candidate grid               | Two columns                                                     | Three at `sm`, four at `lg`                                                                                                         |
+| Results detail               | Three compact podium places; remaining candidates in one column | Three podium places; remaining candidates in two columns at `lg`; larger photos, type, spacing, and content width at `xl` and `2xl` |
+| Photo grid                   | Two columns                                                     | Three at `md`, six at `2xl`                                                                                                         |
+| Admin dashboard shell        | Mobile header and modal drawer                                  | Sidebar at `lg`, edition dropdown in main bar, sign-out in sidebar                                                                  |
+| Dashboard fields             | Stacked                                                         | Paired fields and horizontal layout at `md`                                                                                         |
 
 Keep search and primary actions reachable while scrolling. Account for the fixed
 vote action and bottom-centered Sonner notifications, which are offset by

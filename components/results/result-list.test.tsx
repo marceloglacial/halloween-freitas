@@ -67,7 +67,8 @@ describe("public results ranking", () => {
     expect(html).not.toContain("para ocultar e");
     expect(html).toContain('aria-hidden="true"');
     expect(html).toContain("blur-md");
-    expect(html).toContain("bg-zinc-950/60");
+    expect(html).toContain("from-zinc-900/30");
+    expect(html).toContain("backdrop-blur-sm");
     expect(html).toContain('<article aria-label="1º lugar reservado"');
     expect(html).not.toContain("Ana Freitas");
     expect(html).toMatch(

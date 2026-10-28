@@ -55,7 +55,7 @@ export default async function ResultPage({
             categoryTitle={category.title}
           />
         ) : (
-          <section className="@container relative isolate -mx-4 -mt-24 flex min-h-[60vh] flex-col items-center justify-center gap-4 overflow-hidden px-4 pt-24 text-center sm:-mx-8 sm:-mt-28 sm:px-8 sm:pt-28">
+          <section className="@container relative isolate -mx-4 -mt-24 flex min-h-[60vh] flex-col items-center justify-center gap-4 overflow-hidden px-4 pt-16 text-center sm:-mx-8 sm:-mt-28 sm:px-8 sm:pt-20">
             <BackgroundVideo />
             <div
               aria-hidden="true"
@@ -80,17 +80,6 @@ export default async function ResultPage({
             </p>
           </section>
         )}
-        <p className="mt-10 text-center text-xs text-white/60">
-          Vídeo por{" "}
-          <a
-            href="https://www.vecteezy.com/video/1625536-mystery-and-spooky-dark-forest-with-lightning-and-moving-clouds"
-            target="_blank"
-            rel="noreferrer"
-            className="underline underline-offset-2 hover:text-white"
-          >
-            diizlerza
-          </a>
-        </p>
       </div>
     </main>
   );
