@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import AdminResults from "@/components/dashboard/admin-results";
@@ -45,8 +46,9 @@ export default function AdminVoting({
           : "Iniciar a votação? Novas confirmações e inclusões ou exclusões de participantes serão encerradas permanentemente.",
       "end-voting":
         "Encerrar a rodada? Se houver empate no primeiro lugar, uma rodada de desempate será aberta automaticamente.",
-      "publish-results": "Publicar os resultados para o público desta edição?",
-      "unpublish-results": "Ocultar os resultados públicos desta edição?",
+      "publish-results": "Liberar os resultados para todos nesta edição?",
+      "unpublish-results":
+        "Ocultar os resultados liberados ao público nesta edição?",
     };
     if (!window.confirm(prompts[action])) return;
 
@@ -70,8 +72,8 @@ export default function AdminVoting({
           response.headers.get("X-Runoff-Opened") === "true"
             ? "Empate no primeiro lugar; rodada de desempate iniciada"
             : "Votação encerrada",
-        "publish-results": "Resultados publicados",
-        "unpublish-results": "Resultados ocultados",
+        "publish-results": "Resultados liberados para todos",
+        "unpublish-results": "Resultados públicos ocultados",
       };
       toast.success(success[action]);
       router.refresh();
@@ -173,34 +175,47 @@ export default function AdminVoting({
       >
         <div>
           <h2 id="results-publication-heading" className="text-2xl font-bold">
-            Publicação dos resultados
+            Liberação pública dos resultados
           </h2>
           <p className="mt-1 text-sm text-gray-300">
-            A apuração administrativa permanece privada. A publicação pública só
-            fica disponível depois que a rodada final for encerrada.
+            Durante a festa, somente o admin vê a apuração para apresentá-la na
+            transmissão ao vivo. Depois, libere os resultados para todos. Essa
+            opção fica disponível quando a rodada final for encerrada.
           </p>
           <p role="status" className="mt-2 text-sm font-semibold">
             {event.resultsPublished
-              ? "Resultados publicados"
-              : "Resultados privados"}
+              ? "Resultados liberados para todos"
+              : "Ainda privados; visíveis apenas para o admin"}
           </p>
         </div>
-        <button
-          type="button"
-          disabled={busy || !canPublish}
-          onClick={() =>
-            void changeLifecycle(
-              event.resultsPublished ? "unpublish-results" : "publish-results",
-            )
-          }
-          className="rounded-lg bg-green-600 px-4 py-2 font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-300 disabled:opacity-50"
-        >
-          {busy
-            ? "Salvando…"
-            : event.resultsPublished
-              ? "Ocultar resultados"
-              : "Publicar resultados"}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            disabled={busy || !canPublish}
+            onClick={() =>
+              void changeLifecycle(
+                event.resultsPublished
+                  ? "unpublish-results"
+                  : "publish-results",
+              )
+            }
+            className="rounded-lg bg-green-600 px-4 py-2 font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-300 disabled:opacity-50"
+          >
+            {busy
+              ? "Salvando…"
+              : event.resultsPublished
+                ? "Ocultar resultados"
+                : "Liberar resultados para todos"}
+          </button>
+          <Link
+            href={`/resultados?event=${encodeURIComponent(event.slug)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-orange-300 px-4 py-2 font-semibold text-orange-100 transition hover:bg-orange-300/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+          >
+            Ver resultados
+          </Link>
+        </div>
         {!canPublish && (
           <p className="text-sm text-gray-300">
             Encerre a rodada final antes de publicar ou ocultar resultados.

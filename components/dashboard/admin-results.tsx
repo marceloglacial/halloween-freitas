@@ -193,18 +193,18 @@ export default function AdminResults({
     <section className="space-y-5 rounded-xl bg-white/10 p-5 md:p-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-semibold">Apuração interna</h2>
+          <h2 className="text-2xl font-semibold">Resultados para a transmissão</h2>
           <p className="mt-1 text-sm text-gray-300">
-            Contagens e colocações privadas para administradores. A tela usa a
-            rodada atual ou, quando encerrada, o resultado final de cada
-            categoria.
+            Esta apuração é privada e visível apenas para administradores, para
+            acompanhar e apresentar durante a transmissão ao vivo. A tela usa a
+            rodada atual ou, quando encerrada, o resultado final de cada categoria.
           </p>
           {visibleTally && (
             <div className="mt-2 space-y-1 text-sm text-gray-300">
               <p>
                 {visibleTally.resultsPublished
-                  ? "Resultados publicados"
-                  : "Resultados privados"}
+                  ? "Resultados liberados para todos"
+                  : "Exibição privada para o admin"}
               </p>
               <p>
                 {visibleTally.participantCount}{" "}

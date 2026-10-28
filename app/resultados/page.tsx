@@ -5,6 +5,7 @@ import FeatureUnavailable from "@/components/feature-unavailable";
 import { getEvents, resultsArePublic } from "@/lib/events";
 import { secondaryFont } from "@/util/fonts";
 import { getCategories } from "@/util/get-categories";
+import { isAdmin } from "@/lib/auth/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -14,14 +15,17 @@ export default async function ResultsPage({
   searchParams: Promise<{ event?: string }>;
 }) {
   const allEvents = await getEvents();
-  const events = allEvents.filter((event) => resultsArePublic(event));
+  const admin = await isAdmin();
+  const events = admin
+    ? allEvents
+    : allEvents.filter((event) => resultsArePublic(event));
   const requestedSlug = (await searchParams).event;
   const requestedEvent = requestedSlug
     ? allEvents.find((item) => item.slug === requestedSlug)
     : null;
   if (
     (requestedSlug && !requestedEvent) ||
-    (requestedEvent && !resultsArePublic(requestedEvent))
+    (requestedEvent && !admin && !resultsArePublic(requestedEvent))
   ) {
     return (
       <FeatureUnavailable
@@ -30,7 +34,10 @@ export default async function ResultsPage({
       />
     );
   }
-  const event = requestedEvent ?? events[0];
+  const event =
+    requestedEvent ??
+    events.find((item) => item.status === "active") ??
+    events[0];
   if (!event) {
     return (
       <FeatureUnavailable

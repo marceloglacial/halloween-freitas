@@ -55,9 +55,9 @@ describe("admin event overview", () => {
       />,
     );
     expect(html).toContain("Aguardando publicação");
-    expect(html).toContain("Publicar resultados");
+    expect(html).toContain("Liberar resultados para todos");
     expect(html).toContain(
-      'Próximo marco</p><p class="mt-1 text-lg font-semibold">Publicar os resultados',
+      'Próximo marco</p><p class="mt-1 text-lg font-semibold">Liberar os resultados para todos',
     );
   });
 
@@ -106,8 +106,8 @@ describe("admin event overview", () => {
       name: "voting ended",
       changes: { votingStatus: "ended" as const },
       now: "2025-11-01T12:00:00.000Z",
-      status: "Votação encerrada · resultados privados",
-      action: "Publicar resultados",
+      status: "Votação encerrada · resultados privados para o admin",
+      action: "Liberar resultados para todos",
       href: "/dashboard/votacao?year=2025",
     },
     {

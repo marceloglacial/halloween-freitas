@@ -52,7 +52,7 @@ export default function AdminEventOverview({
         : event.votingStatus === "ended"
           ? event.resultsPublished
             ? "Resultados publicados"
-            : "Votação encerrada · resultados privados"
+            : "Votação encerrada · resultados privados para o admin"
           : eventStarted
             ? "Festa iniciada · votação não iniciada"
             : registration === "upcoming"
@@ -73,7 +73,7 @@ export default function AdminEventOverview({
           }
         : event.votingStatus === "ended" && !event.resultsPublished
           ? {
-              label: "Publicar resultados",
+              label: "Liberar resultados para todos",
               href: `/dashboard/votacao?year=${year}`,
             }
           : event.votingStatus === "ended"
@@ -104,7 +104,7 @@ export default function AdminEventOverview({
     event.votingStatus === "open"
       ? { title: "Encerrar a votação", at: null as string | null }
       : event.votingStatus === "ended" && !event.resultsPublished
-        ? { title: "Publicar os resultados", at: null }
+        ? { title: "Liberar os resultados para todos", at: null }
         : event.votingStatus === "ended"
           ? { title: "Edição concluída", at: null }
           : event.status === "archived"
@@ -225,7 +225,7 @@ export default function AdminEventOverview({
     ...(event.votingStatus === "ended" && !event.resultsPublished
       ? [
           {
-            label: "Publicar resultados",
+            label: "Liberar resultados para todos",
             href: `/dashboard/votacao?year=${year}`,
           },
         ]

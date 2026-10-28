@@ -2,6 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...props }: React.ComponentProps<"a">) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
+}));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock("@/components/dashboard/admin-results", () => ({
   default: () => <div>Apuração por categoria</div>,
@@ -32,8 +39,13 @@ describe("admin voting page", () => {
     expect(html).toContain(">Votação</h1>");
     expect(html).toContain('aria-label="Estado da votação: Encerrada"');
     expect(html).toContain("Reabrir votação");
-    expect(html).toContain("Publicação dos resultados");
-    expect(html).toContain("Resultados privados");
+    expect(html).toContain("Liberação pública dos resultados");
+    expect(html).toContain("Ainda privados; visíveis apenas para o admin");
+    expect(html).toContain("transmissão ao vivo");
+    expect(html).toContain("Liberar resultados para todos");
+    expect(html).toContain('href="/resultados?event=halloween-2026"');
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain(">Ver resultados</a>");
     expect(html).toContain("Reabrir mantém os votos anteriores");
     expect(html).toContain("Apuração por categoria");
     expect(html).not.toContain(event.title);

@@ -8,6 +8,7 @@ import { getCategoryResults } from "@/lib/results";
 import { getFinalVotingRoundForCategory } from "@/lib/voting-rounds";
 import { getCategoryById } from "@/util/get-categories";
 import { secondaryFont } from "@/util/fonts";
+import { isAdmin } from "@/lib/auth/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ export default async function ResultPage({
   if (!category || !event || category.eventId !== event._id) {
     notFound();
   }
-  if (!resultsArePublic(event)) {
+  if (!resultsArePublic(event) && !(await isAdmin())) {
     return (
       <FeatureUnavailable
         title="Resultados indisponíveis"
