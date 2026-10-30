@@ -49,8 +49,20 @@ export default async function ResultPage({
   const primaryResults = primaryRound
     ? await getCategoryResults(event._id, category._id, primaryRound._id.toString())
     : { users: [], totalVotes: 0 };
-  const runoffResults = runoffRound
+  const rawRunoffResults = runoffRound
     ? await getCategoryResults(event._id, category._id, runoffRound._id.toString())
+    : null;
+  const runoffCandidateIds = runoffRound?.candidateIdsByCategory
+    ?.find((scope) => scope.categoryId.toString() === category._id)
+    ?.candidateIds.map((candidateId) => candidateId.toString()) ?? [];
+  const runoffUsers = rawRunoffResults?.users.filter((user) =>
+    runoffCandidateIds.includes(user._id),
+  ) ?? [];
+  const runoffResults = rawRunoffResults
+    ? {
+        users: runoffUsers,
+        totalVotes: runoffUsers.reduce((total, user) => total + user.votes, 0),
+      }
     : null;
   const results = runoffResults ?? primaryResults;
   const backHref = `/resultados?event=${event.slug}`;

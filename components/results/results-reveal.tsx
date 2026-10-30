@@ -124,7 +124,7 @@ export function ResultsReveal({
         event.key === "ArrowRight" &&
         podiumComplete &&
         !remainingRevealed &&
-        remainingUsers.length > 0
+        (remainingUsers.length > 0 || firstTurnUsers.length > 0)
       ) {
         event.preventDefault();
         setRemainingRevealed(true);
