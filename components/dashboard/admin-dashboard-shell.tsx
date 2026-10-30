@@ -456,6 +456,13 @@ export default function AdminDashboardShell({
                   hidden={!accountMenuOpen}
                   className="absolute top-full right-0 z-40 mt-2 grid w-56 gap-2 rounded-xl border border-white/15 bg-zinc-950 p-2 shadow-xl [&[hidden]]:hidden"
                 >
+                  <Link
+                    href="/meu-halloween"
+                    onClick={() => setAccountMenuOpen(false)}
+                    className="flex min-h-11 items-center rounded-xl px-4 py-2 font-semibold text-orange-200 transition hover:bg-white/5 hover:text-orange-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 motion-reduce:transition-none"
+                  >
+                    Meu Halloween
+                  </Link>
                   <LogoutButton
                     className={logoutButtonClassName}
                     onClick={() => setAccountMenuOpen(false)}

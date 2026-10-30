@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import LogoutButton from "@/components/logout-button";
 
 export default function GuestAccountMenu({ guestName }: { guestName: string }) {
   const [open, setOpen] = useState(false);
+  const { isLoaded, user } = useUser();
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const initial = guestName.trim().charAt(0).toLocaleUpperCase("pt-BR") || "C";
+  const isAdmin = isLoaded && user?.publicMetadata?.role === "admin";
 
   useEffect(() => {
     if (!open) return;
@@ -74,14 +77,21 @@ export default function GuestAccountMenu({ guestName }: { guestName: string }) {
         hidden={!open}
         className="absolute top-full right-0 z-40 mt-2 grid w-56 gap-2 rounded-xl border border-white/15 bg-zinc-950 p-2 shadow-xl [&[hidden]]:hidden"
       >
+        {isAdmin ? (
+          <Link
+            href="/dashboard"
+            onClick={() => setOpen(false)}
+            className="flex min-h-11 items-center rounded-xl px-4 py-2 font-semibold text-orange-200 transition hover:bg-white/5 hover:text-orange-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 motion-reduce:transition-none"
+          >
+            Administração
+          </Link>
+        ) : null}
         <Link
           href="/"
-          target="_blank"
-          rel="noreferrer"
           onClick={() => setOpen(false)}
           className="flex min-h-11 items-center rounded-xl px-4 py-2 font-semibold text-orange-200 transition hover:bg-white/5 hover:text-orange-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300 motion-reduce:transition-none"
         >
-          Ver site
+          Voltar para o site
         </Link>
         <LogoutButton
           onClick={() => setOpen(false)}
