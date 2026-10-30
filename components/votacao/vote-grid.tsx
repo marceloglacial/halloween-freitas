@@ -84,7 +84,7 @@ export default function VoteGrid({
         <button
           type="button"
           className="mt-6 rounded-xl bg-orange-400 px-6 py-3 font-semibold text-black"
-          onClick={() => router.push(`/votacao/categories?eventId=${eventId}`)}
+          onClick={() => router.push(`/meu-halloween/votacao?eventId=${eventId}`)}
         >
           Continuar votação
         </button>

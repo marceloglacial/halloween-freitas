@@ -7,7 +7,7 @@ import type { PartyPhotoDocument } from "@/lib/party-photo-writes";
 export type EventOverview = {
   confirmedRsvps: number;
   eligibleContestants: number;
-  votes: number;
+  votingGuests: number;
   categories: number;
   partyPhotos: number;
   albumPublished: boolean;
@@ -25,12 +25,19 @@ export async function getAdminEventOverview(
   if (!ObjectId.isValid(eventId)) throw new Error("INVALID_EVENT_ID");
   const id = new ObjectId(eventId);
   const db = await getDb();
-  const [confirmedRsvps, votes, categories, contestants, partyPhotos, album] =
+  const [
+    confirmedRsvps,
+    votingGuestIds,
+    categories,
+    contestants,
+    partyPhotos,
+    album,
+  ] =
     await Promise.all([
       db
         .collection("users")
         .countDocuments({ eventId: id, status: { $ne: "cancelled" } }),
-      db.collection("votes").countDocuments({ eventId: id }),
+      db.collection("votes").distinct("voterRsvpId", { eventId: id }),
       db
         .collection<OverviewCategory>("categories")
         .find({ eventId: id }, { projection: { _id: 1, eligibility: 1 } })
@@ -60,6 +67,14 @@ export async function getAdminEventOverview(
         .collection<{ eventId: ObjectId; published: boolean }>("partyAlbums")
         .findOne({ eventId: id }, { projection: { published: 1 } }),
     ]);
+  const votingGuests =
+    votingGuestIds.length === 0
+      ? 0
+      : await db.collection("users").countDocuments({
+          _id: { $in: votingGuestIds },
+          eventId: id,
+          status: { $ne: "cancelled" },
+        });
   const eligibilityByCategory = new Map(
     categories.map((category) => [
       category._id.toString(),
@@ -67,12 +82,13 @@ export async function getAdminEventOverview(
     ]),
   );
   const eligibleContestants = contestants.filter((entry) =>
+    entry.entryType === "individual" &&
     isCompleteContestantEntry(entry, eligibilityByCategory),
   ).length;
   return {
     confirmedRsvps,
     eligibleContestants,
-    votes,
+    votingGuests,
     categories: categories.length,
     partyPhotos,
     albumPublished: album?.published === true,

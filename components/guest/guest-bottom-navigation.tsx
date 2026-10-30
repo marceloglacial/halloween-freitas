@@ -96,7 +96,7 @@ export default function GuestBottomNavigation({
         {sections.map((section) => {
           const active =
             pathname === section.href ||
-            (section.icon === "voting" && pathname.startsWith("/votacao"));
+            (section.icon === "voting" && pathname.startsWith("/meu-halloween/votacao"));
           const inactive =
             (contestEntryClosed && section.blockedByContestClosure === true) ||
             (!votingOpen && section.blockedByVotingClosure === true);

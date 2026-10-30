@@ -91,7 +91,14 @@ export default async function GuestVotingPage({
       { projection: { categoryId: 1 } },
     )
     .toArray();
-  const voted = new Set(votes.map((vote) => vote.categoryId.toString()));
+  const availableCategoryIds = new Set(
+    round.categoryIds.map((categoryId) => categoryId.toString()),
+  );
+  const voted = new Set(
+    votes
+      .map((vote) => vote.categoryId.toString())
+      .filter((categoryId) => availableCategoryIds.has(categoryId)),
+  );
 
   return (
     <GuestFlowShell
@@ -107,30 +114,45 @@ export default async function GuestVotingPage({
         <ul className="grid gap-3 sm:grid-cols-2">
           {categories.map((category) => {
             const alreadyVoted = voted.has(category._id);
+            const availableInRound = availableCategoryIds.has(category._id);
             return (
               <li key={category._id}>
-                {alreadyVoted ? (
+                {!availableInRound || alreadyVoted ? (
                   <div
-                    aria-disabled="true"
-                    className="flex min-h-20 items-center gap-4 rounded-xl bg-gray-700 p-4 text-stone-300"
+                    role="status"
+                    aria-disabled={!availableInRound || undefined}
+                    className={`flex min-h-20 items-center gap-4 rounded-xl p-4 text-stone-300 ${alreadyVoted ? "bg-gray-700" : "bg-zinc-800 opacity-75"}`}
                   >
                     <span className="text-4xl" aria-hidden="true">
                       {category.icon}
                     </span>
                     <span>
                       {category.title}
-                      <span className="block text-sm">Voto registrado</span>
+                      <span className="block text-sm">
+                        {!availableInRound
+                          ? "Campeão definido!"
+                          : round.type === "runoff"
+                            ? "Segundo turno em andamento! · Voto registrado"
+                            : "Voto registrado"}
+                      </span>
                     </span>
                   </div>
                 ) : (
                   <Link
-                    href={`/votacao/categories/${category._id}?eventId=${event._id}`}
+                    href={`/meu-halloween/votacao/categories/${category._id}?eventId=${event._id}`}
                     className="flex min-h-20 items-center gap-4 rounded-xl bg-purple-600 p-4 hover:bg-purple-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
                   >
                     <span className="text-4xl" aria-hidden="true">
                       {category.icon}
                     </span>
-                    <span>{category.title}</span>
+                    <span>
+                      {category.title}
+                      {round.type === "runoff" && (
+                        <span className="block text-sm font-semibold text-orange-200">
+                          Segundo turno em andamento!
+                        </span>
+                      )}
+                    </span>
                     <span className="ml-auto text-sm">Votar →</span>
                   </Link>
                 )}

@@ -113,14 +113,12 @@ they are not currently implemented.
 | Screen                          | Purpose and layout                                                                     | Important states                                                                                   |
 | ------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | `/`                             | Hero, countdown, party information, program, registration, party-photo access, footer  | Pre-event, registration upcoming/open/closed, voting soon/open/ended, post-event                   |
-| `/votacao`                      | Verified Google/email-code access for registered guests                                | Entering, rejected email or connection error, voting unavailable                                   |
-| `/votacao/categories`           | Category tiles with guest greeting                                                     | Available category, already voted, guest session unavailable                                       |
-| `/votacao/categories/[id]`      | Candidate search, selectable photo grid, floating vote action                          | No matches, selected candidate, submitting, vote success or failure                                |
 | `/meu-halloween?eventId=…`      | Edition-specific guest hub linking to the participant flows and voting                 | RSVP-linked access, flow status, voting state                                                      |
 | `/meu-halloween/individual`     | RSVP-authorized individual costume participation and its contest photo                 | Title/photo save creates entry, local preview, photo removal, enrollment closed                    |
 | `/meu-halloween/grupo`          | Couple/group costume registration and its contest photo                                | Create entry, editable group name, photo preview/save/removal, category availability, entry closed |
 | `/meu-halloween/fotos-da-festa` | Separate guest uploads for the party album                                             | Waiting for event start, multi-photo upload, private uploads                                       |
 | `/meu-halloween/votacao`        | Edition voting hub with category links                                                 | Hidden from the guest hub until the event starts and voting opens                                  |
+| `/meu-halloween/votacao/categories/[id]` | Candidate search, selectable photo grid, floating vote action                 | No matches, selected candidate, submitting, vote success or failure                                |
 | `/perfil?eventId=...`           | Selected-edition RSVP confirmation and editable guest name                             | Loading, denied/unlinked, validation, saving, saved, archived edition                              |
 | `/resultados`                   | Published category tiles and event navigation                                          | Published results, no published results                                                            |
 | `/resultados/[id]`              | Prominent first place and remaining ranked participants                                | Vote counts and percentages, category with no votes                                                |
@@ -198,8 +196,8 @@ existing waiting page and show no unpublished results or empty albums.
 
 ### Voting
 
-Guests follow `/votacao` to event-specific `/acesso`, choose Google or an email
-verification code, and return to voting. Clerk authenticates both guests and
+Guests open voting through Meu Halloween, choose Google or an email
+verification code when needed, and return to the selected edition's voting flow. Clerk authenticates both guests and
 administrators; the server links each guest to their existing event registration. Keep voting actions tied to
 the event's open state and enforce voting integrity on the server as described
 in the architecture guide.

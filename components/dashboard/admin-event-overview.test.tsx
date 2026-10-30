@@ -18,7 +18,7 @@ const event: HalloweenEvent = {
 const overview = {
   confirmedRsvps: 12,
   eligibleContestants: 8,
-  votes: 0,
+  votingGuests: 6,
   categories: 6,
   partyPhotos: 3,
   albumPublished: false,
@@ -38,6 +38,8 @@ describe("admin event overview", () => {
     expect(html).not.toContain("Halloween dos Freitas 2025");
     expect(html).toContain("12");
     expect(html).toContain("8");
+    expect(html).toContain("de 12 (67%)");
+    expect(html).toContain("de 12 (50%)");
     expect(html).toContain("America/Toronto");
     expect(html).toContain("Categorias do concurso");
     expect(html).toContain("Álbum da festa");

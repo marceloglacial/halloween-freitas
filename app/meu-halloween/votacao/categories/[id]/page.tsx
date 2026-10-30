@@ -49,7 +49,7 @@ export default async function CategoryPage({
   } catch (error) {
     if (!(error instanceof GuestAccessError)) throw error;
     redirect(
-      guestAccessUrl(event._id, `/votacao/categories/${(await params).id}`),
+      guestAccessUrl(event._id, `/meu-halloween/votacao/categories/${(await params).id}`),
     );
   }
 
@@ -84,7 +84,7 @@ export default async function CategoryPage({
       >
         <Link
           className="inline-flex min-h-11 items-center justify-center self-start rounded-xl bg-orange-400 px-5 py-3 font-semibold text-black focus-visible:outline-2"
-          href={`/votacao/categories?eventId=${event._id}`}
+          href={`/meu-halloween/votacao?eventId=${event._id}`}
         >
           Voltar às categorias
         </Link>
@@ -109,7 +109,7 @@ export default async function CategoryPage({
       title={`${category.icon} ${category.title}`}
       description="Escolha a fantasia que receberá seu voto nesta categoria."
     >
-      <BackButton href={`/votacao/categories?eventId=${event._id}`} />
+      <BackButton href={`/meu-halloween/votacao?eventId=${event._id}`} />
       <VoteGrid
         users={users}
         categoryId={category._id}

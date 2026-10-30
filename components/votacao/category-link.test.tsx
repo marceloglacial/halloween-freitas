@@ -21,19 +21,20 @@ describe("voting category link", () => {
       <CategoryLink
         category={category}
         alreadyVoted={false}
+        availableInRound
         firstClassname=""
       />,
     );
 
     expect(html).toContain(
-      `/votacao/categories/${category._id}?eventId=${category.eventId}`,
+      `/meu-halloween/votacao/categories/${category._id}?eventId=${category.eventId}`,
     );
     expect(html).toContain("Votar nesta categoria");
   });
 
   it("shows completed categories as status instead of a dead link", () => {
     const html = renderToStaticMarkup(
-      <CategoryLink category={category} alreadyVoted firstClassname="" />,
+      <CategoryLink category={category} alreadyVoted availableInRound firstClassname="" />,
     );
 
     expect(html).toContain("Fantasia: concluída");

@@ -50,7 +50,7 @@ vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
 }));
 
-import CategoryPage from "@/app/votacao/categories/[id]/page";
+import CategoryPage from "@/app/meu-halloween/votacao/categories/[id]/page";
 
 const eventId = "507f1f77bcf86cd799439011";
 const categoryId = "507f1f77bcf86cd799439012";
@@ -97,7 +97,7 @@ describe("voting category page", () => {
     expect(result.type).toBe("main");
     expect(result.props.children[0].props.children).toBe("Categoria concluída");
     expect(result.props.children[2].props.href).toBe(
-      `/votacao/categories?eventId=${eventId}`,
+      `/meu-halloween/votacao/categories?eventId=${eventId}`,
     );
     expect(mocks.getVotingCandidatesForCategory).not.toHaveBeenCalled();
     expect(mocks.hasVotedInRoundCategory).toHaveBeenCalledWith(

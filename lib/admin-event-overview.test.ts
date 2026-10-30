@@ -16,6 +16,7 @@ beforeEach(() => {
     string,
     {
       countDocuments: (query: unknown) => Promise<number>;
+      distinct: (field: string, query: unknown) => Promise<unknown[]>;
       find: (query: unknown) => { toArray: () => Promise<unknown[]> };
       findOne: (query: unknown) => Promise<{ published: boolean }>;
     }
@@ -30,14 +31,22 @@ beforeEach(() => {
   ]) {
     collections[name] = {
       countDocuments: async (query: unknown) => {
-        queries[name] = [query];
+        queries[name] = [...(queries[name] ?? []), query];
         return name === "users"
-          ? 5
+          ? typeof query === "object" && query !== null && "_id" in query
+            ? 3
+            : 5
           : name === "votes"
             ? 9
             : name === "partyPhotos"
               ? 2
               : 0;
+      },
+      distinct: async (field: string, query: unknown) => {
+        queries[name] = [field, query];
+        return name === "votes"
+          ? [new ObjectId(), new ObjectId(), new ObjectId()]
+          : [];
       },
       find: (query: unknown) => {
         queries[name] = [query];
@@ -61,7 +70,7 @@ describe("getAdminEventOverview", () => {
     expect(result).toEqual({
       confirmedRsvps: 5,
       eligibleContestants: 0,
-      votes: 9,
+      votingGuests: 3,
       categories: 0,
       partyPhotos: 2,
       albumPublished: true,
@@ -70,7 +79,12 @@ describe("getAdminEventOverview", () => {
       eventId: scopedId,
       status: { $ne: "cancelled" },
     });
-    expect(queries.votes?.[0]).toEqual({ eventId: scopedId });
+    expect(queries.users?.[1]).toEqual({
+      _id: { $in: expect.any(Array) },
+      eventId: scopedId,
+      status: { $ne: "cancelled" },
+    });
+    expect(queries.votes).toEqual(["voterRsvpId", { eventId: scopedId }]);
     expect(queries.categories?.[0]).toEqual({ eventId: scopedId });
     expect(queries.contestants?.[0]).toEqual({
       eventId: scopedId,

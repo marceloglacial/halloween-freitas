@@ -13,10 +13,12 @@ function dateLabel(value: string, timezone: string) {
 function Metric({
   label,
   value,
+  detail,
   href,
 }: {
   label: string;
   value: number;
+  detail?: string;
   href: string;
 }) {
   return (
@@ -28,6 +30,9 @@ function Metric({
       <span className="mt-2 block text-3xl font-semibold tabular-nums">
         {value.toLocaleString("pt-BR")}
       </span>
+      {detail && (
+        <span className="mt-1 block text-sm text-gray-400">{detail}</span>
+      )}
     </Link>
   );
 }
@@ -42,6 +47,10 @@ export default function AdminEventOverview({
   now: Date;
 }) {
   const year = event.year;
+  const percentage = (value: number) =>
+    overview.confirmedRsvps === 0
+      ? 0
+      : Math.round((value / overview.confirmedRsvps) * 100);
   const registration = getRegistrationState(event, now);
   const eventStarted = new Date(event.eventStartsAt) <= now;
   const lifecycleStatus =
@@ -284,11 +293,13 @@ export default function AdminEventOverview({
         <Metric
           label="Concorrendo"
           value={overview.eligibleContestants}
+          detail={`de ${overview.confirmedRsvps.toLocaleString("pt-BR")} (${percentage(overview.eligibleContestants)}%)`}
           href={`/dashboard/convidados?year=${year}&participants=true`}
         />
         <Metric
           label="Votos"
-          value={overview.votes}
+          value={overview.votingGuests}
+          detail={`de ${overview.confirmedRsvps.toLocaleString("pt-BR")} (${percentage(overview.votingGuests)}%)`}
           href={`/dashboard/votacao?year=${year}`}
         />
         <Metric

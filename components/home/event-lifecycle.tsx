@@ -54,7 +54,7 @@ function VotingPanel({
         </div>
         {state === "voting_open" ? (
           <Link
-            href="/votacao"
+            href="/meu-halloween/votacao"
             className="mx-auto rounded-xl bg-orange-500 px-8 py-4 text-xl font-bold text-black transition hover:bg-orange-400"
           >
             {content.button}
