@@ -6,7 +6,6 @@ import { getDb } from "@/lib/db";
 import { getCurrentEvent, getEvents } from "@/lib/events";
 import {
   getPublicPartyAlbum,
-  getPublishedPartyAlbumEventIds,
   serializePublicPartyGalleryPhoto,
 } from "@/lib/party-photo-writes";
 
@@ -33,11 +32,6 @@ export default async function PartyAlbumPage({
 
   const event = requestedEvent ?? currentEvent;
   const db = await getDb();
-  const publishedEventIds = await getPublishedPartyAlbumEventIds(db);
-  const publishedEvents = events
-    .filter((item) => publishedEventIds.has(item._id))
-    .map(({ slug, title, year }) => ({ slug, title, year }));
-
   const album = event
     ? await getPublicPartyAlbum(db, new ObjectId(event._id))
     : { published: false as const, photos: [] };
@@ -62,7 +56,6 @@ export default async function PartyAlbumPage({
       }
       published={album.published}
       initialPhotos={photos}
-      publishedEvents={publishedEvents}
     />
   );
 }

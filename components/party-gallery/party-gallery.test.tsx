@@ -21,7 +21,6 @@ describe("party gallery public states", () => {
             height: 1200,
           },
         ],
-        publishedEvents: [],
       }),
     );
 
@@ -42,12 +41,15 @@ describe("party gallery public states", () => {
         },
         published: true,
         initialPhotos: [],
-        publishedEvents: [],
       }),
     );
 
-    expect(html).toContain("Halloween dos Freitas · 2026");
+    expect(html).not.toContain("Halloween dos Freitas");
     expect(html).toContain("Ainda não há fotos publicadas nesta edição.");
+    expect(html).toContain("Adicionar mais fotos");
+    expect(html).toContain(
+      "/meu-halloween/fotos-da-festa?event=halloween-2026",
+    );
   });
 
   it("renders a large album as lazy responsive photo controls", () => {
@@ -66,7 +68,6 @@ describe("party gallery public states", () => {
         },
         published: true,
         initialPhotos: photos,
-        publishedEvents: [],
       }),
     );
 

@@ -5,12 +5,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PublicPartyGalleryPhoto } from "@/lib/party-photo-writes";
 
-type PartyGalleryEvent = {
-  slug: string;
-  title: string;
-  year: number;
-};
-
 type PartyGalleryContext = {
   slug: string;
   title?: string;
@@ -174,12 +168,10 @@ export function PartyGallery({
   event,
   published: initialPublished,
   initialPhotos,
-  publishedEvents,
 }: {
   event: PartyGalleryContext | null;
   published: boolean;
   initialPhotos: PublicPartyGalleryPhoto[];
-  publishedEvents: PartyGalleryEvent[];
 }) {
   const [published, setPublished] = useState(initialPublished);
   const [photos, setPhotos] = useState(initialPublished ? initialPhotos : []);
@@ -233,27 +225,13 @@ export function PartyGallery({
           📸
         </span>
         <h1 className="text-5xl text-orange-200 sm:text-7xl">Álbum da festa</h1>
-        {published && event?.title && event.year !== undefined && (
-          <p className="text-xl text-white/80">
-            {event.title} · {event.year}
-          </p>
-        )}
-        {publishedEvents.length > 0 && (
-          <nav
-            aria-label="Edições com álbum publicado"
-            className="flex flex-wrap justify-center gap-3"
+        {published && event && (
+          <Link
+            href={`/meu-halloween/fotos-da-festa?event=${encodeURIComponent(event.slug)}`}
+            className="rounded-lg bg-orange-500 px-5 py-3 font-semibold text-black transition hover:bg-orange-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
           >
-            {publishedEvents.map((edition) => (
-              <Link
-                key={edition.slug}
-                href={`/album-da-festa?event=${encodeURIComponent(edition.slug)}`}
-                aria-current={edition.slug === event?.slug ? "page" : undefined}
-                className={`rounded-lg px-4 py-2 focus-visible:outline-2 focus-visible:outline-orange-300 ${edition.slug === event?.slug ? "bg-orange-500 font-semibold text-black" : "bg-white/10 text-white hover:bg-white/20"}`}
-              >
-                {edition.year}
-              </Link>
-            ))}
-          </nav>
+            Adicionar mais fotos
+          </Link>
         )}
       </header>
 
