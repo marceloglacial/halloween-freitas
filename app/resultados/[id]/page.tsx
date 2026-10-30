@@ -6,6 +6,8 @@ import { ResultList } from "@/components/results/result-list";
 import { getEventBySlug, resultsArePublic } from "@/lib/events";
 import { getCategoryResults } from "@/lib/results";
 import { getFinalVotingRoundForCategory } from "@/lib/voting-rounds";
+import { getDb } from "@/lib/db";
+import { ObjectId } from "mongodb";
 import { getCategoryById } from "@/util/get-categories";
 import { secondaryFont } from "@/util/fonts";
 import { isAdmin } from "@/lib/auth/admin";
@@ -39,16 +41,28 @@ export default async function ResultPage({
     );
   }
 
-  const round = await getFinalVotingRoundForCategory(event._id, category._id);
-  const results = round
-    ? await getCategoryResults(event._id, category._id, round._id.toString())
+  const [round, primaryRound] = await Promise.all([
+    getFinalVotingRoundForCategory(event._id, category._id),
+    (await getDb()).collection<{_id:ObjectId;type:string;status:string;categoryIds:ObjectId[]}>("votingRounds").findOne({eventId:new ObjectId(event._id),type:"primary",categoryIds:new ObjectId(category._id)}),
+  ]);
+  const runoffRound = round?.type === "runoff" ? round : null;
+  const primaryResults = primaryRound
+    ? await getCategoryResults(event._id, category._id, primaryRound._id.toString())
     : { users: [], totalVotes: 0 };
+  const runoffResults = runoffRound
+    ? await getCategoryResults(event._id, category._id, runoffRound._id.toString())
+    : null;
+  const results = runoffResults ?? primaryResults;
   const backHref = `/resultados?event=${event.slug}`;
   return (
     <main className="min-h-screen w-full overflow-hidden bg-black text-white">
       <BackButton href={backHref} floating />
       <div className="relative z-10 mx-auto min-h-screen w-full px-4 pt-24 pb-8 sm:px-8 sm:pt-28 lg:pb-12">
-        {results.totalVotes > 0 && results.users.length > 0 ? (
+        {runoffResults ? (
+          <>
+          {runoffResults && <ResultList users={runoffResults.users} totalVotes={runoffResults.totalVotes} remainingClassification={primaryResults.users} remainingTotalVotes={primaryResults.totalVotes} eventTitle={event.title} categoryTitle={category.title} />}
+          </>
+        ) : results.totalVotes > 0 && results.users.length > 0 ? (
           <ResultList
             users={results.users}
             totalVotes={results.totalVotes}

@@ -12,6 +12,8 @@ export {
 interface ResultListProps extends Results {
   eventTitle: string;
   categoryTitle: string;
+  remainingClassification?: Results["users"];
+  remainingTotalVotes?: number;
 }
 
 export const ResultList: FC<ResultListProps> = ({
@@ -19,6 +21,8 @@ export const ResultList: FC<ResultListProps> = ({
   totalVotes,
   eventTitle,
   categoryTitle,
+  remainingClassification,
+  remainingTotalVotes,
 }): JSX.Element => {
   const rankedUsers = users.map((user) => ({
     user,
@@ -50,6 +54,9 @@ export const ResultList: FC<ResultListProps> = ({
       podiumPlaces={podiumPlaces}
       podiumRevealSequence={podiumRevealSequence}
       remainingUsers={remainingUsers}
+      remainingTotalVotes={remainingTotalVotes ?? totalVotes}
+      firstTurnUsers={remainingClassification?.map((user, index) => ({ user, position: index + 1 }))}
+      firstTurnTotalVotes={remainingTotalVotes ?? 0}
       totalVotes={totalVotes}
     />
   );

@@ -17,6 +17,9 @@ interface ResultsRevealProps {
   podiumPlaces: PodiumPlace[];
   podiumRevealSequence: RankedResult[];
   remainingUsers: RankedResult[];
+  remainingTotalVotes: number;
+  firstTurnUsers?: RankedResult[];
+  firstTurnTotalVotes: number;
   totalVotes: number;
 }
 
@@ -70,6 +73,9 @@ export function ResultsReveal({
   podiumPlaces,
   podiumRevealSequence,
   remainingUsers,
+  remainingTotalVotes,
+  firstTurnUsers = [],
+  firstTurnTotalVotes,
   totalVotes,
 }: ResultsRevealProps) {
   const [revealStep, setRevealStep] = useState(0);
@@ -149,6 +155,7 @@ export function ResultsReveal({
     podiumRevealSteps,
     remainingRevealed,
     remainingUsers.length,
+    firstTurnUsers,
     revealStep,
     currentEntry,
     currentSubstep,
@@ -276,7 +283,7 @@ export function ResultsReveal({
                 <ResultsUser
                   position={position}
                   user={user}
-                  totalVotes={totalVotes}
+                  totalVotes={remainingTotalVotes}
                   animateReveal
                   revealDelayMs={Math.min(index * 35, 700)}
                 />
@@ -285,6 +292,7 @@ export function ResultsReveal({
           </ol>
         </section>
       )}
+      {podiumComplete && remainingRevealed && firstTurnUsers.length > 0 && <section aria-labelledby="primary-round-heading" className="mx-auto max-w-6xl border-t border-white/10 bg-zinc-950 px-4 py-8"><h2 id="primary-round-heading" className="mb-5 text-center text-3xl font-semibold text-orange-100">Primeiro turno — classificação completa</h2><ol className="grid gap-3 sm:grid-cols-2">{firstTurnUsers.map(({user,position},index)=><li key={user._id}><ResultsUser position={position} user={user} totalVotes={firstTurnTotalVotes} animateReveal revealDelayMs={Math.min(index*35,700)}/></li>)}</ol></section>}
     </div>
   );
 }
