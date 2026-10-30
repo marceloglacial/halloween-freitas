@@ -14,6 +14,7 @@ type AdminTally = {
     title: string;
     icon: string;
     rounds: {
+      roundId: string;
       roundType: "primary" | "runoff";
       roundStatus: "open" | "ended";
       totalVotes: number;
@@ -22,7 +23,9 @@ type AdminTally = {
   }[];
 };
 
-function rankUsers(users: AdminTally["categories"][number]["users"]) {
+function rankUsers(
+  users: AdminTally["categories"][number]["rounds"][number]["users"],
+) {
   return users.map((user, index) => ({ ...user, position: index + 1 }));
 }
 
@@ -44,7 +47,7 @@ export function AdminTallyContent({ tally }: { tally: AdminTally }) {
             </p>
           ) : (
             <div className="mt-4 space-y-5">
-            {[...category.rounds].sort((a, b) => (a.roundType === "runoff" ? -1 : 0) - (b.roundType === "runoff" ? -1 : 0)).map((round) => <section key={round.roundType} aria-label={round.roundType === "primary" ? "Primeiro turno" : "Segundo turno"}>
+            {[...category.rounds].sort((a, b) => (a.roundType === "runoff" ? -1 : 0) - (b.roundType === "runoff" ? -1 : 0)).map((round) => <section key={round.roundId} aria-label={round.roundType === "primary" ? "Primeiro turno" : "Segundo turno"}>
             <div className="flex justify-between gap-2"><h3 className="font-semibold">{round.roundType === "primary" ? "Primeiro turno" : "Segundo turno"}</h3><span className="text-sm text-gray-300">{round.roundStatus === "open" ? "Em andamento" : "Encerrado"}</span></div>
             <p className="mt-1 text-sm text-gray-300">{round.totalVotes} {round.totalVotes === 1 ? "voto" : "votos"}</p>
             {round.users.length === 0 ? <p className="mt-3 rounded-lg bg-white/5 p-3 text-sm">Nenhum voto registrado nesta rodada ainda.</p> : <ol className="mt-3 divide-y divide-white/10">

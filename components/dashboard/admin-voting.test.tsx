@@ -33,7 +33,7 @@ const event: HalloweenEvent = {
 describe("admin voting page", () => {
   it("separates round state and result publication with reopening guidance", () => {
     const html = renderToStaticMarkup(
-      <AdminVoting event={event} now="2026-11-01T01:00:00.000Z" />,
+      <AdminVoting event={event} openRoundType={null} now="2026-11-01T01:00:00.000Z" />,
     );
 
     expect(html).toContain(">Votação</h1>");
@@ -59,6 +59,7 @@ describe("admin voting page", () => {
           votingStatus: "not_started",
           contestEntryStatus: "open",
         }}
+        openRoundType={null}
         now="2026-11-01T01:00:00.000Z"
       />,
     );

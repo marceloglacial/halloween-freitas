@@ -17,13 +17,18 @@ describe("private admin tally presentation", () => {
               categoryId: "category-a",
               title: "Fantasia",
               icon: "🎃",
-              roundType: "runoff",
-              roundStatus: "ended",
-              totalVotes: 7,
-              users: [
-                { _id: "a", fullName: "Ana", votes: 3 },
-                { _id: "b", fullName: "Bia", votes: 3 },
-                { _id: "c", fullName: "Caio", votes: 1 },
+              rounds: [
+                {
+                  roundId: "runoff-a",
+                  roundType: "runoff",
+                  roundStatus: "ended",
+                  totalVotes: 7,
+                  users: [
+                    { _id: "a", fullName: "Ana", votes: 3 },
+                    { _id: "b", fullName: "Bia", votes: 3 },
+                    { _id: "c", fullName: "Caio", votes: 1 },
+                  ],
+                },
               ],
             },
           ],
@@ -34,7 +39,7 @@ describe("private admin tally presentation", () => {
     expect(html.match(/🥇/g)).toHaveLength(2);
     expect(html).toContain("Primeiro lugar");
     expect(html).toContain("3º");
-    expect(html).toContain("Rodada de desempate");
+    expect(html).toContain("Segundo turno");
   });
 
   it("states that an ended category with no ballots has no winner", () => {
@@ -50,17 +55,21 @@ describe("private admin tally presentation", () => {
               categoryId: "category-a",
               title: "Fantasia",
               icon: "🎃",
-              roundType: "primary",
-              roundStatus: "ended",
-              totalVotes: 0,
-              users: [],
+              rounds: [
+                {
+                  roundId: "primary-a",
+                  roundType: "primary",
+                  roundStatus: "ended",
+                  totalVotes: 0,
+                  users: [],
+                },
+              ],
             },
           ],
         },
       }),
     );
 
-    expect(html).toContain("Nenhum voto foi registrado nesta categoria");
-    expect(html).toContain("Não há vencedor.");
+    expect(html).toContain("Nenhum voto registrado nesta rodada ainda.");
   });
 });

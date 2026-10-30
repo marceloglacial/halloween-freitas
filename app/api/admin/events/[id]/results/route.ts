@@ -8,6 +8,7 @@ import { getCategoryResults } from "@/lib/results";
 import {
   getOpenVotingRound,
   roundIncludesCategory,
+  type VotingRoundDocument,
 } from "@/lib/voting-rounds";
 
 export async function GET(
@@ -28,13 +29,13 @@ export async function GET(
       getOpenVotingRound(event._id),
     ]);
     const rounds = await (await getDb())
-      .collection("votingRounds")
+      .collection<VotingRoundDocument>("votingRounds")
       .find({ eventId: new ObjectId(event._id) })
       .sort({ openedAt: 1 })
       .toArray();
     const results = await Promise.all(categories.map(async (category) => {
       const categoryRounds = rounds.filter((round) =>
-        roundIncludesCategory(round as never, event._id, category._id),
+        roundIncludesCategory(round, event._id, category._id),
       );
       const displayedRounds = categoryRounds.filter((round) =>
         round.type === "primary" ||
