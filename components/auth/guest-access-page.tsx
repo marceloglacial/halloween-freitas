@@ -2,7 +2,11 @@ import { SignIn, SignUp } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { getEventById, getRegistrationState } from "@/lib/events";
+import {
+  getActiveEvent,
+  getEventById,
+  getRegistrationState,
+} from "@/lib/events";
 import FeatureUnavailable from "@/components/feature-unavailable";
 import GuestAccessCompletion from "@/components/auth/guest-access-completion";
 import {
@@ -31,14 +35,16 @@ export default async function GuestAccessPage({
       />
     );
   const query = await searchParams;
-  if (!validGuestEventId(query.eventId))
+  const event = validGuestEventId(query.eventId)
+    ? await getEventById(query.eventId)
+    : await getActiveEvent();
+  if (!event)
     return (
       <FeatureUnavailable
-        title="Escolha um evento"
-        message="Volte ao início e escolha a ação desejada para entrar."
+        title="Acesso indisponível"
+        message="Não há uma edição ativa disponível para entrar agora."
       />
     );
-  const event = await getEventById(query.eventId);
   if (!event) notFound();
   const returnTo = guestReturnPath(query.returnTo, event._id);
   const context = new URLSearchParams({
@@ -88,6 +94,7 @@ export default async function GuestAccessPage({
               withSignUp
               signUpUrl={`/acesso/cadastro?${context}`}
               forceRedirectUrl={completionUrl}
+              signInForceRedirectUrl={completionUrl}
               signUpForceRedirectUrl={completionUrl}
               fallback={<p role="status">Carregando acesso...</p>}
             />
