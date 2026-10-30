@@ -29,6 +29,7 @@ export async function getCategoryResults(
       categoryId: ObjectId;
       entryType: ContestantEntryType;
       displayName: string;
+      createdAt: Date;
       status: ContestantEntryStatus;
       contestPhoto?: {
         publicId: string;
@@ -73,13 +74,16 @@ export async function getCategoryResults(
       _id: contestant._id.toString(),
       eventId: contestant.eventId.toString(),
       fullName: contestant.displayName,
+      createdAt: contestant.createdAt,
       contestPhoto: contestant.contestPhoto,
       votes: votesByCandidate.get(contestant._id.toString()) ?? 0,
     }))
     .sort(
       (a, b) =>
         b.votes - a.votes ||
+        a.createdAt.getTime() - b.createdAt.getTime() ||
         (a.fullName < b.fullName ? -1 : a.fullName > b.fullName ? 1 : 0),
+      // Registration time breaks vote ties; name is the deterministic fallback.
     );
 
   return {

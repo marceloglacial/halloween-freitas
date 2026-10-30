@@ -20,15 +20,9 @@ export const ResultList: FC<ResultListProps> = ({
   eventTitle,
   categoryTitle,
 }): JSX.Element => {
-  const positionByVotes = new Map<number, number>();
-  users.forEach((user, index) => {
-    if (!positionByVotes.has(user.votes)) {
-      positionByVotes.set(user.votes, index + 1);
-    }
-  });
   const rankedUsers = users.map((user) => ({
     user,
-    position: positionByVotes.get(user.votes)!,
+    position: users.indexOf(user) + 1,
   }));
   const podiumRevealSequence = getPodiumRevealSequence(rankedUsers);
   const podiumIds = new Set(podiumRevealSequence.map(({ user }) => user._id));

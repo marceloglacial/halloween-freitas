@@ -23,13 +23,7 @@ type AdminTally = {
 };
 
 function rankUsers(users: AdminTally["categories"][number]["users"]) {
-  let previousVotes: number | undefined;
-  let position = 0;
-  return users.map((user, index) => {
-    if (user.votes !== previousVotes) position = index + 1;
-    previousVotes = user.votes;
-    return { ...user, position };
-  });
+  return users.map((user, index) => ({ ...user, position: index + 1 }));
 }
 
 export function AdminTallyContent({ tally }: { tally: AdminTally }) {
