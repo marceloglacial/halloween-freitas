@@ -13,10 +13,12 @@ type AdminTally = {
     categoryId: string;
     title: string;
     icon: string;
-    roundType: "primary" | "runoff" | null;
-    roundStatus: "open" | "ended" | null;
-    totalVotes: number;
-    users: { _id: string; fullName: string; votes: number }[];
+    rounds: {
+      roundType: "primary" | "runoff";
+      roundStatus: "open" | "ended";
+      totalVotes: number;
+      users: { _id: string; fullName: string; votes: number }[];
+    }[];
   }[];
 };
 
@@ -39,34 +41,20 @@ export function AdminTallyContent({ tally }: { tally: AdminTally }) {
           aria-labelledby={`tally-${category.categoryId}`}
           className="rounded-xl border border-white/20 p-4 md:p-5"
         >
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2
-              id={`tally-${category.categoryId}`}
-              className="text-xl font-semibold"
-            >
-              {category.icon} {category.title}
-            </h2>
-            <span className="text-sm text-gray-300">
-              {category.roundType === "runoff"
-                ? "Rodada de desempate"
-                : category.roundType === "primary"
-                  ? "Rodada primária"
-                  : "Votação não iniciada"}
-              {category.roundStatus === "open" ? " · Em andamento" : ""}
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-gray-300">
-            {category.totalVotes} {category.totalVotes === 1 ? "voto" : "votos"}
-          </p>
-          {category.users.length === 0 ? (
+          <h2 id={`tally-${category.categoryId}`} className="text-xl font-semibold">
+            {category.icon} {category.title}
+          </h2>
+          {category.rounds.length === 0 ? (
             <p className="mt-4 rounded-lg bg-white/5 p-3 text-sm">
-              {category.roundStatus === "ended"
-                ? "Nenhum voto foi registrado nesta categoria. Não há vencedor."
-                : "Nenhum voto registrado nesta rodada ainda."}
+              Votação não iniciada.
             </p>
           ) : (
-            <ol className="mt-4 divide-y divide-white/10">
-              {rankUsers(category.users).map((user) => (
+            <div className="mt-4 space-y-5">
+            {[...category.rounds].sort((a, b) => (a.roundType === "runoff" ? -1 : 0) - (b.roundType === "runoff" ? -1 : 0)).map((round) => <section key={round.roundType} aria-label={round.roundType === "primary" ? "Primeiro turno" : "Segundo turno"}>
+            <div className="flex justify-between gap-2"><h3 className="font-semibold">{round.roundType === "primary" ? "Primeiro turno" : "Segundo turno"}</h3><span className="text-sm text-gray-300">{round.roundStatus === "open" ? "Em andamento" : "Encerrado"}</span></div>
+            <p className="mt-1 text-sm text-gray-300">{round.totalVotes} {round.totalVotes === 1 ? "voto" : "votos"}</p>
+            {round.users.length === 0 ? <p className="mt-3 rounded-lg bg-white/5 p-3 text-sm">Nenhum voto registrado nesta rodada ainda.</p> : <ol className="mt-3 divide-y divide-white/10">
+              {rankUsers(round.users).map((user) => (
                 <li
                   key={user._id}
                   className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
@@ -78,7 +66,7 @@ export function AdminTallyContent({ tally }: { tally: AdminTally }) {
                     {user.fullName}
                     {user.position === 1 && (
                       <span className="ml-2 text-xs text-orange-200">
-                        {category.roundStatus === "open"
+                        {round.roundStatus === "open"
                           ? "Na liderança"
                           : "Primeiro lugar"}
                       </span>
@@ -89,7 +77,9 @@ export function AdminTallyContent({ tally }: { tally: AdminTally }) {
                   </span>
                 </li>
               ))}
-            </ol>
+            </ol>}
+            </section>)}
+            </div>
           )}
         </section>
       ))}

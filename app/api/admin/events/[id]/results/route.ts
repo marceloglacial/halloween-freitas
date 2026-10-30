@@ -6,7 +6,6 @@ import { getEventById } from "@/lib/events";
 import { errorResponse, logServerError } from "@/lib/http";
 import { getCategoryResults } from "@/lib/results";
 import {
-  getFinalVotingRoundForCategory,
   getOpenVotingRound,
   roundIncludesCategory,
 } from "@/lib/voting-rounds";
@@ -28,51 +27,41 @@ export async function GET(
       getCategories(event._id),
       getOpenVotingRound(event._id),
     ]);
-    const results = await Promise.all(
-      categories.map(async (category) => {
-        const round =
-          openRound && roundIncludesCategory(openRound, event._id, category._id)
-            ? openRound
-            : await getFinalVotingRoundForCategory(event._id, category._id);
-        if (!round) {
-          return {
-            categoryId: category._id,
-            title: category.title,
-            icon: category.icon,
-            roundId: null,
-            roundType: null,
-            roundStatus: null,
-            totalVotes: 0,
-            users: [],
-          };
-        }
-
-        const tally = await getCategoryResults(
-          event._id,
-          category._id,
-          round._id.toString(),
-        );
+    const rounds = await (await getDb())
+      .collection("votingRounds")
+      .find({ eventId: new ObjectId(event._id) })
+      .sort({ openedAt: 1 })
+      .toArray();
+    const results = await Promise.all(categories.map(async (category) => {
+      const categoryRounds = rounds.filter((round) =>
+        roundIncludesCategory(round as never, event._id, category._id),
+      );
+      const displayedRounds = categoryRounds.filter((round) =>
+        round.type === "primary" ||
+        (round.type === "runoff" &&
+          (round.status === "open" || !openRound ||
+            !roundIncludesCategory(openRound, event._id, category._id))),
+      );
+      const tallies = await Promise.all(displayedRounds.map(async (round) => {
+        const tally = await getCategoryResults(event._id, category._id, round._id.toString());
+        const runoffCandidateIds = round.type === "runoff"
+          ? round.candidateIdsByCategory?.find((scope) => scope.categoryId.toString() === category._id)?.candidateIds.map((candidateId) => candidateId.toString()) ?? []
+          : null;
         return {
-          categoryId: category._id,
-          title: category.title,
-          icon: category.icon,
           roundId: round._id.toString(),
           roundType: round.type,
           roundStatus: round.status,
           totalVotes: tally.totalVotes,
-          users: tally.users.map(({ _id, fullName, votes }) => ({
-            _id,
-            fullName,
-            votes,
-          })),
+          users: tally.users
+            .filter((user) => runoffCandidateIds === null || runoffCandidateIds.includes(user._id))
+            .map(({ _id, fullName, votes }) => ({ _id, fullName, votes })),
         };
-      }),
-    );
+      }));
+      return { categoryId: category._id, title: category.title, icon: category.icon, rounds: tallies };
+    }));
     const displayedRoundIds = [
       ...new Set(
-        results
-          .map((result) => result.roundId)
-          .filter((roundId): roundId is string => roundId !== null),
+        results.flatMap((result) => result.rounds.map((round) => round.roundId)),
       ),
     ].map((roundId) => new ObjectId(roundId));
     const participants = displayedRoundIds.length
@@ -92,10 +81,7 @@ export async function GET(
           categoryId: category.categoryId,
           title: category.title,
           icon: category.icon,
-          roundType: category.roundType,
-          roundStatus: category.roundStatus,
-          totalVotes: category.totalVotes,
-          users: category.users,
+          rounds: category.rounds,
         })),
       },
       { headers: { "Cache-Control": "private, no-store" } },

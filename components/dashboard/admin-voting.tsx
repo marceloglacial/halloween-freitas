@@ -15,9 +15,11 @@ async function responseError(response: Response) {
 
 export default function AdminVoting({
   event: initialEvent,
+  openRoundType,
   now,
 }: {
   event: HalloweenEvent;
+  openRoundType: "primary" | "runoff" | null;
   now: string;
 }) {
   const router = useRouter();
@@ -102,10 +104,10 @@ export default function AdminVoting({
           <h1 className="text-4xl text-orange-300 sm:text-5xl">Votação</h1>
           <p
             role="status"
-            aria-label={`Estado da votação: ${statusLabel}`}
+            aria-label={`Estado da votação: ${statusLabel}${openRoundType === "runoff" ? ", segundo turno em andamento" : ""}`}
             className="ml-auto inline-flex rounded-full bg-orange-300/15 px-3 py-1 font-semibold text-orange-100"
           >
-            {statusLabel}
+            {statusLabel}{openRoundType === "runoff" ? " · Segundo turno em andamento" : ""}
           </p>
         </div>
         {event.status === "archived" && (

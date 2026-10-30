@@ -8,6 +8,7 @@ import { resolveAdminEvent } from "@/lib/admin-event-selection";
 import { getEvents } from "@/lib/events";
 import { getAdminParticipantRsvpIdsForEvent } from "@/lib/contestant-entries";
 import { countConfirmedRsvpsForEvent } from "@/lib/users";
+import { getOpenVotingRound } from "@/lib/voting-rounds";
 
 export type AdminEventFeature = "contests" | "voting" | "gallery";
 
@@ -78,10 +79,12 @@ export default async function AdminEventFeaturePage({
     );
   }
   if (feature === "voting") {
+    const openRound = await getOpenVotingRound(event._id);
     return (
       <AdminVoting
         key={event._id}
         event={event}
+        openRoundType={openRound?.type ?? null}
         now={new Date().toISOString()}
       />
     );
