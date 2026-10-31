@@ -44,6 +44,12 @@ authenticated delivery in separate event-scoped folders. Never move these
 values to `NEXT_PUBLIC_` variables or reuse contest-photo storage for the party
 album.
 
+The production site runs on Vercel, whose Functions reject request bodies over
+4.5 MB. Browser photo forms therefore optimize supported originals up to 25 MB
+to JPEG files no larger than 4 MB before sending them to the app. Keep the
+server-side 8 MB validation as a separate safety limit; do not raise it to work
+around Vercel's request limit.
+
 ### Request rate limits
 
 Public RSVP and guest-access requests use short-lived, event-scoped MongoDB

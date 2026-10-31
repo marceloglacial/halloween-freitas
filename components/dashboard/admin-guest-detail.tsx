@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
+import { photoUploadError, preparePhotoUpload } from "@/lib/photo-upload";
 import { getAdminEnrollmentControls } from "@/util/admin-enrollment-controls";
 
 type GuestDetail = {
@@ -29,10 +30,7 @@ type CandidateDetail = {
 type DetailResponse = { guest: GuestDetail; entries: CandidateDetail[] };
 
 async function responseError(response: Response, fallback: string) {
-  const body = (await response.json().catch(() => null)) as {
-    error?: string;
-  } | null;
-  return body?.error || fallback;
+  return photoUploadError(response, fallback);
 }
 
 export default function AdminGuestDetail({
@@ -213,8 +211,9 @@ export default function AdminGuestDetail({
     setError("");
     setMessage("");
     try {
+      const uploadPhoto = await preparePhotoUpload(individualPhoto);
       const form = new FormData();
-      form.set("image", individualPhoto);
+      form.set("image", uploadPhoto);
       form.set("photoConsent", "true");
       form.set("costumeTitle", individualTitle);
       const response = await fetch(
@@ -252,8 +251,9 @@ export default function AdminGuestDetail({
     setError("");
     setMessage("");
     try {
+      const uploadPhoto = await preparePhotoUpload(file);
       const form = new FormData();
-      form.set("image", file);
+      form.set("image", uploadPhoto);
       if (!entry.photoUrl) form.set("photoConsent", "true");
       const response = await fetch(
         `/api/admin/events/${event._id}/contestants/${entry._id}/photo`,
@@ -611,7 +611,8 @@ export default function AdminGuestDetail({
                         />
                       </label>
                       <p className="text-xs text-stone-400">
-                        JPG, PNG ou WebP, até 8 MB.
+                        JPG, PNG ou WebP, até 25 MB. Fotos grandes são
+                        otimizadas antes do envio.
                       </p>
                       <label className="flex items-start gap-2 text-sm text-stone-300">
                         <input
@@ -812,7 +813,8 @@ export default function AdminGuestDetail({
                           </label>
                         )}
                         <p className="text-xs text-stone-400">
-                          JPG, PNG ou WebP, até 8 MB.
+                          JPG, PNG ou WebP, até 25 MB. Fotos grandes são
+                          otimizadas antes do envio.
                         </p>
                         <div className="flex flex-wrap gap-2">
                           <button

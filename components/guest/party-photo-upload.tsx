@@ -2,6 +2,11 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import {
+  MAX_PHOTO_SOURCE_BYTES,
+  photoUploadError,
+  preparePhotoUpload,
+} from "@/lib/photo-upload";
 
 type GuestPartyPhoto = {
   photoId: string;
@@ -14,11 +19,12 @@ type GuestPartyPhoto = {
 
 type SelectedPhoto = { id: string; file: File; previewUrl: string };
 
-function uploadPhoto(
+async function uploadPhoto(
   eventId: string,
   file: File,
   onProgress: (value: number) => void,
 ) {
+  const uploadFile = await preparePhotoUpload(file);
   return new Promise<GuestPartyPhoto>((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open(
@@ -37,7 +43,13 @@ function uploadPhoto(
         error?: string;
       } | null;
       if (request.status < 200 || request.status >= 300 || !response?.photo) {
-        reject(new Error(response?.error ?? "Não foi possível enviar a foto."));
+        reject(
+          new Error(
+            request.status === 413
+              ? "A foto ainda ficou grande demais para o envio. Escolha uma imagem menor."
+              : (response?.error ?? "Não foi possível enviar a foto."),
+          ),
+        );
         return;
       }
       resolve(response.photo);
@@ -46,7 +58,7 @@ function uploadPhoto(
       reject(new Error("Não foi possível conectar. Tente novamente.")),
     );
     const body = new FormData();
-    body.set("image", file);
+    body.set("image", uploadFile);
     request.send(body);
   });
 }
@@ -119,14 +131,14 @@ export default function PartyPhotoUpload({
       (file) =>
         allowedTypes.has(file.type) &&
         file.size > 0 &&
-        file.size <= 8 * 1024 * 1024,
+        file.size <= MAX_PHOTO_SOURCE_BYTES,
     );
     setErrors(
       fileList
         .filter((file) => !validFiles.includes(file))
         .map((file) =>
-          file.size > 8 * 1024 * 1024
-            ? `${file.name}: a foto deve ter até 8 MB.`
+          file.size > MAX_PHOTO_SOURCE_BYTES
+            ? `${file.name}: a foto original deve ter até 25 MB.`
             : `${file.name}: envie uma foto JPG, PNG ou WebP válida.`,
         ),
     );
@@ -255,11 +267,11 @@ export default function PartyPhotoUpload({
       const response = await fetch(`/api/party-photos?${params.toString()}`, {
         method: "DELETE",
       });
-      const result: { removedCount?: number; error?: string } =
-        await response.json();
-      if (!response.ok) {
-        throw new Error(result.error ?? "Não foi possível apagar as fotos.");
-      }
+      if (!response.ok)
+        throw new Error(
+          await photoUploadError(response, "Não foi possível apagar as fotos."),
+        );
+      const result: { removedCount?: number } = await response.json();
 
       if (allPhotosSelectedForDeletion) {
         setPhotos([]);
@@ -321,7 +333,8 @@ export default function PartyPhotoUpload({
               />
             </label>
             <p className="text-xs text-stone-400">
-              JPG, PNG ou WebP, até 8 MB por foto.
+              JPG, PNG ou WebP, até 25 MB por foto. Fotos grandes são otimizadas
+              antes do envio.
             </p>
             {selected.length ? (
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { photoUploadError, preparePhotoUpload } from "@/lib/photo-upload";
 
 export default function IndividualEntryControls({
   eventId,
@@ -33,18 +34,21 @@ export default function IndividualEntryControls({
     if (pending || !enabled || !photo || !consent) return;
     setPending(true);
     try {
+      const uploadPhoto = await preparePhotoUpload(photo);
       const body = new FormData();
-      body.set("image", photo);
+      body.set("image", uploadPhoto);
       body.set("photoConsent", "true");
       if (title.trim()) body.set("costumeTitle", title);
       const response = await fetch(
         `/api/contestant-entries/individual/photo?eventId=${encodeURIComponent(eventId)}`,
         { method: "POST", body },
       );
-      const result = (await response.json()) as { error?: string };
       if (!response.ok) {
         throw new Error(
-          result.error ?? "Não foi possível salvar sua participação.",
+          await photoUploadError(
+            response,
+            "Não foi possível salvar sua participação.",
+          ),
         );
       }
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
@@ -115,7 +119,10 @@ export default function IndividualEntryControls({
           className="block w-full text-base text-stone-200 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-400 file:px-3 file:py-2 file:font-semibold file:text-black"
         />
       </label>
-      <p className="text-sm text-stone-400">JPG, PNG ou WebP, até 8 MB.</p>
+      <p className="text-sm text-stone-400">
+        JPG, PNG ou WebP, até 25 MB. Fotos grandes são otimizadas antes do
+        envio.
+      </p>
       {previewUrl ? (
         <div className="grid gap-2">
           <p className="text-sm text-stone-300">Prévia da foto selecionada</p>
