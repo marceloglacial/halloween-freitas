@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { GET, POST, DELETE } from "./route";
+import { DELETE } from "./route";
 
-describe("retired guest cookie access", () => {
-  it.each([GET, POST, DELETE])(
-    "never authorizes an email-only or obsolete-cookie session",
-    async (handler) => {
-      const response = handler();
-      expect(response.status).toBe(410);
-      expect(response.headers.get("set-cookie")).toBeNull();
-    },
-  );
+describe("guest session logout", () => {
+  it("clears the session cookie without caching the response", async () => {
+    const response = await DELETE();
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("set-cookie")).toContain("guest_session=");
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
+    expect(response.headers.get("set-cookie")).toContain("HttpOnly");
+  });
 });
