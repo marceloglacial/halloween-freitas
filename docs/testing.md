@@ -42,19 +42,22 @@ cross-edition isolation cases where they apply.
 
 ## Identity, authorization, and isolation tests
 
-- Cover unregistered, unverified, mismatched, ambiguous, and already-linked
-  guest identities, including concurrent RSVP claims.
-- Exercise RSVP and guest-link rate limits at their threshold, across window
+- Cover a valid email-to-RSVP guest access match, an unknown email, cancelled
+  RSVPs, malformed event/email input, and a guest session scoped to another
+  edition. Verify session expiry, invalid signatures, logout cookie clearing,
+  and that each request rechecks the RSVP status.
+- Exercise RSVP and guest-access rate limits at their threshold, across window
   expiry, under concurrency, and across editions; verify generic `429` responses
   and that limiter records contain no raw email, Clerk ID, or client address.
 - Cover authorization denial for every protected admin and guest operation;
-  forged client email, RSVP ID, or voter ID must not change server-derived
-  identity.
+  forged client RSVP ID or voter ID must not change identity derived from the
+  signed session. Verify guest access is explicitly based on knowledge of the
+  RSVP email and is not represented as mailbox verification.
 - Verify guests can read and update only their own RSVP name for the selected
   edition, that email/account identifiers stay private, and that a profile
   edit after contestant enrollment closes does not change a frozen candidate
   name.
-- Create at least two editions in fixtures and prove that guest links,
+- Create at least two editions in fixtures and prove that guest sessions,
   contestants, categories, uploads, ballots, results, audit records, and cleanup
   cannot cross the `eventId` boundary.
 - Assert public serializers omit email, Clerk IDs, RSVP details, private drafts,
@@ -62,7 +65,7 @@ cross-edition isolation cases where they apply.
 
 ## Voting and concurrency tests
 
-- Enforce one ballot per verified RSVP, category, round, and edition under
+- Enforce one ballot per session-authenticated RSVP, category, round, and edition under
   simultaneous requests.
 - Cover category eligibility, individual entries in every `all` category,
   individual self-voting, and creator voting for a couple/group entry.

@@ -31,7 +31,10 @@ for each sample and cited repository evidence:
 The process completed successfully with agents disabled and without changing
 the worktree. This exercises skill routing and fallback behavior. It does not
 test edits to those sample features, their full acceptance criteria, or live
-browser flows. Agent delegation remains optional; an unavailable agent must
+browser flows. Future routing smoke tests should include guest RSVP access:
+route it to `backend-data` and use the email lookup, signed event-scoped
+session, and rate-limit contract in `docs/architecture.md`. Clerk is reserved
+for administrators, and email access is not mailbox verification. Agent delegation remains optional; an unavailable agent must
 not block primary-session work.
 
 ## Handoff and validation

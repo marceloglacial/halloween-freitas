@@ -14,8 +14,9 @@ resolution, authorization, lifecycle decisions, upload authorization, and
 public response shaping. Client components provide interaction and display
 server-authorized state; hiding controls never substitutes for server checks.
 
-MongoDB stores edition and guest-domain records. Clerk verifies guest and
-administrator identities. Cloudinary stores contest and party images in
+MongoDB stores edition and guest-domain records. Clerk verifies administrator
+identity; guests use an application session created from their RSVP email.
+Cloudinary stores contest and party images in
 separate asset flows. Keep provider credentials and private asset authorization
 on the server. Preserve the stack and homepage visual layout described in
 [`design.md`](../design.md).
@@ -29,8 +30,9 @@ edition. Validate same-edition ownership across every reference before reading,
 mutating, publishing, or deleting associated data.
 
 Maintain unique event year and slug, at most one active edition, one RSVP per
-`(eventId, normalizedEmail)`, and one linked RSVP per
-`(eventId, clerkUserId)`. Enforce ballot uniqueness for
+`(eventId, normalizedEmail)`, and at most one optional legacy Clerk association
+per `(eventId, clerkUserId)`. That association does not grant guest access.
+Enforce ballot uniqueness for
 `(eventId, roundId, categoryId, voterRsvpId)`. Use database uniqueness and
 atomic conditional writes for concurrency-sensitive ownership and lifecycle
 cutoffs; application prechecks alone are insufficient.
@@ -45,17 +47,18 @@ it never resets or repurposes prior-edition data.
 
 ## Identity and authorization
 
-Clerk identifies a signed-in adult. A verified RSVP link grants only the
-guest permissions associated with that RSVP's edition. The server derives the
-RSVP and voter identity from the verified Clerk session and event-scoped link;
-client-supplied email, RSVP ID, or voter ID is never identity proof. Link an
-unlinked RSVP only through a verified matching email and an atomic claim. Apply
-abuse limits to RSVP and linking operations without revealing whether another
-email or RSVP exists. Reject ambiguous matches, mismatched event IDs, and links
-owned by another Clerk user.
+Clerk authenticates administrators. A guest submits an email to the selected
+edition's access endpoint; the server normalizes it, rate-limits the request,
+and looks up a non-cancelled RSVP in that edition. A successful match creates
+a signed, expiring, HttpOnly application session scoped to that RSVP and
+edition. Possession of the RSVP email is the guest access proof, so anyone who
+knows it can act as that guest. The server derives guest and voter identity
+from the signed session and rechecks the RSVP in the same edition. Client
+supplied RSVP IDs and voter IDs are never identity proof. Do not describe this
+flow as mailbox verification or Clerk account linking.
 
 Apply fixed-window limits to public RSVP attempts by trusted client address and
-HMAC of the normalized email, and to guest-link attempts by trusted client
+HMAC of the normalized email, and to guest-access attempts by trusted client
 address. Keep counters scoped to the event and action, store no raw address or
 email in limiter records, and expire buckets with a MongoDB TTL index. In
 production, trust `x-real-ip` only when the reverse proxy overwrites it; reject

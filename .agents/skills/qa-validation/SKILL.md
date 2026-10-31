@@ -15,6 +15,10 @@ not touch production data or perform an unapproved external mutation.
    Identify malformed input, authorization, privacy, concurrency, and
    cross-edition isolation cases only where the changed path makes them
    relevant.
+   For guest access changes, cover normalized email lookup, unknown and
+   cancelled RSVPs, trusted-address rate limiting, signed-session tampering,
+   expiry, event scoping, logout, and RSVP rechecks. Treat email knowledge as
+   the guest credential; do not expect mailbox verification or Clerk login.
    For party-gallery changes, verify that a same-edition RSVP guest can upload
    after the event starts even after voting opens; uploads stay private before
    publication, appear automatically after publication, and removal revokes

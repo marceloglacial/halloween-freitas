@@ -19,9 +19,8 @@ layout and visual identity.
 
 Each annual edition is an independent product context with a stable `eventId`,
 year, slug, and IANA timezone. An edition can be active or archived; archiving
-does not erase its records or public material. A guest may use the same verified
-Clerk identity across years but must have an RSVP for each edition to receive
-guest permissions there.
+does not erase its records or public material. Guests access each edition
+through its RSVP email and receive permissions only for that edition.
 
 At most one edition is active at a time. When none is active, current-edition
 reads choose the newest year deterministically for display; its archived state
@@ -52,7 +51,7 @@ and is separate from contestant entries, contest photos, and voting candidates.
   create a contestant entry until a photo is saved, and it does not create a
   Clerk account.
 - After `eventStartsAt`, show a homepage action beside the RSVP call to action
-  that takes guests through login to the selected edition's party-photo upload
+  that takes guests through email access to the selected edition's party-photo upload
   area, even after RSVP closes.
 - Let a guest enter the RSVP email to access and update their RSVP name for the selected
   edition. Keep email and account identifiers private, and keep a frozen

@@ -8,7 +8,7 @@ contest entries and voting, published results, and a separate party photo album.
 - Next.js 16 App Router and React 19
 - TypeScript and Tailwind CSS 4
 - MongoDB for edition, RSVP, contestant, round, ballot, result, and photo data
-- Clerk for verified guest and administrator authentication
+- Clerk for administrator authentication; guests access their edition RSVP by email
 - Cloudinary for contest and party images
 
 ## Quick start

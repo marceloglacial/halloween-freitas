@@ -23,9 +23,11 @@ permanent enrollment cutoff. Only the active edition accepts new RSVPs.
 Closing or reopening a voting round never reverses this cutoff.
 
 RSVP is per edition and unique by normalized email within that edition. A
-verified Clerk account can link to an existing RSVP by a matching verified
-email. Linking never creates an RSVP, changes its event, transfers an existing
-link silently, or allows one edition's RSVP to authorize another.
+guest enters that email to create an expiring application session for the
+matching RSVP in the selected edition. The email is not verified through a
+mailbox challenge; anyone who knows it can act as that guest. The session is
+edition-scoped and never authorizes an RSVP in another edition. Clerk is used
+for administrators, not guest access.
 
 ## Contestant entries
 
@@ -79,7 +81,8 @@ contestant editing. The runoff contains only candidates tied for first place in
 the primary round; if the runoff also ties, the tied candidates share first
 place. A category with no ballots has no winner.
 
-Each ballot is scoped by event, round, category, and verified RSVP identity, and
+Each ballot is scoped by event, round, category, and RSVP identity derived from
+the signed guest session, and
 has a stable ID referencing the contestant entry ID. A unique database index
 enforces one ballot per eligible RSVP/category/round under concurrency. Guests
 may vote for their own individual entry or a group they created. Candidate
@@ -99,8 +102,8 @@ enforce the current publication state.
 
 ## Party album publication
 
-After `eventStartsAt`, a verified Clerk user linked to an RSVP for the same
-edition may upload multiple party photos. This remains allowed after contest
+After `eventStartsAt`, a guest with a valid signed session for an RSVP in the
+same edition may upload multiple party photos. This remains allowed after contest
 entry closes and after voting opens. Uploading party photos never changes
 contestant photos, contestant readiness, or ballots.
 

@@ -18,15 +18,19 @@ matching installed Next.js guide before changing framework code.
    expected failure statuses before changing a contract.
 2. Normalize and validate untrusted input through shared helpers. Construct
    explicit write fields; never apply a request body wholesale.
-3. Enforce Clerk authorization and derive guest identity from the verified
-   session and same-edition RSVP link. Treat client IDs as lookup input, never
-   proof of ownership.
+3. Use Clerk authorization for administrators. Derive guest identity from the
+   signed, expiring application session created after a normalized RSVP email
+   match, and recheck its RSVP within the same `eventId`. Guest access does not
+   verify mailbox control: anyone who knows the email can act as that guest.
+   Treat client-supplied RSVP and voter IDs as lookup input, never identity
+   proof. Keep access and logout responses `no-store` and session cookies
+   HttpOnly, SameSite, and Secure in production.
 4. Scope every guest, contestant, category, asset, vote, and result operation
    to `eventId`. Serialize MongoDB IDs and dates explicitly; omit email, Clerk
    IDs, private drafts, unpublished votes, and private asset identifiers from
    public responses.
-5. Use atomic writes and database uniqueness for ownership claims, enrollment
-   cutoffs, and duplicate-sensitive operations. Application prechecks alone do
+5. Use atomic writes and database uniqueness for enrollment cutoffs and
+   duplicate-sensitive operations. Application prechecks alone do
    not protect concurrent requests.
 6. For party-gallery work, require a valid RSVP for the same edition, allow
    uploads after `eventStartsAt` even after voting opens, keep photos private
