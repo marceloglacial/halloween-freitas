@@ -95,6 +95,7 @@ describe("admin contestant photo correction route", () => {
       collection: () => ({
         findOne: vi.fn().mockResolvedValue({
           _id: new ObjectId(entryId),
+          ownerRsvpId: new ObjectId("507f1f77bcf86cd799439013"),
           contestPhoto: {
             assetId: "old-asset",
             publicId: "contest-photos/old",

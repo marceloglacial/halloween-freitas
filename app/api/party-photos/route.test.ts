@@ -53,13 +53,24 @@ vi.mock("@/lib/party-photos", async (importOriginal) => {
     deletePartyPhotoAsset: mocks.deletePartyPhotoAsset,
   };
 });
-vi.mock("@/lib/party-photo-writes", () => ({
-  savePartyPhoto: mocks.savePartyPhoto,
-  getPartyPhotosForGuest: mocks.getPartyPhotosForGuest,
-  serializePartyPhotoForGuest: mocks.serializePartyPhotoForGuest,
-  enqueuePartyPhotoCleanup: mocks.enqueuePartyPhotoCleanup,
-  retryPartyPhotoCleanup: mocks.retryPartyPhotoCleanup,
-}));
+vi.mock("@/lib/party-photo-writes", () => {
+  class PartyAlbumWriteError extends Error {
+    constructor(
+      public status: number,
+      message: string,
+    ) {
+      super(message);
+    }
+  }
+  return {
+    PartyAlbumWriteError,
+    savePartyPhoto: mocks.savePartyPhoto,
+    getPartyPhotosForGuest: mocks.getPartyPhotosForGuest,
+    serializePartyPhotoForGuest: mocks.serializePartyPhotoForGuest,
+    enqueuePartyPhotoCleanup: mocks.enqueuePartyPhotoCleanup,
+    retryPartyPhotoCleanup: mocks.retryPartyPhotoCleanup,
+  };
+});
 vi.mock("@/lib/request-rate-limits", () => ({
   consumeRateLimit: mocks.consumeRateLimit,
   rateLimitResponse: (retryAfter: number) =>

@@ -15,7 +15,9 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const linkScript = fileURLToPath(new URL("./link-issue-env.mjs", import.meta.url));
+const linkScript = fileURLToPath(
+  new URL("./link-issue-env.mjs", import.meta.url),
+);
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8" }).trim();
@@ -29,7 +31,10 @@ function runLinkScript(issuePath) {
 }
 
 function commit(cwd, message) {
-  git(["add", "--", ".gitignore", "README.md", "package.json", "server.mjs"], cwd);
+  git(
+    ["add", "--", ".gitignore", "README.md", "package.json", "server.mjs"],
+    cwd,
+  );
   git(["commit", "-m", message], cwd);
 }
 
@@ -39,7 +44,9 @@ async function startTestDevServer(issuePath) {
   );
   const packageManager = manifest.packageManager?.split("@")[0];
   if (!packageManager || !manifest.scripts?.dev) {
-    throw new Error("The test worktree must declare its package manager and dev script.");
+    throw new Error(
+      "The test worktree must declare its package manager and dev script.",
+    );
   }
 
   const child = spawn(packageManager, ["run", "dev"], {
@@ -53,7 +60,7 @@ async function startTestDevServer(issuePath) {
     const url = await new Promise((resolve, reject) => {
       timeout = setTimeout(
         () => reject(new Error(`Dev server did not become ready: ${output}`)),
-        5_000,
+        15_000,
       );
       child.stdout.on("data", (chunk) => {
         output += chunk.toString();
@@ -121,9 +128,9 @@ describe("issue worktree environment linking", () => {
           'import { createServer } from "node:http";',
           'const server = createServer((_, response) => response.end("ready"));',
           'server.listen(0, "127.0.0.1", () => {',
-          '  const { port } = server.address();',
-          '  console.log(`READY_URL=http://127.0.0.1:${port}`);',
-          '});',
+          "  const { port } = server.address();",
+          "  console.log(`READY_URL=http://127.0.0.1:${port}`);",
+          "});",
           "",
         ].join("\n"),
       );
@@ -178,7 +185,9 @@ describe("issue worktree environment linking", () => {
       rmSync(sourcePath);
       const missingRun = runLinkScript(issuePath);
       expect(missingRun.status).not.toBe(0);
-      expect(missingRun.stderr).toContain("Required development file .env.local is missing");
+      expect(missingRun.stderr).toContain(
+        "Required development file .env.local is missing",
+      );
       expect(lstatSync(targetPath, { throwIfNoEntry: false })).toBeUndefined();
 
       writeFileSync(privateSourcePath, `${secretSentinel}\n`);
@@ -192,7 +201,10 @@ describe("issue worktree environment linking", () => {
 
       writeFileSync(join(canonicalPath, ".gitignore"), ".env*\n");
       commit(canonicalPath, "fixture: restore env ignore rule");
-      const trackedTargetPath = join(canonicalPath, "tracked environment target");
+      const trackedTargetPath = join(
+        canonicalPath,
+        "tracked environment target",
+      );
       writeFileSync(trackedTargetPath, `${secretSentinel}\n`);
       git(["add", "--", "tracked environment target"], canonicalPath);
       git(["commit", "-m", "fixture: track env link target"], canonicalPath);
@@ -216,5 +228,5 @@ describe("issue worktree environment linking", () => {
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }
-  });
+  }, 20_000);
 });

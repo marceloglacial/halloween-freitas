@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   getCategoryResults: vi.fn(),
   getFinalVotingRoundForCategory: vi.fn(),
   getCategoryById: vi.fn(),
+  primaryRound: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
@@ -55,6 +56,14 @@ vi.mock("@/lib/results", () => ({
 vi.mock("@/lib/voting-rounds", () => ({
   getFinalVotingRoundForCategory: mocks.getFinalVotingRoundForCategory,
 }));
+vi.mock("@/lib/auth/admin", () => ({
+  isAdmin: vi.fn().mockResolvedValue(false),
+}));
+vi.mock("@/lib/db", () => ({
+  getDb: vi.fn().mockResolvedValue({
+    collection: () => ({ findOne: mocks.primaryRound }),
+  }),
+}));
 vi.mock("@/util/get-categories", () => ({
   getCategoryById: mocks.getCategoryById,
 }));
@@ -62,7 +71,7 @@ vi.mock("@/util/get-categories", () => ({
 import ResultPage from "@/app/resultados/[id]/page";
 
 const event: HalloweenEvent = {
-  _id: "event-2026",
+  _id: "507f1f77bcf86cd799439011",
   year: 2026,
   slug: "halloween-2026",
   title: "Halloween 2026",
@@ -74,7 +83,7 @@ const event: HalloweenEvent = {
   resultsPublished: true,
 };
 const category: Category = {
-  _id: "category-1",
+  _id: "507f1f77bcf86cd799439012",
   eventId: event._id,
   title: "Fantasia mais criativa",
   icon: "🧙",
@@ -101,6 +110,7 @@ describe("public category results", () => {
     );
     mocks.getCategoryById.mockResolvedValue(category);
     mocks.getFinalVotingRoundForCategory.mockResolvedValue(round);
+    mocks.primaryRound.mockResolvedValue(round);
     mocks.getCategoryResults.mockResolvedValue({
       users: [
         {
@@ -176,6 +186,7 @@ describe("public category results", () => {
 
   it("provides an explicit zero-vote state", async () => {
     mocks.getFinalVotingRoundForCategory.mockResolvedValue(null);
+    mocks.primaryRound.mockResolvedValue(null);
 
     const page = await ResultPage({
       params: Promise.resolve({ id: category._id }),

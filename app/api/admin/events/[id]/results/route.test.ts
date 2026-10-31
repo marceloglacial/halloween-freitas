@@ -6,15 +6,18 @@ const mocks = vi.hoisted(() => ({
   getEventById: vi.fn(),
   getCategories: vi.fn(),
   getOpenVotingRound: vi.fn(),
-  getFinalVotingRoundForCategory: vi.fn(),
   getCategoryResults: vi.fn(),
   distinctVoters: vi.fn(),
+  rounds: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/admin", () => ({ isAdmin: mocks.isAdmin }));
 vi.mock("@/lib/db", () => ({
   getDb: vi.fn().mockResolvedValue({
-    collection: () => ({ distinct: mocks.distinctVoters }),
+    collection: () => ({
+      distinct: mocks.distinctVoters,
+      find: () => ({ sort: () => ({ toArray: mocks.rounds }) }),
+    }),
   }),
 }));
 vi.mock("@/lib/events", () => ({ getEventById: mocks.getEventById }));
@@ -26,7 +29,6 @@ vi.mock("@/lib/results", () => ({
 }));
 vi.mock("@/lib/voting-rounds", () => ({
   getOpenVotingRound: mocks.getOpenVotingRound,
-  getFinalVotingRoundForCategory: mocks.getFinalVotingRoundForCategory,
   roundIncludesCategory: (
     round: { eventId: ObjectId; categoryIds: ObjectId[] },
     eventId: string,
@@ -43,6 +45,29 @@ const firstCategoryId = "507f1f77bcf86cd799439012";
 const secondCategoryId = "507f1f77bcf86cd799439013";
 const openRoundId = new ObjectId("507f1f77bcf86cd799439014");
 const finalRoundId = new ObjectId("507f1f77bcf86cd799439015");
+const primaryRound = {
+  _id: finalRoundId,
+  eventId: new ObjectId(eventId),
+  type: "primary" as const,
+  status: "ended" as const,
+  categoryIds: [new ObjectId(firstCategoryId), new ObjectId(secondCategoryId)],
+  openedAt: new Date("2026-10-31T20:00:00.000Z"),
+};
+const runoffRound = {
+  _id: openRoundId,
+  eventId: new ObjectId(eventId),
+  type: "runoff" as const,
+  status: "open" as const,
+  categoryIds: [new ObjectId(firstCategoryId)],
+  candidateIdsByCategory: [
+    {
+      categoryId: new ObjectId(firstCategoryId),
+      candidateIds: [new ObjectId("507f1f77bcf86cd799439016")],
+    },
+  ],
+  openedAt: new Date("2026-10-31T21:00:00.000Z"),
+};
+const candidateId = new ObjectId("507f1f77bcf86cd799439016");
 
 function request(id = eventId) {
   return GET(new Request("http://localhost"), {
@@ -69,24 +94,14 @@ describe("private admin event results", () => {
       { _id: secondCategoryId, title: "Dupla", icon: "👯" },
     ]);
     mocks.getOpenVotingRound.mockResolvedValue({
-      _id: openRoundId,
-      eventId: new ObjectId(eventId),
-      type: "runoff",
-      status: "open",
-      categoryIds: [new ObjectId(firstCategoryId)],
+      ...runoffRound,
     });
-    mocks.getFinalVotingRoundForCategory.mockResolvedValue({
-      _id: finalRoundId,
-      eventId: new ObjectId(eventId),
-      type: "primary",
-      status: "ended",
-      categoryIds: [new ObjectId(secondCategoryId)],
-    });
+    mocks.rounds.mockResolvedValue([primaryRound, runoffRound]);
     mocks.getCategoryResults.mockImplementation(
       async (_event: string, categoryId: string, roundId: string) => ({
         users: [
           {
-            _id: "candidate-id",
+            _id: candidateId.toString(),
             fullName: "Ana",
             votes: 2,
             imageUrl: "private",
@@ -126,19 +141,42 @@ describe("private admin event results", () => {
           categoryId: firstCategoryId,
           title: "Fantasia",
           icon: "🎃",
-          roundType: "runoff",
-          roundStatus: "open",
-          totalVotes: 2,
-          users: [{ _id: "candidate-id", fullName: "Ana", votes: 2 }],
+          rounds: [
+            {
+              roundId: finalRoundId.toString(),
+              roundType: "primary",
+              roundStatus: "ended",
+              totalVotes: 2,
+              users: [
+                { _id: candidateId.toString(), fullName: "Ana", votes: 2 },
+              ],
+            },
+            {
+              roundId: openRoundId.toString(),
+              roundType: "runoff",
+              roundStatus: "open",
+              totalVotes: 2,
+              users: [
+                { _id: candidateId.toString(), fullName: "Ana", votes: 2 },
+              ],
+            },
+          ],
         },
         {
           categoryId: secondCategoryId,
           title: "Dupla",
           icon: "👯",
-          roundType: "primary",
-          roundStatus: "ended",
-          totalVotes: 2,
-          users: [{ _id: "candidate-id", fullName: "Ana", votes: 2 }],
+          rounds: [
+            {
+              roundId: finalRoundId.toString(),
+              roundType: "primary",
+              roundStatus: "ended",
+              totalVotes: 2,
+              users: [
+                { _id: candidateId.toString(), fullName: "Ana", votes: 2 },
+              ],
+            },
+          ],
         },
       ],
     });
@@ -146,35 +184,37 @@ describe("private admin event results", () => {
       1,
       eventId,
       firstCategoryId,
-      openRoundId.toString(),
+      finalRoundId.toString(),
     );
     expect(mocks.getCategoryResults).toHaveBeenNthCalledWith(
       2,
+      eventId,
+      firstCategoryId,
+      openRoundId.toString(),
+    );
+    expect(mocks.getCategoryResults).toHaveBeenNthCalledWith(
+      3,
       eventId,
       secondCategoryId,
       finalRoundId.toString(),
     );
     expect(mocks.getCategories).toHaveBeenCalledWith(eventId);
     expect(mocks.getOpenVotingRound).toHaveBeenCalledWith(eventId);
-    expect(mocks.getFinalVotingRoundForCategory).toHaveBeenCalledWith(
-      eventId,
-      secondCategoryId,
-    );
     expect(mocks.distinctVoters).toHaveBeenCalledWith("voterRsvpId", {
       eventId: new ObjectId(eventId),
-      roundId: { $in: [openRoundId, finalRoundId] },
+      roundId: { $in: [finalRoundId, openRoundId] },
     });
   });
 
   it("returns empty categories with no round or ballots and exposes no candidate metadata", async () => {
     mocks.getOpenVotingRound.mockResolvedValue(null);
-    mocks.getFinalVotingRoundForCategory.mockResolvedValue(null);
+    mocks.rounds.mockResolvedValue([]);
     const response = await request();
     const body = await response.json();
     expect(body.participantCount).toBe(0);
     expect(body.categories).toEqual([
-      expect.objectContaining({ totalVotes: 0, users: [], roundType: null }),
-      expect.objectContaining({ totalVotes: 0, users: [], roundType: null }),
+      expect.objectContaining({ rounds: [] }),
+      expect.objectContaining({ rounds: [] }),
     ]);
     expect(mocks.getCategoryResults).not.toHaveBeenCalled();
   });

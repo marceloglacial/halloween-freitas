@@ -51,6 +51,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import CategoryPage from "@/app/meu-halloween/votacao/categories/[id]/page";
+import GuestFlowShell from "@/components/guest/guest-flow-shell";
 
 const eventId = "507f1f77bcf86cd799439011";
 const categoryId = "507f1f77bcf86cd799439012";
@@ -94,10 +95,10 @@ describe("voting category page", () => {
       searchParams: Promise.resolve({ eventId }),
     });
 
-    expect(result.type).toBe("main");
-    expect(result.props.children[0].props.children).toBe("Categoria concluída");
-    expect(result.props.children[2].props.href).toBe(
-      `/meu-halloween/votacao/categories?eventId=${eventId}`,
+    expect(result.type).toBe(GuestFlowShell);
+    expect(result.props.title).toBe("Categoria concluída");
+    expect(result.props.children.props.href).toBe(
+      `/meu-halloween/votacao?eventId=${eventId}`,
     );
     expect(mocks.getVotingCandidatesForCategory).not.toHaveBeenCalled();
     expect(mocks.hasVotedInRoundCategory).toHaveBeenCalledWith(
@@ -114,7 +115,8 @@ describe("voting category page", () => {
       searchParams: Promise.resolve({ eventId }),
     });
 
-    expect(result.type).toBe("section");
+    expect(result.type).toBe(GuestFlowShell);
+    expect(result.props.title).toBe("🎃 Fantasia");
     expect(mocks.getVotingCandidatesForCategory).toHaveBeenCalledWith(
       eventId,
       expect.objectContaining({ _id: categoryId }),

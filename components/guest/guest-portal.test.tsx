@@ -16,6 +16,9 @@ vi.mock("next/link", () => ({
   ),
 }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/meu-halloween" }));
+vi.mock("@clerk/nextjs", () => ({
+  useUser: () => ({ isLoaded: true, user: null }),
+}));
 vi.mock("sonner", () => ({ toast: toastMock }));
 vi.mock("@/components/logout-button", () => ({
   default: () => <button type="button">Sair</button>,
@@ -54,8 +57,8 @@ describe("guest portal", () => {
     expect(html).toContain('aria-label="Abrir menu da conta de Ana Freitas"');
     expect(html).toContain('id="guest-account-menu" hidden=""');
     expect(html).toContain("Sair");
-    expect(html).toContain('href="/" target="_blank" rel="noreferrer"');
-    expect(html).toContain("Ver site");
+    expect(html).toContain('href="/"');
+    expect(html).toContain("Voltar para o site");
     expect(html).toContain("Fantasia individual");
     expect(html).toContain("Fantasia em grupo");
     expect(html).toContain("Fotos da festa");
@@ -171,9 +174,10 @@ describe("guest portal", () => {
       />,
     );
 
-    expect(html).not.toContain("/meu-halloween/votacao");
+    expect(html).not.toContain('href="/meu-halloween/votacao?eventId=');
     expect(html).not.toContain("Votação aberta");
-    expect(html).not.toContain('aria-label="Votação"');
+    expect(html).toContain('aria-label="Votação"');
+    expect(html).toContain('aria-disabled="true"');
   });
 
   it("keeps upcoming costume cards navigable and reports the closed-card notice on activation", () => {
@@ -199,7 +203,6 @@ describe("guest portal", () => {
     });
 
     expect(html).toContain("Inscrições em breve");
-    expect(html).not.toContain('aria-disabled="true"');
     expect(html).toContain(
       'href="/meu-halloween/individual?eventId=507f1f77bcf86cd799439011"',
     );

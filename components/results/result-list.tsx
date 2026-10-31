@@ -24,10 +24,15 @@ export const ResultList: FC<ResultListProps> = ({
   remainingClassification,
   remainingTotalVotes,
 }): JSX.Element => {
-  const rankedUsers = users.map((user) => ({
-    user,
-    position: users.indexOf(user) + 1,
-  }));
+  const rankedUsers: { user: UserWithVotes; position: number }[] = [];
+  users.forEach((user, index) => {
+    const previous = rankedUsers[index - 1];
+    const position =
+      user.votes > 0 && previous?.user.votes === user.votes
+        ? previous.position
+        : index + 1;
+    rankedUsers.push({ user, position });
+  });
   const podiumRevealSequence = getPodiumRevealSequence(rankedUsers);
   const podiumIds = new Set(podiumRevealSequence.map(({ user }) => user._id));
   const remainingUsers = rankedUsers.filter(
@@ -55,7 +60,10 @@ export const ResultList: FC<ResultListProps> = ({
       podiumRevealSequence={podiumRevealSequence}
       remainingUsers={remainingUsers}
       remainingTotalVotes={remainingTotalVotes ?? totalVotes}
-      firstTurnUsers={remainingClassification?.map((user, index) => ({ user, position: index + 1 }))}
+      firstTurnUsers={remainingClassification?.map((user, index) => ({
+        user,
+        position: index + 1,
+      }))}
       firstTurnTotalVotes={remainingTotalVotes ?? 0}
       totalVotes={totalVotes}
     />

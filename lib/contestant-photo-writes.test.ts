@@ -214,6 +214,7 @@ describe("contestant photo ownership and persistence", () => {
             findOne: vi.fn().mockResolvedValue({
               _id: entryId,
               status: "locked",
+              ownerRsvpId: rsvpId,
               contestPhoto: previousPhoto,
             }),
             updateOne: entryUpdate,

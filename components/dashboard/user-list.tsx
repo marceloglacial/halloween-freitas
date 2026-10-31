@@ -48,6 +48,9 @@ export default function UserList({
           <Link
             href={`/dashboard/convidados/novo?year=${event.year}`}
             aria-disabled={!canChangeMembership || loading}
+            aria-describedby={
+              !canChangeMembership ? membershipHelpId : undefined
+            }
             tabIndex={!canChangeMembership || loading ? -1 : undefined}
             className={`shrink-0 rounded-lg bg-orange-400 px-2 py-2 text-sm whitespace-nowrap text-black transition hover:bg-orange-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-200 sm:px-4 sm:text-base ${!canChangeMembership || loading ? "pointer-events-none opacity-50" : ""}`}
           >

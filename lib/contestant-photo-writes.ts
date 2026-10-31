@@ -213,6 +213,9 @@ export async function saveContestPhotoForAdmin(
       );
       if (!entry) throw new ContestPhotoWriteError(404, "entry_not_found");
       previousPhoto = entry.contestPhoto as ContestPhotoAsset | undefined;
+      if (!previousPhoto?.assetId) {
+        await claimContestEntryWrite(db, input.eventId, session, input.now);
+      }
       if (
         previousPhoto &&
         (!previousPhoto.assetId || !previousPhoto.consentAt)

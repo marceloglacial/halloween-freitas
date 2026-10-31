@@ -11,10 +11,12 @@ vi.mock("next/link", () => ({
   default: ({
     href,
     children,
-  }: {
-    href: string;
-    children: React.ReactNode;
-  }) => <a href={href}>{children}</a>,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  ),
 }));
 vi.mock("next-cloudinary", () => ({
   CldImage: ({ alt }: { alt: string }) => <span aria-label={alt} />,
