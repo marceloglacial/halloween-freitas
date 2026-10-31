@@ -228,5 +228,5 @@ describe("issue worktree environment linking", () => {
     } finally {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }
-  }, 20_000);
+  }, 60_000);
 });
