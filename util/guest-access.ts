@@ -1,10 +1,12 @@
 const objectIdPattern = /^[a-f\d]{24}$/i;
 
 export function guestReturnPath(value: unknown, eventId: string) {
-  let pathname = "/votacao/categories";
+  let pathname = "/meu-halloween/votacao";
   if (
     typeof value === "string" &&
-    /^\/votacao\/categories(?:\/[a-f\d]{24})?(?:\?[^#\\]*)?$/i.test(value)
+    (/^\/meu-halloween\/votacao(?:\/categories\/[a-f\d]{24})?(?:\?[^#\\]*)?$/i.test(value) ||
+      /^\/perfil(?:\?[^#\\]*)?$/i.test(value) ||
+      /^\/meu-halloween(?:\?[^#\\]*)?$/i.test(value))
   ) {
     pathname = value.split("?")[0];
   }

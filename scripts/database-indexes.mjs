@@ -30,7 +30,7 @@ export const requiredIndexes = [
     collection: "categories",
     label: "category order",
     key: { eventId: 1, order: 1 },
-    options: {},
+    options: { unique: true },
   },
   {
     collection: "users",
@@ -42,10 +42,70 @@ export const requiredIndexes = [
     },
   },
   {
+    collection: "requestRateLimits",
+    label: "request rate-limit expiry",
+    key: { expiresAt: 1 },
+    options: { expireAfterSeconds: 0 },
+  },
+  {
+    collection: "partyAlbums",
+    label: "one party album per event",
+    key: { eventId: 1 },
+    options: { unique: true },
+  },
+  {
+    collection: "partyPhotos",
+    label: "guest party photos per event",
+    key: { eventId: 1, uploaderRsvpId: 1, uploadedAt: -1, _id: -1 },
+    options: {},
+  },
+  {
+    collection: "partyPhotoCleanups",
+    label: "party photo cleanup retry order",
+    key: { eventId: 1, nextAttemptAt: 1, _id: 1 },
+    options: {},
+  },
+  {
+    collection: "contestants",
+    label: "adult contestant ownership",
+    key: { eventId: 1, ownerRsvpId: 1, entryType: 1 },
+    options: {
+      unique: true,
+      partialFilterExpression: { ownerRsvpId: { $type: "objectId" } },
+    },
+  },
+  {
+    collection: "contestants",
+    label: "event contestant readiness",
+    key: { eventId: 1, status: 1, entryType: 1 },
+    options: {},
+  },
+  {
+    collection: "votingRounds",
+    label: "round type per event",
+    key: { eventId: 1, type: 1 },
+    options: { unique: true },
+  },
+  {
+    collection: "votingRounds",
+    label: "one open round per event",
+    key: { eventId: 1 },
+    options: {
+      unique: true,
+      partialFilterExpression: { status: "open" },
+    },
+  },
+  {
     collection: "votes",
     label: "vote",
-    key: { eventId: 1, voterId: 1, categoryId: 1 },
-    options: { unique: true },
+    key: { eventId: 1, roundId: 1, categoryId: 1, voterRsvpId: 1 },
+    options: {
+      unique: true,
+      partialFilterExpression: {
+        roundId: { $type: "objectId" },
+        voterRsvpId: { $type: "objectId" },
+      },
+    },
   },
 ];
 
@@ -69,6 +129,16 @@ const duplicateChecks = [
     label: "event year",
     pipeline: [
       { $group: { _id: "$year", count: { $sum: 1 } } },
+      { $match: { count: { $gt: 1 } } },
+    ],
+  },
+  {
+    collection: "partyAlbums",
+    label: "one party album per event",
+    pipeline: [
+      {
+        $group: { _id: "$eventId", count: { $sum: 1 } },
+      },
       { $match: { count: { $gt: 1 } } },
     ],
   },
@@ -103,15 +173,75 @@ const duplicateChecks = [
     ],
   },
   {
-    collection: "votes",
-    label: "vote",
+    collection: "contestants",
+    label: "adult contestant ownership",
     pipeline: [
+      { $match: { ownerRsvpId: { $type: "objectId" } } },
       {
         $group: {
           _id: {
             eventId: "$eventId",
-            voterId: "$voterId",
+            ownerRsvpId: "$ownerRsvpId",
+            entryType: "$entryType",
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $match: { count: { $gt: 1 } } },
+    ],
+  },
+  {
+    collection: "categories",
+    label: "category order",
+    pipeline: [
+      {
+        $group: {
+          _id: { eventId: "$eventId", order: "$order" },
+          count: { $sum: 1 },
+        },
+      },
+      { $match: { count: { $gt: 1 } } },
+    ],
+  },
+  {
+    collection: "votingRounds",
+    label: "round type per event",
+    pipeline: [
+      {
+        $group: {
+          _id: { eventId: "$eventId", type: "$type" },
+          count: { $sum: 1 },
+        },
+      },
+      { $match: { count: { $gt: 1 } } },
+    ],
+  },
+  {
+    collection: "votingRounds",
+    label: "one open round per event",
+    pipeline: [
+      { $match: { status: "open" } },
+      { $group: { _id: "$eventId", count: { $sum: 1 } } },
+      { $match: { count: { $gt: 1 } } },
+    ],
+  },
+  {
+    collection: "votes",
+    label: "vote",
+    pipeline: [
+      {
+        $match: {
+          roundId: { $type: "objectId" },
+          voterRsvpId: { $type: "objectId" },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            eventId: "$eventId",
+            roundId: "$roundId",
             categoryId: "$categoryId",
+            voterRsvpId: "$voterRsvpId",
           },
           count: { $sum: 1 },
         },

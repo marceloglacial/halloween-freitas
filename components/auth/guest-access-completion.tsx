@@ -31,11 +31,11 @@ export default function GuestAccessCompletion({
       if (!response.ok)
         throw new Error(data.error || "Não foi possível verificar seu acesso.");
       if (!signal?.aborted) {
-        router.replace(returnTo);
+        router.replace("/meu-halloween");
         router.refresh();
       }
     },
-    [eventId, returnTo, router],
+    [eventId, router],
   );
   const reportFailure = (failure: unknown) => {
     setError(

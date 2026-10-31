@@ -1,7 +1,13 @@
 import { MongoServerError, ObjectId } from "mongodb";
 import { GuestAccessError } from "@/lib/auth/guest-registration";
 import { getVotingGuest } from "@/lib/auth/voting-guest";
-import { getDb } from "@/lib/db";
+import { getDb, getMongoClient } from "@/lib/db";
+import { getContestantEntryForVote } from "@/lib/contestant-entries";
+import {
+  getOpenVotingRound,
+  roundAllowsCandidate,
+  roundIncludesCategory,
+} from "@/lib/voting-rounds";
 import {
   errorResponse,
   logServerError,
@@ -9,8 +15,8 @@ import {
   readJsonObject,
 } from "@/lib/http";
 import { getCategoryById } from "@/util/get-categories";
-import { getUserById } from "@/lib/users";
-import { isEligibleCandidate } from "@/lib/voting";
+
+class VotingRoundClosedError extends Error {}
 
 export async function GET(request?: Request) {
   try {
@@ -18,6 +24,9 @@ export async function GET(request?: Request) {
       ? (new URL(request.url).searchParams.get("eventId") ?? undefined)
       : undefined;
     const session = await getVotingGuest(requestedEventId);
+    const round = await getOpenVotingRound(session.eventId);
+    if (!round)
+      return errorResponse("A rodada de votação não está aberta", 409);
 
     const votes = await (
       await getDb()
@@ -26,7 +35,8 @@ export async function GET(request?: Request) {
       .find(
         {
           eventId: new ObjectId(session.eventId),
-          voterId: new ObjectId(session.userId),
+          roundId: round._id,
+          voterRsvpId: new ObjectId(session.userId),
         },
         { projection: { categoryId: 1 } },
       )
@@ -47,43 +57,82 @@ export async function POST(request: Request) {
     const body = await readJsonObject(request);
     if (!body) return errorResponse("Corpo da requisição inválido", 400);
     const session = await getVotingGuest(body.eventId);
+    const roundId = parseObjectId(body.roundId);
     const categoryId = parseObjectId(body.categoryId);
-    const voteForId = parseObjectId(body.voteForId);
-    if (!categoryId || !voteForId) return errorResponse("Voto inválido", 400);
-    if (session.userId === voteForId.toString()) {
-      return errorResponse("Você não pode votar em si mesmo", 400);
+    const candidateId = parseObjectId(body.candidateId);
+    if (!roundId || !categoryId || !candidateId) {
+      return errorResponse("Voto inválido", 400);
     }
-
-    const [category, candidate] = await Promise.all([
-      getCategoryById(categoryId.toString()),
-      getUserById(voteForId.toString()),
-    ]);
+    const round = await getOpenVotingRound(session.eventId);
+    if (!round || !round._id.equals(roundId)) {
+      return errorResponse("A rodada de votação não está aberta", 409);
+    }
+    if (!roundIncludesCategory(round, session.eventId, categoryId.toString())) {
+      return errorResponse("Categoria indisponível nesta rodada", 400);
+    }
+    if (
+      !roundAllowsCandidate(
+        round,
+        session.eventId,
+        categoryId.toString(),
+        candidateId.toString(),
+      )
+    ) {
+      return errorResponse("Candidato indisponível nesta rodada", 400);
+    }
+    const category = await getCategoryById(categoryId.toString());
     if (!category || category.eventId !== session.eventId) {
       return errorResponse("Categoria não encontrada", 404);
     }
-    if (!candidate || candidate.eventId !== session.eventId) {
-      return errorResponse("Candidato não encontrado", 404);
-    }
-    if (
-      candidate.status === "cancelled" ||
-      !isEligibleCandidate(category, candidate, session.userId)
-    ) {
+    const candidate = await getContestantEntryForVote(
+      session.eventId,
+      candidateId.toString(),
+      category,
+      session.userId,
+    );
+    if (!candidate) {
       return errorResponse("Candidato inelegível para esta categoria", 400);
     }
 
-    await (await getDb()).collection("votes").insertOne({
-      eventId: new ObjectId(session.eventId),
-      voterId: new ObjectId(session.userId),
-      voteForId,
-      categoryId,
-      votedAt: new Date(),
-    });
+    const db = await getDb();
+    const mongoSession = (await getMongoClient()).startSession();
+    try {
+      await mongoSession.withTransaction(async () => {
+        const currentRound = await db.collection("votingRounds").updateOne(
+          {
+            _id: round._id,
+            eventId: new ObjectId(session.eventId),
+            status: "open",
+            categoryIds: categoryId,
+          },
+          { $inc: { ballotMutationVersion: 1 } },
+          { session: mongoSession },
+        );
+        if (!currentRound.matchedCount) throw new VotingRoundClosedError();
+        await db.collection("votes").insertOne(
+          {
+            eventId: new ObjectId(session.eventId),
+            roundId: round._id,
+            voterRsvpId: new ObjectId(session.userId),
+            candidateId,
+            categoryId,
+            votedAt: new Date(),
+          },
+          { session: mongoSession },
+        );
+      });
+    } finally {
+      await mongoSession.endSession();
+    }
     return Response.json({ message: "Voto registrado com sucesso" });
   } catch (error) {
     if (error instanceof GuestAccessError)
       return errorResponse(error.message, error.status);
     if (error instanceof MongoServerError && error.code === 11000) {
       return errorResponse("Você já votou nesta categoria", 409);
+    }
+    if (error instanceof VotingRoundClosedError) {
+      return errorResponse("A rodada de votação não está aberta", 409);
     }
     logServerError("Vote creation failed", error);
     return errorResponse("Não foi possível registrar o voto", 500);

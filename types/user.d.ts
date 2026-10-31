@@ -4,28 +4,24 @@ type User = {
   fullName: string;
   email: string;
   imageUrl?: string | null;
+  contestant?: boolean;
   group?: boolean;
-  junior?: boolean;
   status?: "confirmed" | "cancelled";
 };
 
-type PublicUser = Omit<User, "email" | "status">;
-type AdminUser = User & { clerkUserId?: string };
+type PublicUser = Omit<User, "email" | "status" | "contestant">;
+type AdminUser = User & {
+  clerkUserId?: string;
+  groupEntries?: Array<{
+    displayName: string;
+    status: ContestantEntryStatus;
+  }>;
+};
 
 interface UserListItemProps {
-  user: User;
-  openEditModal: (user: User) => void;
-  handleDelete: (id: string) => void;
-}
-
-interface UserEditModalProps {
-  showModal: boolean;
-  modalUser: Partial<AdminUser>;
-  setModalUser: (u: Partial<AdminUser>) => void;
-  handleEdit: (user: Partial<User>) => void;
-  closeModal: () => void;
-  loading: boolean;
-  error?: string;
+  user: AdminUser;
+  year: number;
+  groupEntry?: NonNullable<AdminUser["groupEntries"]>[number];
 }
 
 interface UserListSearchProps {

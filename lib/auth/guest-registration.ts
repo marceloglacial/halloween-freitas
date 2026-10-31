@@ -1,7 +1,8 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
-import { MongoServerError, ObjectId } from "mongodb";
+import { cookies } from "next/headers";
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/db";
-import { normalizeEmail } from "@/lib/http";
+import { getEventById } from "@/lib/events";
 import type { UserDocument } from "@/lib/users";
 
 export class GuestAccessError extends Error {
@@ -14,29 +15,33 @@ export class GuestAccessError extends Error {
   }
 }
 
-async function verifiedIdentity() {
-  const { userId } = await auth();
-  if (!userId)
-    throw new GuestAccessError(401, "signed_out", "Entre para continuar.");
-  const user = await currentUser();
-  if (!user || user.id !== userId)
-    throw new GuestAccessError(
-      401,
-      "signed_out",
-      "Entre novamente para continuar.",
-    );
-  if (
-    !user.emailAddresses.some(
-      (email) => email.verification?.status === "verified",
-    )
-  ) {
-    throw new GuestAccessError(
-      403,
-      "unverified",
-      "Verifique seu email para continuar.",
-    );
-  }
-  return user;
+const COOKIE = "guest_session";
+const SESSION_SECONDS = 60 * 60 * 24 * 30;
+function sessionKey() {
+  const key = process.env.GUEST_SESSION_SECRET || process.env.CLERK_SECRET_KEY;
+  if (!key) throw new Error("Guest session secret is not configured");
+  return key;
+}
+function sign(payload: string) {
+  return createHmac("sha256", sessionKey()).update(payload).digest("base64url");
+}
+export function createGuestSession(userId: string, eventId: string) {
+  const payload = Buffer.from(JSON.stringify({ userId, eventId, exp: Math.floor(Date.now() / 1000) + SESSION_SECONDS })).toString("base64url");
+  return `${payload}.${sign(payload)}`;
+}
+async function sessionIdentity(eventId: string) {
+  const token = (await cookies()).get(COOKIE)?.value;
+  if (!token) throw new GuestAccessError(401, "signed_out", "Informe seu email para continuar.");
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature) throw new GuestAccessError(401, "signed_out", "Acesse novamente para continuar.");
+  const expected = Buffer.from(sign(payload));
+  const actual = Buffer.from(signature);
+  if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) throw new GuestAccessError(401, "signed_out", "Acesse novamente para continuar.");
+  try {
+    const value = JSON.parse(Buffer.from(payload, "base64url").toString()) as { userId: string; eventId: string; exp: number };
+    if (value.eventId !== eventId || value.exp <= Date.now() / 1000 || !ObjectId.isValid(value.userId)) throw new Error();
+    return value.userId;
+  } catch { throw new GuestAccessError(401, "signed_out", "Acesse novamente para continuar."); }
 }
 
 function guestIdentity(user: UserDocument) {
@@ -53,24 +58,10 @@ function guestIdentity(user: UserDocument) {
   };
 }
 
-async function linkedRegistration(eventId: string, clerkUserId: string) {
-  const users = (await getDb()).collection<UserDocument>("users");
-  const linked = await users
-    .find({ eventId: new ObjectId(eventId), clerkUserId })
-    .limit(2)
-    .toArray();
-  if (linked.length > 1)
-    throw new GuestAccessError(
-      409,
-      "conflict",
-      "Peça ao anfitrião para revisar seu vínculo de acesso.",
-    );
-  return linked[0] ?? null;
-}
-
 export async function getGuestRegistration(eventId: string) {
-  const identity = await verifiedIdentity();
-  const linked = await linkedRegistration(eventId, identity.id);
+  const userId = await sessionIdentity(eventId);
+  const users = (await getDb()).collection<UserDocument>("users");
+  const linked = await users.findOne({ _id: new ObjectId(userId), eventId: new ObjectId(eventId) });
   if (linked) return guestIdentity(linked);
   throw new GuestAccessError(
     403,
@@ -79,62 +70,58 @@ export async function getGuestRegistration(eventId: string) {
   );
 }
 
-export async function claimGuestRegistration(eventId: string) {
-  const identity = await verifiedIdentity();
-  const linked = await linkedRegistration(eventId, identity.id);
-  if (linked) return guestIdentity(linked);
-  const verifiedEmails = identity.emailAddresses
-    .filter((email) => email.verification?.status === "verified")
-    .map((email) => normalizeEmail(email.emailAddress))
-    .filter((email): email is string => Boolean(email));
-  const users = (await getDb()).collection<UserDocument>("users");
-  const matches = await users
-    .find({
-      eventId: new ObjectId(eventId),
-      normalizedEmail: { $in: verifiedEmails },
-    })
-    .limit(2)
-    .toArray();
-  if (!matches.length)
+export async function updateGuestRegistrationName(
+  eventId: string,
+  fullName: string,
+) {
+  const identity = await sessionIdentity(eventId);
+  const registration = await (await getDb()).collection<UserDocument>("users").findOne({ _id: new ObjectId(identity), eventId: new ObjectId(eventId) });
+  if (!registration)
+    throw new GuestAccessError(
+      403,
+      "unlinked",
+      "Verifique seu acesso para continuar.",
+    );
+  guestIdentity(registration);
+
+  const event = await getEventById(eventId);
+  if (!event)
     throw new GuestAccessError(
       404,
-      "not_registered",
-      "Use o email da sua confirmação. Não encontramos uma confirmação para esta conta neste evento.",
+      "event_not_found",
+      "Evento não encontrado.",
     );
-  if (
-    matches.length !== 1 ||
-    (matches[0].clerkUserId && matches[0].clerkUserId !== identity.id)
-  ) {
+
+  const contestantFrozen =
+    event.status === "archived" ||
+    event.contestEntryStatus === "closed" ||
+    event.votingStatus !== "not_started";
+  const update: Record<string, string | Date> = {
+    fullName,
+    updatedAt: new Date(),
+  };
+  if (registration.contestant) {
+    update.contestantName = contestantFrozen
+      ? (registration.contestantName ?? registration.fullName)
+      : fullName;
+  }
+
+  const users = (await getDb()).collection<UserDocument>("users");
+  const result = await users.updateOne(
+    {
+      _id: registration._id,
+      eventId: new ObjectId(eventId),
+      status: { $ne: "cancelled" },
+    },
+    { $set: update },
+  );
+  if (!result.matchedCount)
     throw new GuestAccessError(
       409,
       "conflict",
-      "Peça ao anfitrião para revisar seu vínculo de acesso.",
+      "Seu vínculo mudou. Atualize a página e tente novamente.",
     );
-  }
-  const registration = matches[0];
-  guestIdentity(registration);
-  try {
-    await users.updateOne(
-      {
-        _id: registration._id,
-        eventId: new ObjectId(eventId),
-        normalizedEmail: registration.normalizedEmail,
-        clerkUserId: { $exists: false },
-        status: { $ne: "cancelled" },
-      },
-      { $set: { clerkUserId: identity.id } },
-    );
-  } catch (error) {
-    if (!(error instanceof MongoServerError && error.code === 11000))
-      throw error;
-    // A simultaneous claim may have linked this identity. Re-read ownership.
-  }
-  const claimed = await linkedRegistration(eventId, identity.id);
-  if (!claimed || !claimed._id.equals(registration._id))
-    throw new GuestAccessError(
-      409,
-      "conflict",
-      "O vínculo mudou. Peça ao anfitrião para revisar seu acesso.",
-    );
-  return guestIdentity(claimed);
+
+  return { ...guestIdentity(registration), fullName };
 }
+

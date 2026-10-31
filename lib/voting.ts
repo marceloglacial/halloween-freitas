@@ -1,10 +1,10 @@
 export function isEligibleCandidate(
   category: Pick<Category, "eligibility">,
-  candidate: Pick<PublicUser, "_id" | "group" | "junior">,
-  voterId?: string,
+  candidate: Pick<PublicUser, "_id" | "group"> & {
+    contestant?: boolean;
+  },
 ) {
-  if (voterId && candidate._id === voterId) return false;
+  if (candidate.contestant === false) return false;
   if (category.eligibility === "group") return Boolean(candidate.group);
-  if (category.eligibility === "junior") return Boolean(candidate.junior);
   return true;
 }

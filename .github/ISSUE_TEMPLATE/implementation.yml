@@ -1,0 +1,97 @@
+name: Implementation issue
+description: Propose one bounded product or engineering change.
+title: "[AREA] Short, imperative title"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe one implementation issue. Use the approved product and architecture contracts as context, and keep unrelated work in separate issues.
+  - type: input
+    id: parent-epic
+    attributes:
+      label: Parent epic
+      description: Link the parent epic, or write None.
+      placeholder: "#36 — AI Development Harness"
+    validations:
+      required: true
+  - type: input
+    id: blocking-dependencies
+    attributes:
+      label: Blocking dependencies
+      description: List canonical GitHub issue numbers and feature keys for real technical blockers only. Do not add dependencies just because an issue belongs to an earlier or later epic; write None when unblocked.
+      placeholder: "#42 — AI-06, #43 — API-02"
+    validations:
+      required: true
+  - type: dropdown
+    id: release
+    attributes:
+      label: Release target
+      options:
+        - Foundation
+        - MVP
+        - Later
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P1 — MVP priority
+        - P2 — Follow-up
+    validations:
+      required: true
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User story
+      description: State who needs what and why.
+      placeholder: As a ..., I want ..., so that ...
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and boundaries
+      description: List included behavior and explicitly excluded adjacent work.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: Write observable outcomes, one per line.
+      placeholder: |
+        - [ ] Given ..., when ..., then ...
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Test impact and validation
+      description: Name relevant success, failure, authorization, privacy, concurrency, isolation, documentation, or UI checks. Explain when a category does not apply.
+    validations:
+      required: true
+  - type: textarea
+    id: agent-routing
+    attributes:
+      label: Agent routing
+      description: Name relevant skills from AGENTS.md and any useful bounded, optional subagent review.
+      placeholder: "Skills: backend-data, event-lifecycle. Optional reviewer: qa_security for an independent isolation review."
+    validations:
+      required: true
+  - type: dropdown
+    id: review-status
+    attributes:
+      label: Review status
+      options:
+        - Proposed
+        - Ready for implementation
+        - Blocked
+        - Ready for human review
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        The agent leaves implementation changes uncommitted for review. After approval of the reviewed change set, the agent commits and merges locally into main, validates, and safely removes the issue worktree and local branch. This does not push, close the issue or epic, create a PR, or deploy. Push and GitHub issue/epic closure each need a separate explicit request. Issue fields and labels do not grant approval.

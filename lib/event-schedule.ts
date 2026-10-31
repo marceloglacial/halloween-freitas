@@ -1,18 +1,16 @@
 import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
 
 export const eventDateFields = [
-  "registrationOpensAt",
-  "registrationClosesAt",
-  "startsAt",
+  "registrationStartsAt",
+  "eventStartsAt",
 ] as const;
 
 export type EventDateField = (typeof eventDateFields)[number];
 export type LocalEventSchedule = Record<EventDateField, string>;
 
 export const eventDateLabels: Record<EventDateField, string> = {
-  registrationOpensAt: "Abertura das inscrições",
-  registrationClosesAt: "Encerramento das inscrições",
-  startsAt: "Início do evento",
+  registrationStartsAt: "Abertura das inscrições",
+  eventStartsAt: "Início do evento",
 };
 
 export type ScheduleCollision = {
@@ -36,6 +34,7 @@ export type ParsedEventInput = Omit<EventInput, EventDateField> &
   Record<EventDateField, Date>;
 
 const localDateTimePattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
+const localDateTimeFormat = "yyyy-MM-dd'T'HH:mm";
 
 function localDateTimeMilliseconds(value: string) {
   const match = localDateTimePattern.exec(value);
@@ -63,67 +62,12 @@ function shiftLocalDateTime(value: string, minutes: number) {
   return new Date(milliseconds + minutes * 60_000).toISOString().slice(0, 16);
 }
 
-export function deriveRegistrationClose(startsAt: string) {
-  return shiftLocalDateTime(startsAt, -1);
-}
-
-export function withDerivedRegistrationClose(
-  schedule: LocalEventSchedule,
-): LocalEventSchedule {
-  return {
-    ...schedule,
-    registrationClosesAt: deriveRegistrationClose(schedule.startsAt),
-  };
-}
-
-function localMinuteDifference(laterValue: string, earlierValue: string) {
-  const later = localDateTimeMilliseconds(laterValue);
-  const earlier = localDateTimeMilliseconds(earlierValue);
-  return later === null || earlier === null ? null : (later - earlier) / 60_000;
-}
-
-const scheduleCascadeFields: Record<EventDateField, readonly EventDateField[]> =
-  {
-    registrationOpensAt: ["registrationOpensAt"],
-    registrationClosesAt: ["registrationClosesAt"],
-    startsAt: eventDateFields.slice(1),
-  };
-
-export function getScheduleCascadeFields(field: EventDateField) {
-  return scheduleCascadeFields[field];
-}
-
 export function cascadeScheduleField(
   schedule: LocalEventSchedule,
   field: EventDateField,
   nextValue: string,
-  previousValue = schedule[field],
 ): LocalEventSchedule {
-  const minuteDelta = localMinuteDifference(nextValue, previousValue);
-  if (minuteDelta === null) {
-    return field === "startsAt"
-      ? {
-          ...schedule,
-          startsAt: nextValue,
-          registrationClosesAt: deriveRegistrationClose(nextValue),
-        }
-      : { ...schedule, [field]: nextValue };
-  }
-
-  const cascadedFields = new Set(getScheduleCascadeFields(field));
-  return Object.fromEntries(
-    eventDateFields.map((scheduleField) => [
-      scheduleField,
-      scheduleField === field
-        ? nextValue
-        : field === "startsAt" && scheduleField === "registrationClosesAt"
-          ? deriveRegistrationClose(nextValue)
-          : cascadedFields.has(scheduleField)
-            ? shiftLocalDateTime(schedule[scheduleField], minuteDelta) ||
-              schedule[scheduleField]
-            : schedule[scheduleField],
-    ]),
-  ) as LocalEventSchedule;
+  return { ...schedule, [field]: nextValue };
 }
 
 export function getScheduleFieldBounds(
@@ -131,99 +75,36 @@ export function getScheduleFieldBounds(
   field: EventDateField,
   eventYear: number,
 ): LocalDateTimeBounds {
-  const bounds: LocalDateTimeBounds = {};
-  if (field === "registrationClosesAt") {
-    const derivedValue = deriveRegistrationClose(schedule.startsAt);
-    return derivedValue ? { min: derivedValue, max: derivedValue } : bounds;
-  }
+  if (field === "registrationStartsAt") return {};
+
+  const minimum = shiftLocalDateTime(schedule.registrationStartsAt, 0);
   const hasValidEventYear =
     Number.isInteger(eventYear) && eventYear >= 2000 && eventYear <= 2100;
-  const cascadedFields = new Set(getScheduleCascadeFields(field));
-  let minimumDelta: number | null = null;
-  let maximumDelta: number | null = null;
-
-  for (let index = 1; index < eventDateFields.length; index += 1) {
-    const earlierField = eventDateFields[index - 1];
-    const laterField = eventDateFields[index];
-    const earlierMoves = cascadedFields.has(earlierField);
-    const laterMoves = cascadedFields.has(laterField);
-    if (earlierMoves === laterMoves) continue;
-
-    const earlier = localDateTimeMilliseconds(schedule[earlierField]);
-    const later = localDateTimeMilliseconds(schedule[laterField]);
-    if (earlier === null || later === null) continue;
-
-    if (laterMoves) {
-      const delta = (earlier + 60_000 - later) / 60_000;
-      minimumDelta =
-        minimumDelta === null ? delta : Math.max(minimumDelta, delta);
-    } else {
-      const delta = (later - 60_000 - earlier) / 60_000;
-      maximumDelta =
-        maximumDelta === null ? delta : Math.min(maximumDelta, delta);
-    }
-  }
-
-  if (cascadedFields.has("startsAt") && hasValidEventYear) {
-    const yearMinimumDelta = localMinuteDifference(
-      `${eventYear}-01-01T00:00`,
-      schedule.startsAt,
-    );
-    const yearMaximumDelta = localMinuteDifference(
-      `${eventYear}-12-31T23:59`,
-      schedule.startsAt,
-    );
-    if (yearMinimumDelta !== null) {
-      minimumDelta =
-        minimumDelta === null
-          ? yearMinimumDelta
-          : Math.max(minimumDelta, yearMinimumDelta);
-    }
-    if (yearMaximumDelta !== null) {
-      maximumDelta =
-        maximumDelta === null
-          ? yearMaximumDelta
-          : Math.min(maximumDelta, yearMaximumDelta);
-    }
-  }
-
-  if (minimumDelta !== null) {
-    const minimum = shiftLocalDateTime(schedule[field], minimumDelta);
-    if (minimum) bounds.min = minimum;
-  }
-  if (maximumDelta !== null) {
-    const maximum = shiftLocalDateTime(schedule[field], maximumDelta);
-    if (maximum) bounds.max = maximum;
-  }
-
-  return bounds;
+  return {
+    ...(minimum ? { min: minimum } : {}),
+    ...(hasValidEventYear ? { max: `${eventYear}-12-31T23:59` } : {}),
+  };
 }
 
 export function getScheduleCollisions(
   schedule: LocalEventSchedule,
 ): ScheduleCollision[] {
-  const collisions: ScheduleCollision[] = [];
-  for (let index = 1; index < eventDateFields.length; index += 1) {
-    const earlierField = eventDateFields[index - 1];
-    const laterField = eventDateFields[index];
-    const earlierValue = schedule[earlierField];
-    const laterValue = schedule[laterField];
-    if (
-      isLocalDateTime(earlierValue) &&
-      isLocalDateTime(laterValue) &&
-      laterValue <= earlierValue
-    ) {
-      collisions.push({
-        earlierField,
-        laterField,
-        suggestedLocalValue:
-          laterField === "registrationClosesAt"
-            ? shiftLocalDateTime(laterValue, -1)
-            : shiftLocalDateTime(earlierValue, 1),
-      });
-    }
+  const registrationStart = schedule.registrationStartsAt;
+  const eventStart = schedule.eventStartsAt;
+  if (
+    !isLocalDateTime(registrationStart) ||
+    !isLocalDateTime(eventStart) ||
+    eventStart >= registrationStart
+  ) {
+    return [];
   }
-  return collisions;
+  return [
+    {
+      earlierField: "registrationStartsAt",
+      laterField: "eventStartsAt",
+      suggestedLocalValue: shiftLocalDateTime(registrationStart, 1),
+    },
+  ];
 }
 
 function formatLocalDateTime(value: string) {
@@ -234,9 +115,6 @@ function formatLocalDateTime(value: string) {
 }
 
 export function scheduleCollisionMessage(collision: ScheduleCollision) {
-  if (collision.laterField === "registrationClosesAt") {
-    return `Defina "${eventDateLabels[collision.earlierField]}" antes de "${eventDateLabels[collision.laterField]}". Sugestão: use ${formatLocalDateTime(collision.suggestedLocalValue)} ou um horário anterior.`;
-  }
   return `Defina "${eventDateLabels[collision.laterField]}" depois de "${eventDateLabels[collision.earlierField]}". Sugestão: use ${formatLocalDateTime(collision.suggestedLocalValue)} ou um horário posterior.`;
 }
 
@@ -255,7 +133,7 @@ export function eventToLocalSchedule(
   return Object.fromEntries(
     eventDateFields.map((field) => [
       field,
-      formatInTimeZone(event[field], event.timezone, "yyyy-MM-dd'T'HH:mm"),
+      formatInTimeZone(event[field], event.timezone, localDateTimeFormat),
     ]),
   ) as LocalEventSchedule;
 }
@@ -272,14 +150,41 @@ function shiftLocalDate(value: string, years: number) {
 export function shiftEventSchedule(event: HalloweenEvent, targetYear: number) {
   const local = eventToLocalSchedule(event);
   const yearDelta = targetYear - event.year;
-  return withDerivedRegistrationClose(
-    Object.fromEntries(
-      eventDateFields.map((field) => [
-        field,
-        shiftLocalDate(local[field], yearDelta),
-      ]),
-    ) as LocalEventSchedule,
-  );
+  return Object.fromEntries(
+    eventDateFields.map((field) => [
+      field,
+      shiftLocalDate(local[field], yearDelta),
+    ]),
+  ) as LocalEventSchedule;
+}
+
+function parseEventDate(
+  localValue: string,
+  timezone: string,
+): { value: Date } | { error: string } {
+  const date = fromZonedTime(localValue, timezone);
+  if (
+    Number.isNaN(date.getTime()) ||
+    formatInTimeZone(date, timezone, localDateTimeFormat) !== localValue
+  ) {
+    return { error: "Data do evento inexistente neste fuso horário" };
+  }
+
+  // Detect a second instant with the same wall-clock value during a DST fold.
+  for (let minutes = 15; minutes <= 240; minutes += 15) {
+    for (const offset of [-minutes, minutes]) {
+      if (
+        formatInTimeZone(
+          new Date(date.getTime() + offset * 60_000),
+          timezone,
+          localDateTimeFormat,
+        ) === localValue
+      ) {
+        return { error: "Horário ambíguo neste fuso horário" };
+      }
+    }
+  }
+  return { value: date };
 }
 
 export function parseEventInput(
@@ -308,41 +213,34 @@ export function parseEventInput(
     const localValue = body[field];
     if (
       typeof localValue !== "string" ||
-      !localDateTimePattern.test(localValue)
+      !localDateTimePattern.test(localValue) ||
+      localDateTimeMilliseconds(localValue) === null
     ) {
       return { error: "Preencha todas as datas do evento" };
     }
-    const parsed = fromZonedTime(localValue, timezone);
-    if (
-      Number.isNaN(parsed.getTime()) ||
-      formatInTimeZone(parsed, timezone, "yyyy-MM-dd'T'HH:mm") !== localValue
-    ) {
-      return { error: "Data do evento inválida" };
-    }
-    parsedDates[field] = parsed;
+    const parsed = parseEventDate(localValue, timezone);
+    if ("error" in parsed) return { error: parsed.error };
+    parsedDates[field] = parsed.value;
   }
 
-  const localStartYear = Number(
-    formatInTimeZone(parsedDates.startsAt, timezone, "yyyy"),
-  );
-  if (localStartYear !== year) {
+  if (
+    formatInTimeZone(parsedDates.eventStartsAt, timezone, "yyyy") !==
+    String(year)
+  ) {
     return { error: "O início do evento deve pertencer ao ano selecionado" };
   }
-  if (
-    body.registrationClosesAt !==
-    deriveRegistrationClose(body.startsAt as string)
-  ) {
+  if (parsedDates.eventStartsAt < parsedDates.registrationStartsAt) {
     return {
-      error:
-        "O encerramento das inscrições deve ser exatamente um minuto antes do início do evento",
+      error: scheduleCollisionMessage({
+        earlierField: "registrationStartsAt",
+        laterField: "eventStartsAt",
+        suggestedLocalValue: shiftLocalDateTime(
+          body.registrationStartsAt as string,
+          1,
+        ),
+      }),
     };
   }
-  const collision = getScheduleCollisions(
-    Object.fromEntries(
-      eventDateFields.map((field) => [field, body[field]]),
-    ) as LocalEventSchedule,
-  )[0];
-  if (collision) return { error: scheduleCollisionMessage(collision) };
 
   return {
     value: {

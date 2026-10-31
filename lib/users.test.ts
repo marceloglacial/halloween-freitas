@@ -39,8 +39,19 @@ describe("public user serialization", () => {
       fullName: "Ana",
       imageUrl: undefined,
       group: undefined,
-      junior: undefined,
     });
+  });
+  it("uses the frozen contestant name in public candidate views", () => {
+    expect(
+      toPublicUser({
+        _id: "user",
+        eventId: "event",
+        fullName: "Current RSVP name",
+        contestantName: "Frozen candidate name",
+        contestant: true,
+        email: "private@example.com",
+      }),
+    ).toMatchObject({ fullName: "Frozen candidate name" });
   });
   it("excludes cancelled voting candidates without hiding historical portraits", async () => {
     const eventId = new ObjectId("507f1f77bcf86cd799439011");
@@ -72,5 +83,23 @@ describe("public user serialization", () => {
         (user) => user.fullName,
       ),
     ).toEqual(["Ana", "Bia"]);
+  });
+
+  it("keeps frozen candidate names in event-scoped public listings", async () => {
+    const eventId = new ObjectId("507f1f77bcf86cd799439011");
+    documents.mockResolvedValue([
+      {
+        _id: new ObjectId("507f1f77bcf86cd799439012"),
+        eventId,
+        fullName: "Updated RSVP name",
+        contestantName: "Frozen candidate name",
+        email: "private@example.com",
+        normalizedEmail: "private@example.com",
+        contestant: true,
+      },
+    ]);
+    expect(
+      (await getPublicVotingUsersForEvent(eventId.toString()))[0].fullName,
+    ).toBe("Frozen candidate name");
   });
 });

@@ -4,11 +4,13 @@ import CategoryLink from "./category-link";
 interface CategoryListProps {
   categories: Category[];
   votedCategoryIds: Set<Category["_id"]>;
+  availableCategoryIds: Set<Category["_id"]>;
 }
 
 const CategoryList: FC<CategoryListProps> = async ({
   categories,
   votedCategoryIds,
+  availableCategoryIds,
 }) => {
   return (
     <div className="grid max-w-3xl gap-8 lg:grid-cols-2">
@@ -21,6 +23,7 @@ const CategoryList: FC<CategoryListProps> = async ({
             key={category._id}
             category={category}
             alreadyVoted={alreadyVoted}
+            availableInRound={availableCategoryIds.has(category._id)}
             firstClassname={firstClassname}
           />
         );

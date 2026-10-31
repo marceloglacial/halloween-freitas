@@ -6,15 +6,25 @@ describe("guest return destinations", () => {
   it("retains the requested category and selected event", () => {
     expect(
       guestReturnPath(
-        "/votacao/categories/507f1f77bcf86cd799439012?eventId=other",
+        "/meu-halloween/votacao/categories/507f1f77bcf86cd799439012?eventId=other",
         eventId,
       ),
-    ).toBe(`/votacao/categories/507f1f77bcf86cd799439012?eventId=${eventId}`);
+    ).toBe(`/meu-halloween/votacao/categories/507f1f77bcf86cd799439012?eventId=${eventId}`);
     expect(
       new URL(guestAccessUrl(eventId), "http://localhost").searchParams.get(
         "eventId",
       ),
     ).toBe(eventId);
+  });
+  it("returns an authenticated guest to their selected-edition profile", () => {
+    expect(guestReturnPath(`/perfil?eventId=${eventId}`, eventId)).toBe(
+      `/perfil?eventId=${eventId}`,
+    );
+  });
+  it("returns an authenticated guest to their selected-edition portal", () => {
+    expect(guestReturnPath(`/meu-halloween?eventId=${eventId}`, eventId)).toBe(
+      `/meu-halloween?eventId=${eventId}`,
+    );
   });
   it.each([
     "https://evil.test",
@@ -27,7 +37,7 @@ describe("guest return destinations", () => {
     null,
   ])("uses a safe default for %s", (path) => {
     expect(guestReturnPath(path, eventId)).toBe(
-      `/votacao/categories?eventId=${eventId}`,
+      `/meu-halloween/votacao?eventId=${eventId}`,
     );
   });
 });

@@ -15,11 +15,11 @@ export const UserListSearch: React.FC<UserListSearchProps> = ({
   return (
     <input
       type="text"
-      aria-label="Buscar usuários por nome ou email"
+      aria-label="Buscar convidados por nome ou email"
       value={search}
       onChange={handleChange}
-      placeholder="Search users by name or email..."
-      className="w-full rounded-lg border border-gray-300 bg-white/20 px-4 py-2 text-white placeholder:text-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+      placeholder="Buscar convidados por nome ou email…"
+      className="w-full rounded-lg border border-gray-300 bg-white/20 px-4 py-2 text-white placeholder:text-white focus-visible:ring-2 focus-visible:ring-orange-300"
     />
   );
 };

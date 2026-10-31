@@ -1,36 +1,48 @@
 import { ObjectId } from "mongodb";
-import { formatInTimeZone } from "date-fns-tz";
 import { getDb } from "@/lib/db";
+export { getRegistrationState } from "@/util/registration-state";
 
 type EventDocument = Omit<
   HalloweenEvent,
   | "_id"
+  | "registrationStartsAt"
+  | "eventStartsAt"
   | "startsAt"
   | "registrationOpensAt"
-  | "registrationClosesAt"
+  | "contestEntryStatus"
   | "votingStatus"
   | "resultsPublished"
 > & {
   _id: ObjectId;
-  startsAt: Date;
-  registrationOpensAt: Date;
-  registrationClosesAt: Date;
+  registrationStartsAt?: Date;
+  eventStartsAt?: Date;
+  /** Legacy event date fields remain readable until existing data is migrated. */
+  startsAt?: Date;
+  registrationOpensAt?: Date;
+  contestEntryStatus?: ContestEntryStatus;
   votingStatus?: VotingStatus;
   resultsPublished?: boolean;
 };
 
 function serializeEvent(event: EventDocument): HalloweenEvent {
+  const registrationStartsAt =
+    event.registrationStartsAt ?? event.registrationOpensAt;
+  const eventStartsAt = event.eventStartsAt ?? event.startsAt;
+
+  if (!registrationStartsAt || !eventStartsAt) {
+    throw new Error(`Event ${event._id.toString()} is missing schedule dates`);
+  }
+
   return {
     _id: event._id.toString(),
-    year:
-      event.year ??
-      Number(formatInTimeZone(event.startsAt, event.timezone, "yyyy")),
+    year: event.year,
     slug: event.slug,
     title: event.title,
     timezone: event.timezone,
-    startsAt: new Date(event.startsAt).toISOString(),
-    registrationOpensAt: new Date(event.registrationOpensAt).toISOString(),
-    registrationClosesAt: new Date(event.registrationClosesAt).toISOString(),
+    registrationStartsAt: new Date(registrationStartsAt).toISOString(),
+    eventStartsAt: new Date(eventStartsAt).toISOString(),
+    contestEntryStatus:
+      event.contestEntryStatus === "closed" ? "closed" : "open",
     votingStatus:
       event.votingStatus === "open" || event.votingStatus === "ended"
         ? event.votingStatus
@@ -44,13 +56,22 @@ export async function getCurrentEvent(): Promise<HalloweenEvent | null> {
   const db = await getDb();
   const active = await db
     .collection<EventDocument>("events")
-    .findOne({ status: "active" }, { sort: { startsAt: -1 } });
+    .findOne({ status: "active" }, { sort: { year: -1, _id: 1 } });
   if (active) return serializeEvent(active);
 
   const latest = await db
     .collection<EventDocument>("events")
-    .findOne({}, { sort: { startsAt: -1 } });
+    .findOne({}, { sort: { year: -1, _id: 1 } });
   return latest ? serializeEvent(latest) : null;
+}
+
+/** Returns the active edition only; unlike getCurrentEvent, this has no historical fallback. */
+export async function getActiveEvent(): Promise<HalloweenEvent | null> {
+  const db = await getDb();
+  const active = await db
+    .collection<EventDocument>("events")
+    .findOne({ status: "active" }, { sort: { year: -1, _id: 1 } });
+  return active ? serializeEvent(active) : null;
 }
 
 export async function getEventBySlug(
@@ -75,7 +96,7 @@ export async function getEvents(): Promise<HalloweenEvent[]> {
   const events = await db
     .collection<EventDocument>("events")
     .find({})
-    .sort({ startsAt: -1 })
+    .sort({ year: -1, _id: 1 })
     .toArray();
   return events.map(serializeEvent);
 }
@@ -89,21 +110,8 @@ export function getEventPhase(
   if (event.votingStatus === "open") return "voting";
   if (event.votingStatus === "ended") return "awaiting-results";
   const time = now.getTime();
-  if (time < new Date(event.registrationOpensAt).getTime()) return "upcoming";
-  if (time < new Date(event.registrationClosesAt).getTime())
-    return "registration";
-  return "upcoming";
-}
-
-export function getRegistrationState(
-  event: HalloweenEvent,
-  now = new Date(),
-): RegistrationState {
-  if (event.status !== "active") return "closed";
-  const time = now.getTime();
-  if (time < new Date(event.registrationOpensAt).getTime()) return "upcoming";
-  if (time >= new Date(event.registrationClosesAt).getTime()) return "closed";
-  return "open";
+  if (time < new Date(event.registrationStartsAt).getTime()) return "upcoming";
+  return "registration";
 }
 
 export function isVotingOpen(event: HalloweenEvent) {

@@ -4,7 +4,7 @@ interface Category {
   title: string;
   icon: string;
   order: number;
-  eligibility: "all" | "group" | "junior";
+  eligibility: "all" | "group";
 }
 
 interface CategoryListProps {

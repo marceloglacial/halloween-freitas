@@ -1,0 +1,53 @@
+---
+name: backend-data
+description: Change Halloween Freitas API handlers, server queries, request validation, authentication integration, persistence access, and response contracts. Use for server-side implementation; live schema, index, or migration operations belong to halloween-database-operations.
+---
+
+# Backend data
+
+Keep database access, identity resolution, authorization, lifecycle decisions,
+and response shaping on the server. Treat the [product](../../../docs/product.md),
+[architecture](../../../docs/architecture.md), and [data model](../../../docs/data-model.md)
+as target contracts. Read [repository instructions](../../../AGENTS.md) and the
+matching installed Next.js guide before changing framework code.
+
+## Procedure
+
+1. Trace the affected route handler, colocated tests, shared helpers, response
+   serializer, and client consumer. Record request fields, success shape, and
+   expected failure statuses before changing a contract.
+2. Normalize and validate untrusted input through shared helpers. Construct
+   explicit write fields; never apply a request body wholesale.
+3. Use Clerk authorization for administrators. Derive guest identity from the
+   signed, expiring application session created after a normalized RSVP email
+   match, and recheck its RSVP within the same `eventId`. Guest access does not
+   verify mailbox control: anyone who knows the email can act as that guest.
+   Treat client-supplied RSVP and voter IDs as lookup input, never identity
+   proof. Keep access and logout responses `no-store` and session cookies
+   HttpOnly, SameSite, and Secure in production.
+4. Scope every guest, contestant, category, asset, vote, and result operation
+   to `eventId`. Serialize MongoDB IDs and dates explicitly; omit email, Clerk
+   IDs, private drafts, unpublished votes, and private asset identifiers from
+   public responses.
+5. Use atomic writes and database uniqueness for enrollment cutoffs and
+   duplicate-sensitive operations. Application prechecks alone do
+   not protect concurrent requests.
+6. For party-gallery work, require a valid RSVP for the same edition, allow
+   uploads after `eventStartsAt` even after voting opens, keep photos private
+   until album-wide publication, and scope administrator removal to that
+   edition. Party photos are separate from contest-entry photos and have no
+   per-photo approval state. Follow [lifecycle](../../../docs/lifecycle.md)
+   and [testing](../../../docs/testing.md).
+
+## Output checks
+
+- Cover malformed input, expected failure statuses, authorization, privacy,
+  concurrency, and cross-edition isolation where the changed path requires
+  them.
+- Update affected consumers and types with response-contract changes.
+- Run repository-required code checks and report validation, plus any new
+  compatibility, environment, index, or deployment requirements.
+
+For schema/index design or live database work, read
+[halloween-database-operations](../halloween-database-operations/SKILL.md) and
+`docs/operations.md`. Live mutations require separate explicit authorization.

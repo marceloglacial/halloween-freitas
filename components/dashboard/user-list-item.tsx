@@ -1,58 +1,31 @@
-import React from "react";
-import { CldImage } from "next-cloudinary";
+import Link from "next/link";
 
-export function UserListItem({
-  user,
-  openEditModal,
-  handleDelete,
-}: UserListItemProps) {
+export function UserListItem({ user, year, groupEntry }: UserListItemProps) {
   return (
-    <li
-      key={user._id}
-      className="flex items-center gap-4 rounded-lg bg-white/10 p-4"
-    >
-      <CldImage
-        src={user.imageUrl || "halloween-freitas/apple-icon_fqkaye"}
-        width={900}
-        height={600}
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        alt="User Image"
-        className="h-10 w-10 rounded-full"
-      />
-      <div className="flex-1">
-        <div className="w-32 truncate font-semibold md:w-fit">
-          {user.fullName}
+    <li className="rounded-lg bg-white/10">
+      <Link
+        href={`/dashboard/convidados/${user._id}?year=${year}`}
+        className="flex items-center justify-between gap-3 rounded-lg p-4 transition hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+        aria-label={
+          groupEntry
+            ? `Gerenciar o grupo ${groupEntry.displayName}, responsável ${user.fullName}, ${user.email}`
+            : `Gerenciar ${user.fullName}, ${user.email}`
+        }
+      >
+        <div className="min-w-0 flex-1">
+          <div className="min-w-0 truncate font-semibold">
+            {groupEntry ? `Grupo: ${groupEntry.displayName}` : user.fullName}
+          </div>
+          <div className="truncate text-sm text-gray-400">
+            {groupEntry
+              ? `Responsável: ${user.fullName} · ${user.email}${groupEntry.status === "draft" ? " · inscrição sem foto" : ""}`
+              : user.email}
+          </div>
         </div>
-        <div className="w-32 truncate text-sm text-gray-400 md:w-fit">
-          {user.email}
-        </div>
-        <div className="mt-1 flex gap-2">
-          {user.group && (
-            <span className="rounded bg-orange-200 px-2 py-1 text-xs text-orange-800">
-              Grupo
-            </span>
-          )}
-          {user.junior && (
-            <span className="rounded bg-blue-200 px-2 py-1 text-xs text-blue-800">
-              Junior
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="flex lg:gap-2">
-        <button
-          className="cursor-pointer rounded px-4 py-3 text-xs text-white hover:bg-blue-700"
-          onClick={() => openEditModal(user)}
-        >
-          Edit
-        </button>
-        <button
-          className="cursor-pointer rounded px-4 py-2 text-xs text-white hover:bg-red-700"
-          onClick={() => handleDelete(user._id)}
-        >
-          Delete
-        </button>
-      </div>
+        <span aria-hidden="true" className="shrink-0 text-sm text-orange-200">
+          Gerenciar →
+        </span>
+      </Link>
     </li>
   );
 }

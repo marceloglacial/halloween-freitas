@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   cascadeScheduleField,
-  deriveRegistrationClose,
   eventToLocalSchedule,
   getScheduleFieldBounds,
+  getScheduleCollisions,
   parseEventInput,
   shiftEventSchedule,
-  withDerivedRegistrationClose,
 } from "@/lib/event-schedule";
 
 const event: HalloweenEvent = {
@@ -15,139 +14,171 @@ const event: HalloweenEvent = {
   slug: "halloween-2024",
   title: "Halloween 2024",
   timezone: "America/Toronto",
-  registrationOpensAt: "2024-08-01T04:00:00.000Z",
-  registrationClosesAt: "2024-10-31T23:59:00.000Z",
-  startsAt: "2024-11-01T00:00:00.000Z",
-  votingStatus: "ended",
-  resultsPublished: true,
-  status: "archived",
+  registrationStartsAt: "2024-08-01T04:00:00.000Z",
+  eventStartsAt: "2024-11-01T00:00:00.000Z",
+  votingStatus: "not_started",
+  resultsPublished: false,
+  status: "active",
+};
+
+const input = {
+  year: 2024,
+  title: event.title,
+  timezone: event.timezone,
+  registrationStartsAt: "2024-08-01T00:00",
+  eventStartsAt: "2024-10-31T20:00",
 };
 
 describe("event schedule", () => {
-  it("formats stored instants in the event timezone", () => {
-    expect(eventToLocalSchedule(event).startsAt).toBe("2024-10-31T20:00");
+  it("formats persisted instants in the event timezone", () => {
+    expect(eventToLocalSchedule(event)).toEqual({
+      registrationStartsAt: "2024-08-01T00:00",
+      eventStartsAt: "2024-10-31T20:00",
+    });
   });
 
-  it("shifts wall-clock values and clamps leap day", () => {
+  it("shifts local schedule values and clamps leap day", () => {
     const leapEvent = {
       ...event,
-      registrationOpensAt: "2024-02-29T17:00:00.000Z",
+      registrationStartsAt: "2024-02-29T17:00:00.000Z",
     };
-    expect(shiftEventSchedule(leapEvent, 2025).registrationOpensAt).toBe(
+    expect(shiftEventSchedule(leapEvent, 2025).registrationStartsAt).toBe(
       "2025-02-28T12:00",
     );
-    expect(shiftEventSchedule(leapEvent, 2025).registrationClosesAt).toBe(
-      "2025-10-31T19:59",
+    expect(shiftEventSchedule(leapEvent, 2025).eventStartsAt).toBe(
+      "2025-10-31T20:00",
     );
   });
 
-  it("derives registration closing across calendar boundaries", () => {
-    expect(deriveRegistrationClose("2025-01-01T00:00")).toBe(
-      "2024-12-31T23:59",
+  it("parses local schedule input to BSON-compatible instants", () => {
+    const result = parseEventInput(input);
+    expect("value" in result && result.value.registrationStartsAt).toEqual(
+      new Date("2024-08-01T04:00:00.000Z"),
     );
-    expect(deriveRegistrationClose("2024-03-01T00:00")).toBe(
-      "2024-02-29T23:59",
+    expect("value" in result && result.value.eventStartsAt).toEqual(
+      new Date("2024-11-01T00:00:00.000Z"),
     );
   });
 
-  it("normalizes a legacy registration closing from event start", () => {
-    const schedule = {
-      ...eventToLocalSchedule(event),
-      registrationClosesAt: "2024-09-01T00:00",
-    };
-
-    expect(withDerivedRegistrationClose(schedule)).toEqual({
-      ...schedule,
-      registrationClosesAt: "2024-10-31T19:59",
-    });
-  });
-
-  it("parses valid local dates into UTC dates", () => {
+  it("allows the event and registration starts to be equal", () => {
     const result = parseEventInput({
-      ...eventToLocalSchedule(event),
-      year: 2024,
-      title: event.title,
-      timezone: event.timezone,
+      ...input,
+      registrationStartsAt: "2024-10-31T20:00",
     });
-    expect("value" in result && result.value.startsAt.toISOString()).toBe(
-      event.startsAt,
+    expect("value" in result && result.value.eventStartsAt).toEqual(
+      new Date("2024-11-01T00:00:00.000Z"),
     );
   });
 
-  it.each(["2024-10-31T19:58", "2024-10-31T20:00"])(
-    "rejects a non-derived registration closing at %s",
-    (registrationClosesAt) => {
-      const result = parseEventInput({
-        ...eventToLocalSchedule(event),
-        registrationClosesAt,
-        year: 2024,
-        title: event.title,
-        timezone: event.timezone,
-      });
-
-      expect(result).toEqual({
-        error:
-          "O encerramento das inscrições deve ser exatamente um minuto antes do início do evento",
-      });
-    },
-  );
-
-  it("rejects registration opening at the derived closing minute", () => {
-    const schedule = eventToLocalSchedule(event);
-    const result = parseEventInput({
-      ...schedule,
-      registrationOpensAt: schedule.registrationClosesAt,
-      year: 2024,
-      title: event.title,
-      timezone: event.timezone,
-    });
-
-    expect(result).toEqual({
-      error:
-        'Defina "Abertura das inscrições" antes de "Encerramento das inscrições". Sugestão: use 31/10/2024 às 19:58 ou um horário anterior.',
-    });
-  });
-
-  it("keeps registration opening independent", () => {
-    const schedule = eventToLocalSchedule(event);
+  it("requires registration to start before the event when they differ", () => {
     expect(
-      cascadeScheduleField(schedule, "registrationOpensAt", "2024-08-02T01:00"),
-    ).toEqual({ ...schedule, registrationOpensAt: "2024-08-02T01:00" });
-  });
-
-  it("derives registration closing when the event start moves", () => {
-    const schedule = eventToLocalSchedule(event);
-    expect(
-      cascadeScheduleField(schedule, "startsAt", "2024-11-01T20:00"),
+      parseEventInput({
+        ...input,
+        registrationStartsAt: "2024-10-31T20:01",
+      }),
     ).toEqual({
-      registrationOpensAt: "2024-08-01T00:00",
-      registrationClosesAt: "2024-11-01T19:59",
-      startsAt: "2024-11-01T20:00",
+      error:
+        'Defina "Início do evento" depois de "Abertura das inscrições". Sugestão: use 31/10/2024 às 20:02 ou um horário posterior.',
     });
   });
 
-  it("constrains event start by registration opening and selected year", () => {
-    const schedule = eventToLocalSchedule(event);
-    const bounds = getScheduleFieldBounds(schedule, "startsAt", 2024);
-
+  it("shows a form collision only when the event starts before registration", () => {
     expect(
-      cascadeScheduleField(schedule, "startsAt", bounds.min!)
-        .registrationClosesAt,
-    ).toBe("2024-08-01T00:01");
+      getScheduleCollisions({
+        registrationStartsAt: "2024-10-31T20:00",
+        eventStartsAt: "2024-10-31T20:00",
+      }),
+    ).toHaveLength(0);
     expect(
-      cascadeScheduleField(schedule, "startsAt", bounds.max!).startsAt,
-    ).toBe("2024-12-31T23:59");
+      getScheduleCollisions({
+        registrationStartsAt: "2024-10-31T20:00",
+        eventStartsAt: "2024-10-31T20:01",
+      }),
+    ).toHaveLength(0);
+    expect(
+      getScheduleCollisions({
+        registrationStartsAt: "2024-10-31T20:01",
+        eventStartsAt: "2024-10-31T20:00",
+      }),
+    ).toHaveLength(1);
   });
 
-  it("rejects local times skipped by daylight saving time", () => {
-    const schedule = eventToLocalSchedule(event);
-    const result = parseEventInput({
-      ...schedule,
-      registrationOpensAt: "2024-03-10T02:30",
-      year: 2024,
-      title: event.title,
-      timezone: event.timezone,
+  it("bounds the event start at registration and within its edition year", () => {
+    expect(
+      getScheduleFieldBounds(
+        {
+          registrationStartsAt: "2024-08-01T00:00",
+          eventStartsAt: "2024-10-31T20:00",
+        },
+        "eventStartsAt",
+        2024,
+      ),
+    ).toEqual({ min: "2024-08-01T00:00", max: "2024-12-31T23:59" });
+    expect(
+      cascadeScheduleField({ ...input }, "eventStartsAt", "2024-11-01T20:00")
+        .eventStartsAt,
+    ).toBe("2024-11-01T20:00");
+  });
+
+  it("rejects malformed dates and invalid timezones", () => {
+    expect(
+      parseEventInput({ ...input, eventStartsAt: "2024-02-30T12:00" }),
+    ).toEqual({
+      error: "Preencha todas as datas do evento",
     });
-    expect(result).toEqual({ error: "Data do evento inválida" });
+    expect(parseEventInput({ ...input, timezone: "Mars/Olympus" })).toEqual({
+      error: "Fuso horário inválido",
+    });
+  });
+
+  it("rejects skipped and repeated daylight-saving wall times", () => {
+    expect(
+      parseEventInput({
+        ...input,
+        registrationStartsAt: "2024-03-10T02:30",
+      }),
+    ).toEqual({ error: "Data do evento inexistente neste fuso horário" });
+    expect(
+      parseEventInput({
+        ...input,
+        registrationStartsAt: "2024-11-03T01:30",
+      }),
+    ).toEqual({ error: "Horário ambíguo neste fuso horário" });
+  });
+
+  it("parses schedules and rejects daylight-saving gaps and folds in Europe/Berlin", () => {
+    const berlinInput = {
+      ...input,
+      timezone: "Europe/Berlin",
+      registrationStartsAt: "2024-08-01T00:00",
+      eventStartsAt: "2024-10-31T20:00",
+    };
+    const valid = parseEventInput(berlinInput);
+    expect("value" in valid && valid.value.registrationStartsAt).toEqual(
+      new Date("2024-07-31T22:00:00.000Z"),
+    );
+    expect(
+      parseEventInput({
+        ...berlinInput,
+        registrationStartsAt: "2024-03-31T02:30",
+      }),
+    ).toEqual({ error: "Data do evento inexistente neste fuso horário" });
+    expect(
+      parseEventInput({
+        ...berlinInput,
+        registrationStartsAt: "2024-10-27T02:30",
+      }),
+    ).toEqual({ error: "Horário ambíguo neste fuso horário" });
+  });
+
+  it("requires the event start to belong to the selected edition year", () => {
+    expect(
+      parseEventInput({
+        ...input,
+        eventStartsAt: "2025-10-31T20:00",
+      }),
+    ).toEqual({
+      error: "O início do evento deve pertencer ao ano selecionado",
+    });
   });
 });

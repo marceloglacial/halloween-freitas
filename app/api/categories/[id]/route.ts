@@ -1,3 +1,4 @@
+import { logServerError } from "@/lib/http";
 import { NextResponse } from "next/server";
 import { getCategoryById } from "@/util/get-categories";
 
@@ -15,7 +16,7 @@ export async function GET(
     }
     return NextResponse.json(category);
   } catch (error) {
-    console.error(error);
+    logServerError("Category lookup failed", error);
     return NextResponse.json(
       { error: "Failed to fetch category" },
       { status: 500 },

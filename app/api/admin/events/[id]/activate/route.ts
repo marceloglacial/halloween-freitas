@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 import { isAdmin } from "@/lib/auth/admin";
 import { getDb, getMongoClient } from "@/lib/db";
 import { getEventById } from "@/lib/events";
-import { errorResponse } from "@/lib/http";
+import { errorResponse, logServerError } from "@/lib/http";
 
 export async function POST(
   _request: Request,
@@ -22,6 +22,23 @@ export async function POST(
         .collection("events")
         .findOne({ _id: eventId }, { session });
       if (!event) throw new Error("EVENT_NOT_FOUND");
+      const activeEvents = await db
+        .collection("events")
+        .find(
+          { status: "active", _id: { $ne: eventId } },
+          { projection: { _id: 1 }, session },
+        )
+        .toArray();
+      const activeEventIds = activeEvents.map((item) => item._id);
+      if (activeEventIds.length > 0) {
+        await db
+          .collection("votingRounds")
+          .updateMany(
+            { eventId: { $in: activeEventIds }, status: "open" },
+            { $set: { status: "ended", endedAt: new Date() } },
+            { session },
+          );
+      }
       await db.collection("events").updateMany(
         {
           status: "active",
@@ -57,7 +74,7 @@ export async function POST(
     if (error instanceof Error && error.message === "EVENT_NOT_FOUND") {
       return errorResponse("Evento não encontrado", 404);
     }
-    console.error("Admin event activation failed", error);
+    logServerError("Admin event activation failed", error);
     return errorResponse("Não foi possível ativar o evento", 500);
   } finally {
     await session.endSession();

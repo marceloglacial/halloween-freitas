@@ -1,4 +1,3 @@
-import { UserImageModalProvider } from "@/components/pages/fotos/user-image-modal-provider";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -8,5 +7,5 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return <UserImageModalProvider>{children}</UserImageModalProvider>;
+  return children;
 }

@@ -1,15 +1,15 @@
 # Halloween dos Freitas
 
-Event registration, costume voting, published results, and a photo gallery for
-the annual Halloween dos Freitas event.
+Annual editions of the Halloween dos Freitas party, with guest RSVPs, costume
+contest entries and voting, published results, and a separate party photo album.
 
 ## Technology
 
 - Next.js 16 App Router and React 19
 - TypeScript and Tailwind CSS 4
-- MongoDB for event, participant, category, and vote data
-- Clerk for verified guest and administrator authentication
-- Cloudinary for participant images
+- MongoDB for edition, RSVP, contestant, round, ballot, result, and photo data
+- Clerk for administrator authentication; guests access their edition RSVP by email
+- Cloudinary for contest and party images
 
 ## Quick start
 
@@ -33,16 +33,26 @@ pnpm lint
 pnpm build
 ```
 
-Other available commands are `pnpm start`, `pnpm format`, and the data-mutating
-`pnpm migrate:events`. Follow the operations guide before running the migration.
+Use `pnpm start` to serve a production build and `pnpm format` to format files.
+See `package.json` for available scripts; read the [operations
+guide](docs/operations.md) before database or release operations.
 
 ## Documentation
 
+- [Product contract](docs/product.md) defines guest, contest, voting, results,
+  and party-photo capabilities.
+- [Edition lifecycle](docs/lifecycle.md) defines scheduled starts, RSVP and
+  contestant cutoffs, voting rounds, and publication transitions.
+- [Architecture](docs/architecture.md) defines identity, event isolation,
+  persistence, authorization, and photo security boundaries.
+- [Data model](docs/data-model.md) defines event-scoped records and references.
+- [Testing strategy](docs/testing.md) lists lifecycle, privacy, isolation, and
+  concurrency scenarios.
+- [AI workflow](docs/ai-workflow.md) describes skill routing, issue execution,
+  and review boundaries.
 - [UI design reference](design.md) describes the visual language, responsive
-  layouts, user journeys, interaction states, and accessibility guidance.
-- [Architecture and domain rules](docs/architecture.md) explains event
-  ownership, lifecycle, voting, authorization, and privacy boundaries.
-- [Operations](docs/operations.md) covers environment configuration, local
-  development, administrator setup, migrations, validation, and deployment.
+  layouts, homepage section arrangement, user journeys, and accessibility.
+- [Operations](docs/operations.md) covers local environment, database safety,
+  validation, and release boundaries.
 - [Repository guidelines](AGENTS.md) defines coding and review instructions for
   contributors and coding agents.

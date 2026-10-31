@@ -3,13 +3,15 @@
 Halloween dos Freitas is an annual party website for guests registering their
 attendance, voting on costumes, viewing published results, and browsing photos.
 Administrators manage events and participants through a separate dashboard.
-This document records the existing UI and gives guidance for extending it.
-Recommendations are identified explicitly; they do not imply that the current
-application already implements them.
+This document is the visual reference for the rebuild. Recommendations are
+identified explicitly; they do not imply that the current application already
+implements them.
 
-For lifecycle, authorization, and privacy requirements, see
-[Architecture and domain rules](docs/architecture.md). For setup and deployment,
-see [Operations](docs/operations.md).
+The [product](docs/product.md), [lifecycle](docs/lifecycle.md),
+[architecture](docs/architecture.md), and [data model](docs/data-model.md)
+documents define behavior and privacy. For setup and deployment, see
+[Operations](docs/operations.md). Preserve the existing homepage section layout
+and visual identity while implementing those contracts.
 
 ## Identity and content
 
@@ -25,9 +27,10 @@ happened, and how to continue. Some existing dashboard labels are English;
 Portuguese is the recommended default for new interface copy.
 
 Display event dates in the event's IANA timezone and format public dates using
-`pt-BR`. Event details and availability should follow the selected event rather
-than assume a fixed year. The homepage's program currently lists costume award
-categories in static copy; voting and results render event category records.
+`pt-BR`. Event details and availability follow the selected annual edition
+rather than assume a fixed year. Keep attendance RSVP, contestant entry, and the
+contestant photo gallery visually distinct from the party photo album; see the
+product and lifecycle documents for their access and publication rules.
 
 ## Visual language
 
@@ -107,47 +110,142 @@ they are not currently implemented.
 
 ## Screens and journeys
 
-| Screen                     | Purpose and layout                                                | Important states                                                                       |
-| -------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `/`                        | Hero, countdown, party information, program, registration, footer | Pre-event, registration upcoming/open/closed, voting soon/open/ended, post-event       |
-| `/votacao`                 | Verified Google/email-code access for registered guests           | Entering, rejected email or connection error, voting unavailable                       |
-| `/votacao/categories`      | Category tiles with guest greeting                                | Available category, already voted, guest session unavailable                           |
-| `/votacao/categories/[id]` | Candidate search, selectable photo grid, floating vote action     | No matches, selected candidate, submitting, vote success or failure                    |
-| `/resultados`              | Published category tiles and event navigation                     | Published results, no published results                                                |
-| `/resultados/[id]`         | Prominent first place and remaining ranked participants           | Vote counts and percentages, category with no votes                                    |
-| `/fotos`                   | Event navigation, name search, photo grid and enlarged viewer     | No photos or matches, selected photo                                                   |
-| `/dashboard`               | Event selector, settings and participants, event creation         | Authentication/authorization, active or archived event, validation and pending actions |
+| Screen                                   | Purpose and layout                                                                     | Important states                                                                                   |
+| ---------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `/`                                      | Hero, countdown, party information, program, registration, party-photo access, footer  | Pre-event, registration upcoming/open/closed, voting soon/open/ended, post-event                   |
+| `/meu-halloween?eventId=…`               | Edition-specific guest hub linking to the participant flows and voting                 | RSVP-linked access, flow status, voting state                                                      |
+| `/meu-halloween/individual`              | RSVP-authorized individual costume participation and its contest photo                 | Title/photo save creates entry, local preview, photo removal, enrollment closed                    |
+| `/meu-halloween/grupo`                   | Couple/group costume registration and its contest photo                                | Create entry, editable group name, photo preview/save/removal, category availability, entry closed |
+| `/meu-halloween/fotos-da-festa`          | Separate guest uploads for the party album                                             | Waiting for event start, multi-photo upload, private uploads                                       |
+| `/meu-halloween/votacao`                 | Edition voting hub with category links                                                 | Hidden from the guest hub until the event starts and voting opens                                  |
+| `/meu-halloween/votacao/categories/[id]` | Candidate search, selectable photo grid, floating vote action                          | No matches, selected candidate, submitting, vote success or failure                                |
+| `/perfil?eventId=...`                    | Selected-edition RSVP confirmation and editable guest name                             | Loading, denied/unlinked, validation, saving, saved, archived edition                              |
+| `/resultados`                            | Published category tiles and event navigation                                          | Published results, no published results                                                            |
+| `/resultados/[id]`                       | Prominent first place and remaining ranked participants                                | Vote counts and percentages, category with no votes                                                |
+| `/fotos`                                 | Contestant photo gallery with event navigation, search, and viewer                     | No photos or matches, selected photo                                                               |
+| `/album-da-festa`                        | Published party-photo album with annual archive selection                              | Waiting for publication, empty published album, selected photo                                     |
+| `/dashboard`                             | Admin overview with event KPIs, readiness checklist, milestone, and valid next actions | No edition, selected active or archived edition, lifecycle phases, metrics unavailable             |
+| `/dashboard/convidados`                  | Selected-edition guest management                                                      | Guest list and editing, archived-edition inspection                                                |
+| `/dashboard/concursos`                   | Selected-edition contest categories, entries, and enrollment status                    | Loading, empty, error, enrollment open/closed/frozen, archived edition                             |
+| `/dashboard/votacao`                     | Voting controls and results publication                                                | Manual voting state, publication, archived-edition inspection                                      |
+| `/dashboard/galeria`                     | Selected-edition party album management                                                | Album publication and photos, separate from contestant images                                      |
+| `/dashboard/configuracoes`               | Event schedule, settings, category settings, annual edition creation                   | Selected edition, validation, active or archived state                                             |
 
 ### Homepage and registration
 
 Before the event starts, show event information, the program, and the registration
 section. The countdown appears when an event start is available and the initial
-homepage state is pre-event. The registration form is shown only when registration
-is open; otherwise the section displays the opening or closing date.
+homepage state is pre-event. Show the attendance RSVP form when its scheduled
+start has passed and the edition remains before its permanent first-voting
+cutoff; otherwise show the relevant opening or closed state. Manual enrollment
+closure applies to both RSVP and contestant entry. Preserve the existing section
+layout while communicating these states.
+
+After `eventStartsAt`, show a login and party-photo upload button beside the
+hero's RSVP call to action. Keep it available even after RSVP closes. Link to
+the selected edition's guest portal so sign-in returns guests to party-photo
+uploads; hide the button before the party starts. Stack the actions on narrow
+screens and align them side by side on wider screens.
 
 Registration asks for full name and email and explains that each adult needs a
 separate email. During submission, disable the inputs and action and show
 “Enviando...”. Success resets the form and leaves a persistent “Presença confirmada!” panel; duplicate registration,
 server rejection, and connection failure produce error toasts.
 
-At the event start, the homepage lifecycle area replaces pre-event content with
-a centered panel for “Votação em breve”, “Votação aberta”, or “Votação encerrada”.
-Only the open state offers an active link to vote. The lifecycle area refreshes
-the current event every ten seconds and retains its last valid event on fetch
-failure. The hero is separate from this polling component, so its countdown
-visibility is based on the initial server-rendered state.
+At the event start, keep event information, the program, and the RSVP status
+visible so the persistent navigation's section links remain useful. Follow them
+with a centered lifecycle panel for “Votação em breve”, “Votação aberta”, or
+“Votação encerrada”. Only the open state offers an active link to vote. First
+opening voting also ends new RSVP and contestant membership changes permanently,
+while previously registered guests can still authenticate. The lifecycle area
+reflects server-backed state and retains its established visual treatment.
 
 Published results after voting ends, an archived event, or no current event show
 the post-event cards linking to results and photos. Those links do not bypass
 results publication checks.
 
+### Feature navigation
+
+Do not render the public horizontal feature menu at wide desktop widths. At
+tablet and narrow widths, use a compact brand header and a menu button that
+opens a right-side modal drawer; on narrow phones, present the same menu as a
+bottom-inset panel matching the mobile reference. The mobile menu uses a labeled
+menu button, close button, overlay dismissal, Escape handling, focus management,
+and reduced-motion support. Keep safe-area insets clear.
+
+Before and during an active edition, show the ordered public links Início,
+Informações, Programação, and Confirme sua presença. Omit the RSVP link when
+the server says registration is unavailable. Include Entrar after the ordered
+links in the mobile menu. Once signed in, replace Entrar with the existing Sair
+action.
+Show Dashboard beside Sair only after Clerk confirms the signed-in user's
+public role is admin; keep it hidden while the user or role is loading and for
+all other roles. The `/dashboard` route remains protected by server-side admin
+authorization.
+Use the selected edition's server-backed lifecycle state, including RSVP
+availability, rather than a browser clock. Preserve the event information and
+program sections during voting so those links remain valid.
+
+After an edition ends, show Início followed only by available destinations:
+Vencedores when that edition's results are published, Galeria de fotos when a
+published party album has accessible photos, and Edições anteriores when an
+older edition has published results or a published album. Keep event slugs on
+result and album links and exclude the currently viewed edition from the
+previous-editions list. Show no disabled placeholders. With no edition, keep the
+existing waiting page and show no unpublished results or empty albums.
+
 ### Voting
 
-Guests follow `/votacao` to event-specific `/acesso`, choose Google or an email
-verification code, and return to voting. Clerk authenticates both guests and
-administrators; the server links each guest to their existing event registration. Keep voting actions tied to
+Guests open voting through Meu Halloween, enter the email used for their RSVP,
+and return to the selected edition's voting flow. Clerk authenticates
+administrators; the server issues a signed guest session for the matching RSVP
+in that edition. Possession of the email grants guest access; no mailbox
+verification occurs. Keep voting actions tied to
 the event's open state and enforce voting integrity on the server as described
 in the architecture guide.
+
+### Meu Halloween guest portal and participant flows
+
+The portal and each participant flow require a valid guest session for an RSVP
+in the selected edition. The portal acts as a simple hub with separate
+links for individual and group costume registration and party-photo uploads.
+Each flow has its own page, shows only entries owned by that RSVP, and keeps a
+contestant's photo upload beside its registration.
+Use the same edition brand and guest account menu in the top header on the hub
+and every participant flow. Keep the header fixed at the top while the page
+scrolls. Align each flow's title and description to the left.
+Place each hub card's status badge beside its icon. Use green for available,
+open, or complete states, gray for waiting or unavailable states, and orange
+for entries in progress; allow longer badge labels to wrap on narrow screens.
+When contestant enrollment is closed or frozen, make the individual and group
+costume cards and corresponding bottom-navigation items visibly inactive and
+show an explanatory toast when activated.
+Keep cards navigable before the scheduled enrollment opening so guests can see
+when registration becomes available.
+On narrow screens, keep a fixed bottom navigation across the hub and participant
+flows, with links to the hub, individual and group costume pages, and party
+photos. Show voting only after the event starts and voting opens. Preserve the
+selected event in every destination, mark the current page with `aria-current`,
+and leave enough bottom padding for the menu and device safe area. Hide this
+navigation at `lg` and wider, matching the admin dashboard's mobile navigation.
+Contestant status remains private to its owner. Show the voting page link in
+the hub only after the event starts and voting opens. The separate voting page
+is available to every linked attendee, whether or not they have a contestant
+entry, and marks completed categories as unavailable.
+
+From the authenticated voting categories page, guests can open their selected
+edition's Meu Halloween portal to view entries, RSVP/event status, and profile
+controls. While contestant entries are open, owners can upload or replace one
+photo per entry after confirming permission to use it. Show the current photo,
+file limits, pending upload, success, and error states. Once entries close,
+creation and upload controls are disabled. The
+profile page still lets guests update the single “Nome e sobrenome” field.
+While entries are open, a guest can create one group entry per edition with a
+group name, a group-eligible category, and an optional costume title. Do not ask
+for member rosters or invitations. The creator can vote for their group, and
+the entry remains a private draft until its required photo is uploaded. Keep
+the RSVP email private. Once contestant enrollment is closed, profile edits do
+not change the contestant name frozen for voting and results.
 
 Category tiles use purple backgrounds, emoji, and a text title. Completed
 categories become gray and translucent, prevent navigation, expose
@@ -160,50 +258,128 @@ button appears after selection and changes to “Votando...” during submission
 After success, candidate buttons are disabled and a persistent success toast
 offers “Voltar” to the category list. Failure displays an error toast.
 
-### Results and gallery
+### Results and photo galleries
 
-Results category tiles reuse the purple category treatment. Results details
-give first place a large name, photograph, and medal, with remaining participants
-in compact rows. Counts and percentages support the ranking; categories with
-no votes have an explicit message. Public views exclude email addresses.
+Results category tiles reuse the purple category treatment over the muted
+homepage video and a dark overlay. Published result details show the real event
+and category names over the muted homepage video,
+which ends at the podium base; the ranking below uses a solid black background,
+like the homepage's content sections. A floating “Voltar” action stays at the
+bottom left. A responsive silver, gold, and bronze podium
+keeps its platforms visible while the keyboard's right and left arrow keys
+reveal third, second, and first place in order and hide the latest reveal in
+reverse order. Every podium trophy is visible from the start; for each
+participant, vote totals appear before the full profile. Reserved slots for the
+crown, name, and vote details keep the podium stable between reveal steps.
+The vote details animate into view, respecting reduced-motion settings. Generic
+names and vote placeholders remain blurred until their respective reveal step;
+the unrevealed photo stays blurred beneath a semitransparent trophy badge.
+Tied podium participants
+reveal individually, keep their shared competition rank, and remain visible
+together. A separate right-arrow press after the first-place group reveals all
+remaining eligible participants together in rank order, with a brief staggered
+entrance effect. The first, second, and third podium platforms have clearly
+distinct heights, with extra room above and below their centered placement
+number and label; the podium also leaves a wider gap between each profile and
+its platform. Cards show each photo, vote count, percentage, and proportional bar.
+A candidate with no photo receives a text placeholder, never a substitute image.
+On 1080p screens, the podium and ranking use the available desktop width with
+larger photos, type, and spacing. The additional 4K scale applies only at
+2560px viewport width and above; content expands to a readable maximum width
+and scales podium photos, placement labels, and ranking cards without
+stretching across the full display.
+When a category has ballots, its ranking includes every locked eligible
+candidate, including those with zero votes. Categories with no votes retain an
+explicit empty state. Public views exclude email addresses and preserve event
+publication checks.
 
-The gallery lists participants with photos, sorted by name, and searches within
-the selected event. Event navigation appears when multiple events are available
-and marks the selected event with an orange background and `aria-current`.
-The enlarged gallery viewer supports previous/next buttons, arrow keys, swipes,
-Escape, and clicking the backdrop; navigation wraps at either end. Gallery and
-results image dialogs focus their close button, lock body scrolling, and restore
-the prior focus when closed.
+The contestant photo gallery shows only eligible contestant imagery and remains
+separate from party photos. Its existing gallery lists entries with photos,
+sorted by name, and searches within the selected event. Event navigation marks
+the selected edition with an orange background and `aria-current`. The enlarged
+viewer supports previous/next buttons, arrow keys, swipes, Escape, and backdrop
+click; navigation wraps at either end. Dialogs focus the close button, lock body
+scrolling, and restore prior focus when closed.
+
+The party photo album is a separate edition-scoped gallery at
+`/album-da-festa`. Before an admin publishes it, show a waiting state without
+exposing photos or their metadata. After publication, use the same dark
+surfaces, orange accents, responsive thumbnail grid, and accessible
+enlarged-photo viewer. Clearly identify this as party photography and avoid
+reusing contestant names, eligibility, or photo controls. Keep published
+editions navigable while an unpublished edition shows only its waiting state.
+
+On the separate party-photo page, show the upload area after the edition's
+event start. Use a multiple-file picker, local previews, per-file progress, and
+clear upload errors. Explain that photos stay private until the organization
+publishes the album. Show the guest only their own uploaded photos before
+publication; provide an opening-time message before the party starts. Explain
+that these are general party photos, separate from the costume photos submitted
+to the contest.
 
 ### Administration
 
-The dashboard provides event selection, status badges, settings and participant
-tabs, and a form to create a new year. Event settings include the timezone,
-registration opening, event start, derived registration closing, manual voting
-controls, and results publication. Disabled controls and explanatory text
+The public feature navigation is hidden throughout `/dashboard` and on
+`/meu-halloween`; the admin dashboard uses its own desktop sidebar and native
+modal drawer on mobile.
+Its main bar shows the current section and a right-aligned edition dropdown
+labeled “Selecionar edição”, followed by a “Ver site” link to the public home;
+choosing a year opens that edition's overview. On mobile, keep the edition
+selector and public-site link together on a row below the brand and menu button.
+Include the selected year in the sidebar brand and browser document title.
+Sign-out stays at the bottom of the desktop sidebar and mobile drawer. Mark the
+current navigation destination with `aria-current`; preserve the selected year
+in every section link. The mobile drawer uses native dialog focus containment,
+Escape handling, scroll locking, and focus restoration.
+
+Resolve a requested `?year=YYYY` to that edition. For an unknown year, show an
+explanation and fall back to the active edition or newest available edition.
+When no edition is active, identify the newest archived edition; when there are
+no editions, show an explicit empty state and keep first-edition creation under
+settings. Legacy `/dashboard?tab=settings|guests` links redirect to their
+settings or guest routes while retaining the requested year.
+
+Guest management, voting/results, gallery, and settings routes reuse the
+existing edition-scoped controls. The overview aggregates the exact selected
+edition, labels its current lifecycle state, and links to relevant modules.
+When no edition exists, explain how to create the first one and provide an
+“Abrir configurações” link to `/dashboard/configuracoes`. Archived editions
+remain available for historical reads and server-supported publication work;
+never suggest opening RSVP creation or the first voting round for an archived
+edition. Do not present planned controls as operational. Event settings show the timezone and the
+scheduled RSVP and event starts. Keep RSVP availability, manual contestant
+entry controls, voting round controls, results publication, and party album
+publication visibly distinct. Disabled controls and explanatory text
 communicate lifecycle restrictions; UI availability must match server rules.
 
-Participant dialogs edit name, email, group/junior eligibility, and a Cloudinary
-photo. Pending requests disable relevant inputs and show progress text; failures
-appear inline. Linked participants have an explicit “Redefinir vínculo de acesso”
-action with confirmation; ordinary email edits preserve ownership. The participant dialog focuses the name field and handles Escape,
-but does not share all focus and scroll behavior of the photo dialogs.
+Selecting a guest opens an edition-scoped detail page. Use labeled form fields
+for RSVP corrections and separate cards for each contestant entry, with its
+category, status, private photo, and photo controls. Keep adding or removing
+contestants subject to the enrollment cutoff and voting rules. Administrators
+may correct existing records and replace existing contestant photos after the
+first voting opening, with an audit record, while contestant membership remains
+fixed. New-photo uploads require an explicit confirmation that the guest
+authorized its contest use. Pending requests disable relevant inputs and show
+progress text; failures appear inline. Guest deletion and candidate deletion
+must identify the affected records and explain lifecycle restrictions.
 
 ## Responsive and interaction patterns
 
 The project uses mobile-first utilities and Tailwind's default breakpoints:
 `sm` at 640px, `md` at 768px, `lg` at 1024px, and `2xl` at 1536px are used across
-the UI.
+the UI. Results-only 4K scaling uses a 2560px minimum viewport width instead
+of the default `2xl` breakpoint, so 1080p desktop layouts do not inherit it.
 
-| Pattern                      | Small screens              | Larger screens                              |
-| ---------------------------- | -------------------------- | ------------------------------------------- |
-| Homepage information         | Stacked cards              | Three columns at `lg`                       |
-| Program and post-event links | One column                 | Two columns at `lg`                         |
-| Voting categories            | One column                 | Two columns at `lg`, first tile spans both  |
-| Candidate grid               | Two columns                | Three at `sm`, four at `lg`                 |
-| Results detail               | Stacked winner and ranking | Two columns at `lg`                         |
-| Photo grid                   | Two columns                | Three at `md`, six at `2xl`                 |
-| Dashboard fields/header      | Stacked                    | Paired fields and horizontal header at `md` |
+| Pattern                      | Small screens                                                   | Larger screens                                                                                                                |
+| ---------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Homepage information         | Stacked cards                                                   | Three columns at `lg`                                                                                                         |
+| Program and post-event links | One column                                                      | Two columns at `lg`                                                                                                           |
+| Voting categories            | One column                                                      | Two columns at `lg`, first tile spans both                                                                                    |
+| Candidate grid               | Two columns                                                     | Three at `sm`, four at `lg`                                                                                                   |
+| Results detail               | Three compact podium places; remaining candidates in one column | Three podium places; remaining candidates in two columns at `lg`; desktop sizing through `xl`; additional 4K sizing at 2560px |
+| Photo grid                   | Two columns                                                     | Three at `md`, six at `2xl`                                                                                                   |
+| Admin dashboard shell        | Mobile header and modal drawer                                  | Sidebar at `lg`, edition dropdown in main bar, sign-out in sidebar                                                            |
+| Dashboard fields             | Stacked                                                         | Paired fields and horizontal layout at `md`                                                                                   |
 
 Keep search and primary actions reachable while scrolling. Account for the fixed
 vote action and bottom-centered Sonner notifications, which are offset by
@@ -221,18 +397,23 @@ where one exists.
 
 Existing support includes accessible names for inputs and photo controls,
 participant image alternatives, selected-candidate `aria-pressed`, disabled
-category semantics, named dialogs, and polite live status in the voting lifecycle
-panel. These features do not establish full accessibility compliance.
+category semantics, a native modal dialog for the admin drawer, and polite live
+status in the voting lifecycle panel. Checklist completion uses text in addition
+to its visual icon. These features do not establish full accessibility
+compliance.
 
 Recommended improvements for future UI work:
 
-- Provide visible keyboard focus throughout. Some registration inputs currently
-  remove outlines and focus rings without a replacement.
-- Contain keyboard focus inside modal dialogs and consistently restore it on
-  close. Current dialogs do not implement a focus trap.
+- Continue checking visible keyboard focus and contrast on every route.
+  Registration fields, admin category controls, guest editor fields, and the
+  guest search now have explicit focus indicators.
+- Keep custom dialogs contained and restore focus on close. The admin drawer uses
+  the browser's native modal-dialog behavior; verify its Escape, overlay, and
+  route-link paths at mobile widths.
 - Verify contrast for every text/action combination, especially white text on
   orange, and supplement color or opacity with meaningful text or semantics.
-- Respect reduced motion and provide an alternative to continuous hero video.
+- The decorative hero video is hidden when reduced motion is requested; the
+  dark hero background remains as its static alternative.
 - Give the shared loading spinner an accessible status label and preserve
   logical heading structure; some card titles currently use generic elements.
 - Check long names, large text, and narrow viewports for overflow, especially in

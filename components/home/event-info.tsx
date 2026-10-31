@@ -7,7 +7,7 @@ function getCards(event: HalloweenEvent | null): CardProps[] {
         dateStyle: "long",
         timeStyle: "short",
         timeZone: event.timezone,
-      }).format(new Date(event.startsAt))
+      }).format(new Date(event.eventStartsAt))
     : "Data a confirmar";
   return [
     {
@@ -59,8 +59,8 @@ const EventInfo: FC<{ event: HalloweenEvent | null }> = ({
 }): JSX.Element => {
   const cards = getCards(event);
   return (
-    <section className="relative grid justify-center bg-black px-8 py-12 lg:p-8">
-      <div className="relative grid max-w-7xl gap-8 lg:-top-28 lg:grid-cols-3">
+    <section id="informacoes" className="scroll-mt-24 relative grid justify-center bg-black px-8 py-12 lg:p-8">
+      <div className="relative grid max-w-7xl gap-8 lg:-top-12 lg:grid-cols-3">
         {cards.map((card, index) => (
           <Card
             title={card.title}

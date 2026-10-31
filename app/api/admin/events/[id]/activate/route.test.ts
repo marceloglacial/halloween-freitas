@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ObjectId } from "mongodb";
 
 const mocks = vi.hoisted(() => ({
   isAdmin: vi.fn(),
   getEventById: vi.fn(),
   findOne: vi.fn(),
+  eventList: vi.fn(),
   updateMany: vi.fn(),
+  roundUpdateMany: vi.fn(),
   updateOne: vi.fn(),
   endSession: vi.fn(),
 }));
@@ -21,11 +24,15 @@ vi.mock("@/lib/db", () => ({
     startSession: () => session,
   }),
   getDb: vi.fn().mockResolvedValue({
-    collection: () => ({
-      findOne: mocks.findOne,
-      updateMany: mocks.updateMany,
-      updateOne: mocks.updateOne,
-    }),
+    collection: (name: string) =>
+      name === "votingRounds"
+        ? { updateMany: mocks.roundUpdateMany }
+        : {
+            findOne: mocks.findOne,
+            find: () => ({ toArray: mocks.eventList }),
+            updateMany: mocks.updateMany,
+            updateOne: mocks.updateOne,
+          },
   }),
 }));
 
@@ -38,7 +45,28 @@ describe("event activation", () => {
     vi.clearAllMocks();
     mocks.isAdmin.mockResolvedValue(true);
     mocks.findOne.mockResolvedValue({ _id: eventId });
+    mocks.eventList.mockResolvedValue([{ _id: new ObjectId(eventId) }]);
+    mocks.roundUpdateMany.mockResolvedValue({ modifiedCount: 1 });
     mocks.getEventById.mockResolvedValue({ _id: eventId, status: "active" });
+  });
+
+  it("rejects non-admin requests before starting activation work", async () => {
+    mocks.isAdmin.mockResolvedValue(false);
+
+    const response = await POST(new Request("http://localhost"), {
+      params: Promise.resolve({ id: eventId }),
+    });
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Não autorizado" });
+    expect(mocks.findOne).not.toHaveBeenCalled();
+    expect(mocks.eventList).not.toHaveBeenCalled();
+    expect(mocks.roundUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.updateMany).not.toHaveBeenCalled();
+    expect(mocks.updateOne).not.toHaveBeenCalled();
+    expect(mocks.getEventById).not.toHaveBeenCalled();
+    expect(session.withTransaction).not.toHaveBeenCalled();
+    expect(mocks.endSession).not.toHaveBeenCalled();
   });
 
   it("archives the current event and activates the selected event in one transaction", async () => {
@@ -52,6 +80,13 @@ describe("event activation", () => {
       expect.objectContaining({ status: "active" }),
       expect.objectContaining({
         $set: expect.objectContaining({ status: "archived" }),
+      }),
+      { session },
+    );
+    expect(mocks.roundUpdateMany).toHaveBeenCalledWith(
+      { eventId: { $in: [expect.any(ObjectId)] }, status: "open" },
+      expect.objectContaining({
+        $set: expect.objectContaining({ status: "ended" }),
       }),
       { session },
     );

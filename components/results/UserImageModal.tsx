@@ -1,18 +1,20 @@
-import { CldImage } from "next-cloudinary";
 import React from "react";
 
 interface UserImageModalProps {
   open: boolean;
   onClose: () => void;
   imageSrc: string;
+  imageAlt: string;
 }
 
 const UserImageModal: React.FC<UserImageModalProps> = ({
   open,
   onClose,
   imageSrc,
+  imageAlt,
 }) => {
   const closeButtonRef = React.useRef<HTMLButtonElement>(null);
+  const dialogRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (!open) return;
@@ -20,12 +22,26 @@ const UserImageModal: React.FC<UserImageModalProps> = ({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     closeButtonRef.current?.focus();
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+      if (event.key !== "Tab") return;
+      const controls = dialogRef.current?.querySelectorAll<HTMLElement>(
+        "button:not([disabled])",
+      );
+      if (!controls?.length) return;
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener("keydown", handleEsc);
+      window.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
       previouslyFocused?.focus();
     };
@@ -36,25 +52,33 @@ const UserImageModal: React.FC<UserImageModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Foto ampliada do participante"
-      className="bg-opacity-70 fixed inset-0 z-50 flex items-center justify-center bg-black"
-      onClick={onClose}
+      aria-label={imageAlt}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
-      <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={dialogRef}
+        className="relative flex max-h-[92vh] max-w-[92vw] items-center justify-center"
+      >
         <button
           ref={closeButtonRef}
-          className="absolute -top-2 -right-2 rounded-full bg-white px-3 py-1 text-xl text-black"
+          type="button"
+          className="absolute -top-2 -right-2 rounded-full bg-white px-3 py-1 text-xl text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
           onClick={onClose}
           aria-label="Fechar"
         >
           ×
         </button>
-        <CldImage
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={imageSrc}
           width={900}
           height={600}
-          alt="Foto ampliada do participante"
-          className="max-h-[80vh] max-w-[90vw] rounded-lg border-4 border-orange-400 object-cover object-top lg:max-h-[90vh] lg:max-w-[680px]"
+          decoding="async"
+          alt={imageAlt}
+          className="max-h-[84vh] max-w-[90vw] rounded-lg border-4 border-orange-400 object-contain"
         />
       </div>
     </div>

@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   normalizeEmail,
   normalizeName,
   parseObjectId,
+  logServerError,
   readJsonObject,
 } from "@/lib/http";
 
@@ -29,5 +30,23 @@ describe("request normalization", () => {
         new Request("http://localhost", { method: "POST", body: "[]" }),
       ),
     ).toBeNull();
+  });
+
+  it("logs server error metadata without exposing exception messages", () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      logServerError(
+        "Request failed",
+        new Error("private guest@example.com token=secret-value"),
+      );
+
+      const logged = JSON.stringify(errorSpy.mock.calls);
+      expect(logged).toContain("Request failed");
+      expect(logged).toContain("Error");
+      expect(logged).not.toContain("guest@example.com");
+      expect(logged).not.toContain("secret-value");
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 });

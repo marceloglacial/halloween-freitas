@@ -1,12 +1,17 @@
-import EventDashboard from "@/components/dashboard/event-dashboard";
-import { auth } from "@clerk/nextjs/server";
-import { isAdmin } from "@/lib/auth/admin";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import AdminAccessDenied from "@/components/dashboard/admin-access-denied";
+import AdminEventOverview from "@/components/dashboard/admin-event-overview";
+import { authorizeAdminPage } from "@/lib/auth/admin-page";
 import { getEvents } from "@/lib/events";
-import { Metadata } from "next";
-import FeatureUnavailable from "@/components/feature-unavailable";
+import { resolveAdminEvent } from "@/lib/admin-event-selection";
+import { getAdminEventOverview } from "@/lib/admin-event-overview";
 
-export const metadata: Metadata = {
-  title: "Dashboard - Halloween dos Freitas",
+const legacyTabRoutes: Record<string, string> = {
+  settings: "/dashboard/configuracoes",
+  guests: "/dashboard/convidados",
+  results: "/dashboard/votacao",
+  photos: "/dashboard/galeria",
 };
 
 export const dynamic = "force-dynamic";
@@ -14,33 +19,70 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; tab?: string }>;
+  searchParams: Promise<{
+    year?: string | string[];
+    tab?: string | string[];
+  }>;
 }) {
-  const { userId, redirectToSignIn } = await auth();
-  if (!userId) redirectToSignIn({ returnBackUrl: "/dashboard" });
-  if (!(await isAdmin(userId)))
+  if (!(await authorizeAdminPage())) return <AdminAccessDenied />;
+
+  const query = await searchParams;
+  const legacyTab = Array.isArray(query.tab) ? query.tab[0] : query.tab;
+  const requestedYear = Array.isArray(query.year) ? query.year[0] : query.year;
+  const destination = legacyTab && legacyTabRoutes[legacyTab];
+  if (destination) {
+    const params = new URLSearchParams();
+    if (requestedYear) params.set("year", requestedYear);
+    const suffix = params.size > 0 ? `?${params.toString()}` : "";
+    redirect(`${destination}${suffix}`);
+  }
+
+  const events = await getEvents();
+  const selection = resolveAdminEvent(events, requestedYear);
+  if (!selection.event) {
     return (
-      <FeatureUnavailable
-        title="Acesso restrito"
-        message="Esta área é reservada aos administradores. Sua sessão de convidado continua ativa."
-      />
+      <section className="rounded-2xl border border-white/10 bg-stone-950/80 p-6 sm:p-8">
+        <h1 className="text-4xl text-orange-300 sm:text-5xl">Visão Geral</h1>
+        <h2 className="mt-3 text-2xl font-semibold">
+          Nenhuma edição cadastrada
+        </h2>
+        <p className="mt-2 text-gray-300">
+          Crie uma edição em Configurações para acompanhar presenças, concurso e
+          votação.
+        </p>
+        <Link
+          href="/dashboard/configuracoes"
+          className="mt-4 inline-flex rounded-lg bg-orange-500 px-4 py-2 font-semibold text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-300"
+        >
+          Abrir configurações
+        </Link>
+      </section>
     );
+  }
 
-  const [events, query] = await Promise.all([getEvents(), searchParams]);
-  const requestedYear = Number(query.year);
-  const selected =
-    events.find((event) => event.year === requestedYear) ??
-    events.find((event) => event.status === "active") ??
-    events[0];
-
+  const event = events.find((item) => item.year === selection.event?.year);
+  if (!event) throw new Error("SELECTED_EVENT_NOT_FOUND");
+  let overview;
+  try {
+    overview = await getAdminEventOverview(event._id);
+  } catch {
+    return (
+      <section
+        role="alert"
+        className="rounded-2xl border border-red-400/30 bg-red-950/30 p-6"
+      >
+        <h1 className="text-4xl text-orange-300 sm:text-5xl">Visão Geral</h1>
+        <h2 className="text-xl font-semibold">
+          Não foi possível carregar a visão geral
+        </h2>
+        <p className="mt-2 text-sm text-gray-300">
+          Os indicadores desta edição estão indisponíveis. Atualize a página
+          para tentar novamente.
+        </p>
+      </section>
+    );
+  }
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 md:px-8 md:py-12">
-      <EventDashboard
-        initialEvents={events}
-        initialYear={selected?.year}
-        initialTab={query.tab === "settings" ? "settings" : "guests"}
-        initialNow={new Date().toISOString()}
-      />
-    </main>
+    <AdminEventOverview event={event} overview={overview} now={new Date()} />
   );
 }

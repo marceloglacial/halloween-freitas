@@ -1,9 +1,13 @@
-import { secondaryFont } from "@/util/fonts";
-import { FC, JSX } from "react";
+"use client";
 
-const Schedule: FC = (): JSX.Element => {
+import { useHomeCategories } from "@/components/home/home-categories-context";
+import { secondaryFont } from "@/util/fonts";
+
+const Schedule = () => {
+  const categories = useHomeCategories();
+
   return (
-    <section className="relative grid justify-center bg-stone-900 px-8 py-16 lg:p-8">
+    <section id="programacao" className="scroll-mt-24 relative grid justify-center bg-stone-900 px-8 py-16 lg:p-8">
       <div className="relative grid max-w-7xl">
         <div className="relative grid gap-16 lg:-top-24">
           <div className="text-center">
@@ -35,12 +39,15 @@ const Schedule: FC = (): JSX.Element => {
                 Premiação para as Categorias
               </h3>
               <ul className="grid gap-3">
-                <li>🏆 Melhor Fantasia</li>
-                <li>💩 Pior Fantasia</li>
-                <li>🧟 Fantasia Mais Assustadora</li>
-                <li>🤡 Fantasia Mais Engraçada</li>
-                <li>👯‍♀️ Melhor Fantasia de Grupo ou Dupla</li>
-                {/* <li>👻 Melhor Fantasia Infantil</li> */}
+                {categories.length > 0 ? (
+                  categories.map((category) => (
+                    <li key={category._id}>
+                      {category.icon} {category.title}
+                    </li>
+                  ))
+                ) : (
+                  <li>As categorias serão divulgadas em breve.</li>
+                )}
               </ul>
             </div>
           </div>

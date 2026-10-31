@@ -1,16 +1,63 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ObjectId } from "mongodb";
 
 const mocks = vi.hoisted(() => ({
+  auth: vi.fn(),
   isAdmin: vi.fn(),
   getEventById: vi.fn(),
+  eventFindOne: vi.fn(),
   updateOne: vi.fn(),
+  updateMany: vi.fn(),
+  categoryToArray: vi.fn(),
+  contestantToArray: vi.fn(),
+  ballotToArray: vi.fn(),
+  roundFindOne: vi.fn(),
+  roundFindMany: vi.fn(),
+  roundInsertOne: vi.fn(),
+  roundUpdateOne: vi.fn(),
+  auditInsertOne: vi.fn(),
+  countRsvps: vi.fn(),
+  withTransaction: vi.fn(),
+  endSession: vi.fn(),
 }));
 
+vi.mock("@clerk/nextjs/server", () => ({ auth: mocks.auth }));
 vi.mock("@/lib/auth/admin", () => ({ isAdmin: mocks.isAdmin }));
 vi.mock("@/lib/events", () => ({ getEventById: mocks.getEventById }));
 vi.mock("@/lib/db", () => ({
   getDb: vi.fn().mockResolvedValue({
-    collection: () => ({ updateOne: mocks.updateOne }),
+    collection: (name: string) =>
+      name === "events"
+        ? { findOne: mocks.eventFindOne, updateOne: mocks.updateOne }
+        : name === "adminAudits"
+          ? { insertOne: mocks.auditInsertOne }
+          : name === "users"
+            ? { countDocuments: mocks.countRsvps }
+            : name === "categories"
+              ? { find: () => ({ toArray: mocks.categoryToArray }) }
+              : name === "votingRounds"
+                ? {
+                    findOne: mocks.roundFindOne,
+                    find: () => ({
+                      sort: () => ({
+                        limit: () => ({ toArray: mocks.roundFindMany }),
+                      }),
+                    }),
+                    insertOne: mocks.roundInsertOne,
+                    updateOne: mocks.roundUpdateOne,
+                  }
+                : name === "votes"
+                  ? { find: () => ({ toArray: mocks.ballotToArray }) }
+                  : {
+                      find: () => ({ toArray: mocks.contestantToArray }),
+                      updateMany: mocks.updateMany,
+                    },
+  }),
+  getMongoClient: vi.fn().mockResolvedValue({
+    startSession: () => ({
+      withTransaction: mocks.withTransaction,
+      endSession: mocks.endSession,
+    }),
   }),
 }));
 
@@ -18,12 +65,12 @@ import { POST } from "@/app/api/admin/events/[id]/lifecycle/route";
 
 const eventId = "507f1f77bcf86cd799439011";
 
-function request(action: string) {
+function request(action: string, extra: Record<string, unknown> = {}) {
   return POST(
     new Request("http://localhost", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ action, ...extra }),
     }),
     { params: Promise.resolve({ id: eventId }) },
   );
@@ -34,12 +81,51 @@ describe("event lifecycle controls", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-11-01T00:00:00.000Z"));
     vi.clearAllMocks();
+    mocks.auth.mockResolvedValue({ userId: "admin-clerk-id" });
     mocks.isAdmin.mockResolvedValue(true);
     mocks.updateOne.mockResolvedValue({ matchedCount: 1 });
+    mocks.updateMany.mockResolvedValue({ modifiedCount: 0 });
+    mocks.categoryToArray.mockResolvedValue([]);
+    mocks.contestantToArray.mockResolvedValue([]);
+    mocks.ballotToArray.mockResolvedValue([]);
+    mocks.roundFindOne.mockResolvedValue({
+      _id: new ObjectId("507f1f77bcf86cd799439016"),
+      status: "open",
+      type: "primary",
+      categoryIds: [],
+    });
+    mocks.roundFindOne.mockImplementation((filter) =>
+      filter.type === "runoff"
+        ? null
+        : {
+            _id: new ObjectId("507f1f77bcf86cd799439016"),
+            status: "open",
+            type: "primary",
+            categoryIds: [],
+          },
+    );
+    mocks.roundFindMany.mockResolvedValue([
+      {
+        _id: new ObjectId("507f1f77bcf86cd799439016"),
+        status: "ended",
+        type: "primary",
+        categoryIds: [],
+      },
+    ]);
+    mocks.roundInsertOne.mockResolvedValue({ insertedId: new ObjectId() });
+    mocks.roundUpdateOne.mockResolvedValue({ matchedCount: 1 });
+    mocks.auditInsertOne.mockResolvedValue({ acknowledged: true });
+    mocks.countRsvps.mockResolvedValue(0);
+    mocks.withTransaction.mockImplementation(async (callback) => callback());
+    mocks.eventFindOne.mockResolvedValue({
+      votingStatus: "ended",
+      resultsPublished: false,
+    });
     mocks.getEventById.mockResolvedValue({
       _id: eventId,
       status: "active",
-      startsAt: "2026-10-31T23:00:00.000Z",
+      eventStartsAt: "2026-10-31T23:00:00.000Z",
+      contestEntryStatus: "open",
       votingStatus: "ended",
       resultsPublished: false,
     });
@@ -59,17 +145,342 @@ describe("event lifecycle controls", () => {
     expect(response.status).toBe(200);
     expect(mocks.updateOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        _id: expect.anything(),
+        _id: expect.any(ObjectId),
         status: "active",
-        startsAt: { $lte: new Date("2026-11-01T00:00:00.000Z") },
+        votingStatus: { $in: ["not_started", "ended"] },
+        contestEntryStatus: "closed",
+        eventStartsAt: { $lte: new Date("2026-11-01T00:00:00.000Z") },
       }),
-      {
+      expect.objectContaining({
         $set: expect.objectContaining({
+          contestEntryStatus: "closed",
           votingStatus: "open",
           resultsPublished: false,
         }),
-      },
+        $inc: { contestEntryMutationVersion: 1 },
+      }),
+      { session: expect.anything() },
     );
+    expect(mocks.roundUpdateOne).toHaveBeenCalledWith(
+      {
+        _id: expect.any(ObjectId),
+        eventId: new ObjectId(eventId),
+        status: "ended",
+      },
+      {
+        $set: {
+          status: "open",
+          reopenedAt: new Date("2026-11-01T00:00:00.000Z"),
+        },
+      },
+      { session: expect.anything() },
+    );
+    expect(mocks.roundUpdateOne.mock.calls[0][1]).toEqual({
+      $set: {
+        status: "open",
+        reopenedAt: new Date("2026-11-01T00:00:00.000Z"),
+      },
+    });
+  });
+
+  it("audits automatic unpublishing when voting is reopened", async () => {
+    mocks.eventFindOne.mockResolvedValue({
+      votingStatus: "ended",
+      resultsPublished: true,
+    });
+
+    const response = await request("start-voting");
+
+    expect(response.status).toBe(200);
+    expect(mocks.auditInsertOne).toHaveBeenCalledWith(
+      {
+        eventId: new ObjectId(eventId),
+        clerkUserId: "admin-clerk-id",
+        action: "results_unpublished",
+        targetType: "event",
+        targetId: new ObjectId(eventId),
+        at: new Date("2026-11-01T00:00:00.000Z"),
+        changes: {
+          resultsPublished: { from: true, to: false },
+          reason: "voting_reopened",
+        },
+      },
+      { session: expect.anything() },
+    );
+  });
+
+  it("reopens the current runoff without reopening the earlier primary round", async () => {
+    const runoffId = new ObjectId("507f1f77bcf86cd799439019");
+    mocks.roundFindMany.mockResolvedValue([
+      { _id: runoffId, status: "ended", type: "runoff", categoryIds: [] },
+    ]);
+
+    const response = await request("start-voting");
+
+    expect(response.status).toBe(200);
+    expect(mocks.roundUpdateOne).toHaveBeenCalledOnce();
+    expect(mocks.roundUpdateOne).toHaveBeenCalledWith(
+      { _id: runoffId, eventId: new ObjectId(eventId), status: "ended" },
+      {
+        $set: {
+          status: "open",
+          reopenedAt: new Date("2026-11-01T00:00:00.000Z"),
+        },
+      },
+      { session: expect.anything() },
+    );
+  });
+
+  it("creates the primary round in the voting-opening transaction", async () => {
+    const firstCategoryId = new ObjectId("507f1f77bcf86cd799439018");
+    mocks.eventFindOne.mockResolvedValue({ votingStatus: "not_started" });
+    mocks.roundFindMany.mockResolvedValue([]);
+    mocks.categoryToArray.mockResolvedValue([{ _id: firstCategoryId }]);
+
+    expect((await request("start-voting")).status).toBe(200);
+    expect(mocks.roundInsertOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventId: new ObjectId(eventId),
+        type: "primary",
+        status: "open",
+        categoryIds: [firstCategoryId],
+        openedAt: new Date("2026-11-01T00:00:00.000Z"),
+      }),
+      { session: expect.anything() },
+    );
+  });
+
+  it("ends the currently open round in the same transaction as voting", async () => {
+    const runoffId = new ObjectId("507f1f77bcf86cd799439019");
+    mocks.roundFindOne.mockResolvedValue({
+      _id: runoffId,
+      status: "open",
+      type: "runoff",
+    });
+    expect((await request("end-voting")).status).toBe(200);
+    expect(mocks.roundUpdateOne).toHaveBeenCalledWith(
+      {
+        _id: runoffId,
+        eventId: new ObjectId(eventId),
+        status: "open",
+      },
+      {
+        $set: {
+          status: "ended",
+          endedAt: new Date("2026-11-01T00:00:00.000Z"),
+        },
+      },
+      { session: expect.anything() },
+    );
+    expect(mocks.withTransaction).toHaveBeenCalledOnce();
+  });
+
+  it("opens a category-scoped runoff for tied leaders when ending the primary round", async () => {
+    const categoryId = new ObjectId("507f1f77bcf86cd799439018");
+    const candidateA = new ObjectId("507f1f77bcf86cd799439019");
+    const candidateB = new ObjectId("507f1f77bcf86cd799439020");
+    const candidateC = new ObjectId("507f1f77bcf86cd799439021");
+    const primaryId = new ObjectId("507f1f77bcf86cd799439022");
+    mocks.roundFindOne.mockResolvedValue({
+      _id: primaryId,
+      status: "open",
+      type: "primary",
+      categoryIds: [categoryId],
+    });
+    mocks.roundFindOne.mockImplementation((filter) =>
+      filter.type === "runoff"
+        ? null
+        : {
+            _id: primaryId,
+            status: "open",
+            type: "primary",
+            categoryIds: [categoryId],
+          },
+    );
+    mocks.ballotToArray.mockResolvedValue([
+      { categoryId, candidateId: candidateA },
+      { categoryId, candidateId: candidateB },
+      { categoryId, candidateId: candidateC },
+      { categoryId, candidateId: candidateA },
+      { categoryId, candidateId: candidateB },
+    ]);
+
+    const response = await request("end-voting");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("X-Runoff-Opened")).toBe("true");
+    expect(mocks.roundInsertOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventId: new ObjectId(eventId),
+        type: "runoff",
+        status: "open",
+        categoryIds: [categoryId],
+        candidateIdsByCategory: [
+          { categoryId, candidateIds: [candidateA, candidateB] },
+        ],
+      }),
+      { session: expect.anything() },
+    );
+  });
+
+  it("closes contest entry atomically before voting", async () => {
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      status: "active",
+      contestEntryStatus: "open",
+      votingStatus: "not_started",
+    });
+
+    const response = await request("close-contest-entry");
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: expect.anything(),
+        status: "active",
+        votingStatus: "not_started",
+        $or: expect.arrayContaining([
+          { contestEntryStatus: "open" },
+          { contestEntryStatus: { $exists: false } },
+        ]),
+      }),
+      {
+        $set: expect.objectContaining({ contestEntryStatus: "closed" }),
+        $inc: { contestEntryMutationVersion: 1 },
+      },
+      { session: expect.anything() },
+    );
+    expect(mocks.withTransaction).toHaveBeenCalledOnce();
+  });
+
+  it("requires explicit confirmation before closing registrations with RSVPs", async () => {
+    mocks.countRsvps.mockResolvedValue(3);
+
+    const warning = await request("close-contest-entry");
+    expect(warning.status).toBe(409);
+    expect(await warning.json()).toEqual({
+      error:
+        "Confirme o encerramento das inscrições para os convidados já registrados",
+      code: "rsvp_confirmation_required",
+      confirmedRsvps: 3,
+    });
+    expect(mocks.updateOne).not.toHaveBeenCalled();
+
+    const confirmed = await request("close-contest-entry", {
+      confirmExistingRsvps: true,
+    });
+    expect(confirmed.status).toBe(200);
+    expect(mocks.updateOne).toHaveBeenCalledOnce();
+  });
+
+  it("freezes photo-complete entries while leaving incomplete drafts private", async () => {
+    const eventObjectId = new ObjectId(eventId);
+    const categoryId = new ObjectId("507f1f77bcf86cd799439012");
+    const rsvpId = new ObjectId("507f1f77bcf86cd799439013");
+    const completeId = new ObjectId("507f1f77bcf86cd799439014");
+    const draftId = new ObjectId("507f1f77bcf86cd799439015");
+    const now = new Date("2026-11-01T00:00:00.000Z");
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      status: "active",
+      contestEntryStatus: "open",
+      votingStatus: "not_started",
+    });
+    mocks.categoryToArray.mockResolvedValue([
+      { _id: categoryId, eligibility: "all" },
+    ]);
+    mocks.contestantToArray.mockResolvedValue([
+      {
+        _id: completeId,
+        eventId: eventObjectId,
+        categoryId,
+        entryType: "individual",
+        displayName: "Ana",
+        status: "draft",
+        ownerRsvpId: rsvpId,
+        contestPhoto: {
+          assetId: "asset",
+          publicId: `contest-photos/${eventObjectId.toString()}/asset`,
+          consentAt: now,
+          consentByRsvpId: rsvpId.toString(),
+        },
+      },
+      {
+        _id: draftId,
+        eventId: eventObjectId,
+        categoryId,
+        entryType: "individual",
+        displayName: "Bia",
+        status: "draft",
+        ownerRsvpId: rsvpId,
+      },
+    ]);
+
+    const response = await request("close-contest-entry");
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateMany).toHaveBeenCalledOnce();
+    expect(mocks.updateMany).toHaveBeenCalledWith(
+      {
+        eventId: eventObjectId,
+        _id: { $in: [completeId] },
+        status: { $in: ["draft", "ready"] },
+      },
+      { $set: { status: "locked", updatedAt: now } },
+      { session: expect.anything() },
+    );
+  });
+
+  it("reopens contest entry only before the first voting opening", async () => {
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      status: "active",
+      contestEntryStatus: "closed",
+      votingStatus: "not_started",
+    });
+
+    const response = await request("reopen-contest-entry");
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "active",
+        votingStatus: "not_started",
+        contestEntryStatus: "closed",
+      }),
+      {
+        $set: expect.objectContaining({ contestEntryStatus: "open" }),
+        $inc: { contestEntryMutationVersion: 1 },
+      },
+      { session: expect.anything() },
+    );
+    expect(mocks.updateMany).toHaveBeenCalledWith(
+      { eventId: expect.anything(), status: "locked" },
+      {
+        $set: {
+          status: "ready",
+          updatedAt: new Date("2026-11-01T00:00:00.000Z"),
+        },
+      },
+      { session: expect.anything() },
+    );
+  });
+
+  it("does not reopen contest entry after voting begins", async () => {
+    mocks.updateOne.mockResolvedValue({ matchedCount: 0 });
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      status: "active",
+      contestEntryStatus: "closed",
+      votingStatus: "open",
+    });
+
+    const response = await request("reopen-contest-entry");
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error:
+        "As inscrições do concurso foram encerradas com o início da votação",
+    });
   });
 
   it("does not start voting before the event begins", async () => {
@@ -77,7 +488,7 @@ describe("event lifecycle controls", () => {
     mocks.getEventById.mockResolvedValue({
       _id: eventId,
       status: "active",
-      startsAt: "2026-11-01T00:01:00.000Z",
+      eventStartsAt: "2026-11-01T00:01:00.000Z",
       votingStatus: "not_started",
       resultsPublished: false,
     });
@@ -87,6 +498,24 @@ describe("event lifecycle controls", () => {
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({
       error: "A votação só pode começar após o início do evento",
+    });
+  });
+
+  it("does not start voting while contestant entry is open", async () => {
+    mocks.updateOne.mockResolvedValue({ matchedCount: 0 });
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      status: "active",
+      eventStartsAt: "2026-10-31T23:00:00.000Z",
+      contestEntryStatus: "open",
+      votingStatus: "not_started",
+    });
+
+    const response = await request("start-voting");
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Feche as inscrições do concurso antes de iniciar a votação",
     });
   });
 
@@ -105,6 +534,97 @@ describe("event lifecycle controls", () => {
     expect(await response.json()).toEqual({
       error: "Encerre a votação antes de publicar os resultados",
     });
+  });
+
+  it("publishes and audits results only after the latest round ended", async () => {
+    const response = await request("publish-results");
+
+    expect(response.status).toBe(200);
+    expect(mocks.roundFindMany).toHaveBeenCalledOnce();
+    expect(mocks.updateOne).toHaveBeenCalledWith(
+      {
+        _id: new ObjectId(eventId),
+        votingStatus: "ended",
+        resultsPublished: { $ne: true },
+      },
+      {
+        $set: {
+          resultsPublished: true,
+          updatedAt: new Date("2026-11-01T00:00:00.000Z"),
+        },
+      },
+      { session: expect.anything() },
+    );
+    expect(mocks.auditInsertOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clerkUserId: "admin-clerk-id",
+        action: "results_published",
+        changes: { resultsPublished: { from: false, to: true } },
+      }),
+      { session: expect.anything() },
+    );
+  });
+
+  it("rejects publication when the latest round is still open", async () => {
+    mocks.roundFindMany.mockResolvedValue([
+      { _id: new ObjectId(), status: "open", type: "runoff" },
+    ]);
+
+    const response = await request("publish-results");
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Encerre a rodada final antes de publicar os resultados",
+    });
+    expect(mocks.updateOne).not.toHaveBeenCalled();
+    expect(mocks.auditInsertOne).not.toHaveBeenCalled();
+  });
+
+  it("does not audit a publication lost to a concurrent transition", async () => {
+    mocks.updateOne.mockResolvedValue({ matchedCount: 0 });
+    mocks.getEventById.mockResolvedValue({
+      _id: eventId,
+      votingStatus: "ended",
+      resultsPublished: true,
+    });
+
+    const response = await request("publish-results");
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Os resultados já estão publicados",
+    });
+    expect(mocks.auditInsertOne).not.toHaveBeenCalled();
+  });
+
+  it("unpublishes and audits results without changing votes", async () => {
+    const response = await request("unpublish-results");
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateOne).toHaveBeenCalledWith(
+      {
+        _id: new ObjectId(eventId),
+        votingStatus: "ended",
+        resultsPublished: true,
+      },
+      {
+        $set: {
+          resultsPublished: false,
+          updatedAt: new Date("2026-11-01T00:00:00.000Z"),
+        },
+      },
+      { session: expect.anything() },
+    );
+    expect(mocks.auditInsertOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clerkUserId: "admin-clerk-id",
+        action: "results_unpublished",
+        changes: { resultsPublished: { from: true, to: false } },
+      }),
+      { session: expect.anything() },
+    );
+    expect(mocks.ballotToArray).not.toHaveBeenCalled();
+    expect(mocks.updateMany).not.toHaveBeenCalled();
   });
 
   it("rejects unsupported lifecycle actions", async () => {

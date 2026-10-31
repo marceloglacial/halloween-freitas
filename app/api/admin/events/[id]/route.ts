@@ -3,7 +3,24 @@ import { isAdmin } from "@/lib/auth/admin";
 import { getDb } from "@/lib/db";
 import { parseEventInput } from "@/lib/event-schedule";
 import { getEventById } from "@/lib/events";
-import { errorResponse, readJsonObject } from "@/lib/http";
+import { errorResponse, readJsonObject, logServerError } from "@/lib/http";
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  if (!(await isAdmin())) return errorResponse("Não autorizado", 401);
+  const { id } = await params;
+  if (!ObjectId.isValid(id)) return errorResponse("Evento inválido", 400);
+  try {
+    const event = await getEventById(id);
+    if (!event) return errorResponse("Evento não encontrado", 404);
+    return Response.json(event);
+  } catch (error) {
+    logServerError("Admin event lookup failed", error);
+    return errorResponse("Não foi possível carregar o evento", 500);
+  }
+}
 
 export async function PUT(
   request: Request,
@@ -37,7 +54,7 @@ export async function PUT(
     if (error instanceof MongoServerError && error.code === 11000) {
       return errorResponse("Já existe um evento para este ano", 409);
     }
-    console.error("Admin event update failed", error);
+    logServerError("Admin event update failed", error);
     return errorResponse("Não foi possível atualizar o evento", 500);
   }
 }

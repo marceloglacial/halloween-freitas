@@ -4,6 +4,7 @@ import { defaultFont } from "@/util/fonts";
 import { Toaster } from "sonner";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ptBR } from "@clerk/localizations/pt-BR";
+import FeatureNavigation from "@/components/feature-navigation";
 
 export const metadata: Metadata = {
   title: "Halloween dos Freitas",
@@ -29,6 +30,14 @@ const clerkLocalization = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const app = (
+    <>
+      <FeatureNavigation
+        clerkEnabled={Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)}
+      />
+      {children}
+    </>
+  );
   const content = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? (
     <ClerkProvider
       localization={clerkLocalization}
@@ -63,14 +72,18 @@ export default function RootLayout({
         },
       }}
     >
-      {children}
+      {app}
     </ClerkProvider>
   ) : (
-    children
+    app
   );
 
   return (
-    <html lang="pt-BR" className="scroll-smooth">
+    <html
+      lang="pt-BR"
+      className="scroll-smooth"
+      data-scroll-behavior="smooth"
+    >
       <body className={`${defaultFont.className} antialiased`}>
         {content}
         <Toaster
