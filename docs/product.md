@@ -54,7 +54,7 @@ and is separate from contestant entries, contest photos, and voting candidates.
 - After `eventStartsAt`, show a homepage action beside the RSVP call to action
   that takes guests through login to the selected edition's party-photo upload
   area, even after RSVP closes.
-- Let a verified guest view and update their own RSVP name for the selected
+- Let a guest enter the RSVP email to access and update their RSVP name for the selected
   edition. Keep email and account identifiers private, and keep a frozen
   contestant display name independent from later RSVP profile edits.
 - Let guests stage an optional costume title and required photo for individual
@@ -69,9 +69,10 @@ and is separate from contestant entries, contest photos, and voting candidates.
   `registrationStartsAt` instant in the edition's timezone. Administrators can
   close and reopen that window before voting first opens. Closing it stops new
   RSVPs and contest additions or edits and freezes the eligible candidate set.
-- Allow a previously registered guest to verify and link their Clerk identity
-  after the RSVP cutoff. Authentication does not create an RSVP or grant access
-  to another edition.
+- Guest access uses an application session scoped to one RSVP and edition;
+  Clerk is reserved for administrators. Access is based on the entered email
+  without mailbox verification, so anyone who knows that email can act as that
+  guest.
 - After `eventStartsAt` and contestant freeze, administrators may open voting.
   The first opening permanently cuts off new RSVPs and contestant additions or
   deletions for that edition.
