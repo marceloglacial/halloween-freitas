@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { photoUploadError, preparePhotoUpload } from "@/lib/photo-upload";
 
 export default function ContestantEntryEditor({
   eventId,
@@ -79,17 +80,22 @@ export default function ContestantEntryEditor({
       }
 
       if (photo) {
+        const uploadPhoto = await preparePhotoUpload(photo);
         const body = new FormData();
-        body.set("image", photo);
+        body.set("image", uploadPhoto);
         body.set("photoConsent", "true");
         const response = await fetch(
           `/api/contestants/${entryId}/photo?eventId=${encodeURIComponent(eventId)}`,
           { method: "PUT", body },
         );
-        const result: { photoUrl?: string; error?: string } =
-          await response.json();
-        if (!response.ok || !result.photoUrl)
-          throw new Error(result.error ?? "Não foi possível enviar a foto.");
+        if (!response.ok) {
+          throw new Error(
+            await photoUploadError(response, "Não foi possível enviar a foto."),
+          );
+        }
+        const result: { photoUrl?: string } = await response.json();
+        if (!result.photoUrl)
+          throw new Error("Não foi possível enviar a foto.");
         setPhotoUrl(result.photoUrl);
         if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
         previewUrlRef.current = null;
@@ -225,7 +231,10 @@ export default function ContestantEntryEditor({
             />
           </label>
         ) : null}
-        <p className="text-sm text-stone-400">JPG, PNG ou WebP, até 8 MB.</p>
+        <p className="text-sm text-stone-400">
+          JPG, PNG ou WebP, até 25 MB. Fotos grandes são otimizadas antes do
+          envio.
+        </p>
         {shownImage ? (
           <div className="grid gap-2">
             <p className="text-sm text-stone-300">

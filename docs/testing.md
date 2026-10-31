@@ -80,8 +80,9 @@ cross-edition isolation cases where they apply.
 - Reject uploads before `eventStartsAt`, from users without an RSVP in the same
   edition, invalid files, oversize files, and rate-limit abuse.
 - Verify multiple party uploads do not alter contestant photos/readiness;
-  allow only JPG, PNG, and WebP files up to 8 MB each; and keep assets private
-  until album publication.
+  accept JPG, PNG, and WebP originals up to 25 MB, optimize large images to
+  JPEG files up to 4 MB before sending, and keep assets private until album
+  publication. The server independently rejects uploaded files over 8 MB.
 - Verify guest photo reads return only that RSVP's event-scoped photos with
   short-lived private preview URLs, never Cloudinary asset/public IDs.
 - Verify guests can remove their own party photos individually or all at once;
