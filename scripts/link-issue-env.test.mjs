@@ -52,6 +52,7 @@ async function startTestDevServer(issuePath) {
   const child = spawn(packageManager, ["run", "dev"], {
     cwd: issuePath,
     stdio: ["ignore", "pipe", "pipe"],
+    detached: process.platform !== "win32",
   });
   let output = "";
   let timeout;
@@ -80,15 +81,37 @@ async function startTestDevServer(issuePath) {
       });
     });
 
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(5_000) });
     expect(response.status).toBe(200);
     expect(await response.text()).toBe("ready");
     return url;
   } finally {
     clearTimeout(timeout);
-    if (child.exitCode === null && child.signalCode === null) {
-      child.kill("SIGINT");
-      await new Promise((resolve) => child.once("exit", resolve));
+    if (child.pid !== undefined) {
+      const exited = new Promise((resolve) => child.once("exit", resolve));
+      const signalProcessGroup = (signal) => {
+        try {
+          if (process.platform === "win32") {
+            child.kill(signal);
+          } else {
+            process.kill(-child.pid, signal);
+          }
+        } catch (error) {
+          if (error.code !== "ESRCH") throw error;
+        }
+      };
+
+      signalProcessGroup("SIGINT");
+      if (child.exitCode === null && child.signalCode === null) {
+        await Promise.race([
+          exited,
+          new Promise((resolve) => setTimeout(resolve, 1_000)),
+        ]);
+      }
+      if (child.exitCode === null && child.signalCode === null) {
+        signalProcessGroup("SIGKILL");
+        await exited;
+      }
     }
   }
 }
