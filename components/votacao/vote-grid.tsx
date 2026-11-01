@@ -40,13 +40,20 @@ export default function VoteGrid({
       });
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
+        code?: string;
       };
       if (!res.ok) {
-        if (res.status === 409) {
-          setErrorMessage(
-            "Esta categoria pode ter sido concluída em outra aba. Atualizando seu progresso…",
+        const categoriesUrl = `/meu-halloween/votacao?eventId=${encodeURIComponent(eventId)}`;
+        if (data.code === "already_voted") {
+          toast.info("Seu voto já está registrado. Atualizando seu progresso…");
+          router.replace(categoriesUrl);
+          return;
+        }
+        if (data.code === "round_changed") {
+          toast.info(
+            "A rodada de votação mudou. Atualizando as categorias disponíveis…",
           );
-          router.refresh();
+          router.replace(categoriesUrl);
           return;
         }
         throw new Error(data.error || "Não foi possível registrar seu voto.");
@@ -74,7 +81,11 @@ export default function VoteGrid({
   if (submitted) {
     return (
       <section className="mx-auto max-w-xl rounded-2xl border border-green-500/60 bg-zinc-900 p-8 text-center">
-        <h2 ref={stepHeadingRef} tabIndex={-1} className="text-2xl font-semibold">
+        <h2
+          ref={stepHeadingRef}
+          tabIndex={-1}
+          className="text-2xl font-semibold"
+        >
           Voto registrado
         </h2>
         <p className="mt-3 text-orange-100">
@@ -84,7 +95,9 @@ export default function VoteGrid({
         <button
           type="button"
           className="mt-6 rounded-xl bg-orange-400 px-6 py-3 font-semibold text-black"
-          onClick={() => router.push(`/meu-halloween/votacao?eventId=${eventId}`)}
+          onClick={() =>
+            router.push(`/meu-halloween/votacao?eventId=${eventId}`)
+          }
         >
           Continuar votação
         </button>

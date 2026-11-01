@@ -67,6 +67,8 @@ cross-edition isolation cases where they apply.
 
 - Enforce one ballot per session-authenticated RSVP, category, round, and edition under
   simultaneous requests.
+- Distinguish existing-ballot conflicts from stale-round conflicts in API
+  responses and guest recovery; report undeclared unique indexes on `votes`.
 - Cover category eligibility, individual entries in every `all` category,
   individual self-voting, and creator voting for a couple/group entry.
 - Race first voting opening against new RSVP and contestant requests; only

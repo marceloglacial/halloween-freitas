@@ -310,5 +310,20 @@ export async function getIndexIssues(db) {
     }
   }
 
+  const voteIndex = requiredIndexes.find(({ label }) => label === "vote");
+  const existingVoteIndexes = indexesByCollection.get("votes") ?? [];
+  for (const index of existingVoteIndexes) {
+    if (
+      !index.unique ||
+      sameDocument(index.key, { _id: 1 }) ||
+      sameDocument(index.key, voteIndex.key)
+    ) {
+      continue;
+    }
+    issues.push(
+      `vote: unexpected unique index ${index.name ?? JSON.stringify(index.key)}`,
+    );
+  }
+
   return issues;
 }

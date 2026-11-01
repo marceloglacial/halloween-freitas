@@ -18,6 +18,23 @@ import { getCategoryById } from "@/util/get-categories";
 
 class VotingRoundClosedError extends Error {}
 
+function voteConflictResponse(
+  code: "round_changed" | "already_voted",
+  message: string,
+) {
+  return Response.json({ error: message, code }, { status: 409 });
+}
+
+function isExpectedBallotDuplicate(error: MongoServerError) {
+  const keyPattern = error.keyPattern;
+  const expectedFields = ["eventId", "roundId", "categoryId", "voterRsvpId"];
+  return (
+    keyPattern !== undefined &&
+    Object.keys(keyPattern).length === expectedFields.length &&
+    expectedFields.every((field) => keyPattern[field] === 1)
+  );
+}
+
 export async function GET(request?: Request) {
   try {
     const requestedEventId = request
@@ -65,7 +82,10 @@ export async function POST(request: Request) {
     }
     const round = await getOpenVotingRound(session.eventId);
     if (!round || !round._id.equals(roundId)) {
-      return errorResponse("A rodada de votação não está aberta", 409);
+      return voteConflictResponse(
+        "round_changed",
+        "A rodada de votação mudou. Confira as categorias disponíveis.",
+      );
     }
     if (!roundIncludesCategory(round, session.eventId, categoryId.toString())) {
       return errorResponse("Categoria indisponível nesta rodada", 400);
@@ -129,10 +149,22 @@ export async function POST(request: Request) {
     if (error instanceof GuestAccessError)
       return errorResponse(error.message, error.status);
     if (error instanceof MongoServerError && error.code === 11000) {
-      return errorResponse("Você já votou nesta categoria", 409);
+      if (!isExpectedBallotDuplicate(error)) {
+        console.error("Vote insert violated an unexpected unique index", {
+          keyPattern: error.keyPattern,
+        });
+        return errorResponse("Não foi possível registrar seu voto", 500);
+      }
+      return voteConflictResponse(
+        "already_voted",
+        "Você já votou nesta categoria",
+      );
     }
     if (error instanceof VotingRoundClosedError) {
-      return errorResponse("A rodada de votação não está aberta", 409);
+      return voteConflictResponse(
+        "round_changed",
+        "A rodada de votação mudou. Confira as categorias disponíveis.",
+      );
     }
     logServerError("Vote creation failed", error);
     return errorResponse("Não foi possível registrar o voto", 500);

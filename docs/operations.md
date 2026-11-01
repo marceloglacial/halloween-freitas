@@ -130,6 +130,11 @@ seed, or migrate documents. Review the index definitions and verify the target
 database before any authorized index operation; never use them on a legacy
 database.
 
+Index verification also reports undeclared unique indexes on `votes`, since a
+leftover constraint can reject a guest's first ballot in a category. Review the
+reported index and its affected records before any index removal; index creation
+does not remove old constraints.
+
 Database schema, indexes, and transaction prerequisites are defined alongside
 the implementation contract in [architecture](architecture.md) and
 [data model](data-model.md). Verify the target and a recoverable backup before
