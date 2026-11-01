@@ -18,21 +18,18 @@ import { getCategoryById } from "@/util/get-categories";
 
 class VotingRoundClosedError extends Error {}
 
+type DuplicateBallotScope = {
+  eventId: ObjectId;
+  roundId: ObjectId;
+  categoryId: ObjectId;
+  voterRsvpId: ObjectId;
+};
+
 function voteConflictResponse(
   code: "round_changed" | "already_voted",
   message: string,
 ) {
   return Response.json({ error: message, code }, { status: 409 });
-}
-
-function isExpectedBallotDuplicate(error: MongoServerError) {
-  const keyPattern = error.keyPattern;
-  const expectedFields = ["eventId", "roundId", "categoryId", "voterRsvpId"];
-  return (
-    keyPattern !== undefined &&
-    Object.keys(keyPattern).length === expectedFields.length &&
-    expectedFields.every((field) => keyPattern[field] === 1)
-  );
 }
 
 export async function GET(request?: Request) {
@@ -70,6 +67,8 @@ export async function GET(request?: Request) {
 }
 
 export async function POST(request: Request) {
+  let duplicateBallotScope: DuplicateBallotScope | null = null;
+
   try {
     const body = await readJsonObject(request);
     if (!body) return errorResponse("Corpo da requisição inválido", 400);
@@ -116,6 +115,12 @@ export async function POST(request: Request) {
 
     const db = await getDb();
     const mongoSession = (await getMongoClient()).startSession();
+    duplicateBallotScope = {
+      eventId: new ObjectId(session.eventId),
+      roundId: round._id,
+      categoryId,
+      voterRsvpId: new ObjectId(session.userId),
+    };
     try {
       await mongoSession.withTransaction(async () => {
         const currentRound = await db.collection("votingRounds").updateOne(
@@ -131,11 +136,8 @@ export async function POST(request: Request) {
         if (!currentRound.matchedCount) throw new VotingRoundClosedError();
         await db.collection("votes").insertOne(
           {
-            eventId: new ObjectId(session.eventId),
-            roundId: round._id,
-            voterRsvpId: new ObjectId(session.userId),
+            ...duplicateBallotScope,
             candidateId,
-            categoryId,
             votedAt: new Date(),
           },
           { session: mongoSession },
@@ -149,16 +151,27 @@ export async function POST(request: Request) {
     if (error instanceof GuestAccessError)
       return errorResponse(error.message, error.status);
     if (error instanceof MongoServerError && error.code === 11000) {
-      if (!isExpectedBallotDuplicate(error)) {
-        console.error("Vote insert violated an unexpected unique index", {
-          keyPattern: error.keyPattern,
-        });
-        return errorResponse("Não foi possível registrar seu voto", 500);
+      if (duplicateBallotScope) {
+        try {
+          const existingBallot = await (
+            await getDb()
+          )
+            .collection("votes")
+            .findOne(duplicateBallotScope, { projection: { _id: 1 } });
+          if (existingBallot) {
+            return voteConflictResponse(
+              "already_voted",
+              "Você já votou nesta categoria",
+            );
+          }
+        } catch (lookupError) {
+          logServerError("Existing ballot lookup failed", lookupError);
+        }
       }
-      return voteConflictResponse(
-        "already_voted",
-        "Você já votou nesta categoria",
-      );
+      console.error("Vote insert violated an unexpected unique index", {
+        keyPattern: error.keyPattern,
+      });
+      return errorResponse("Não foi possível registrar seu voto", 500);
     }
     if (error instanceof VotingRoundClosedError) {
       return voteConflictResponse(

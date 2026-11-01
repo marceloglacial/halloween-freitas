@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   withTransaction: vi.fn(),
   endSession: vi.fn(),
   insertOne: vi.fn(),
+  findOne: vi.fn(),
   find: vi.fn(),
 }));
 
@@ -104,6 +105,7 @@ describe("round-scoped vote API", () => {
       _id: new ObjectId(candidateId),
     });
     mocks.insertOne.mockResolvedValue({ insertedId: new ObjectId() });
+    mocks.findOne.mockResolvedValue(null);
     mocks.roundGuardUpdate.mockResolvedValue({ matchedCount: 1 });
     mocks.withTransaction.mockImplementation(
       async (operation: () => Promise<unknown>) => operation(),
@@ -113,7 +115,11 @@ describe("round-scoped vote API", () => {
       collection: (name: string) =>
         name === "votingRounds"
           ? { updateOne: mocks.roundGuardUpdate }
-          : { insertOne: mocks.insertOne, find: mocks.find },
+          : {
+              insertOne: mocks.insertOne,
+              findOne: mocks.findOne,
+              find: mocks.find,
+            },
     });
     mocks.getMongoClient.mockResolvedValue({
       startSession: () => ({
@@ -231,7 +237,17 @@ describe("round-scoped vote API", () => {
     mocks.insertOne.mockRejectedValue(
       new MongoServerError({ code: 11000, message: "duplicate ballot" }),
     );
+    mocks.findOne.mockResolvedValue({ _id: new ObjectId() });
     expect((await POST(request())).status).toBe(409);
+    expect(mocks.findOne).toHaveBeenCalledWith(
+      {
+        eventId: new ObjectId(eventId),
+        roundId: new ObjectId(roundId),
+        categoryId: new ObjectId(categoryId),
+        voterRsvpId: new ObjectId(voterRsvpId),
+      },
+      { projection: { _id: 1 } },
+    );
   });
 
   it("returns only category IDs already cast in the open round", async () => {

@@ -56,7 +56,8 @@ export default function VoteGrid({
           router.replace(categoriesUrl);
           return;
         }
-        throw new Error(data.error || "Não foi possível registrar seu voto.");
+        setErrorMessage(data.error || "Não foi possível registrar seu voto.");
+        return;
       }
       setSubmitted(true);
       toast.success("Voto registrado!");
