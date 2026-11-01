@@ -3,6 +3,7 @@
 Event registration, costume voting, published results, and a photo gallery for
 the annual Halloween dos Freitas event.
 
+
 ## Technology
 
 - Next.js 16 App Router and React 19
